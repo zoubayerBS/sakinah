@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Clock } from 'lucide-react';
+import { Search, Clock, Book } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
 import { SurahCard } from '../components/SurahCard.jsx';
 import { ContinueReading } from '../components/ContinueReading.jsx';
@@ -76,6 +76,25 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
                         />
                     )}
                     <DailyAyah />
+
+                    {/* Khitma Planner Button */}
+                    <button
+                        onClick={() => onNavigate('khitma')}
+                        className="w-full mt-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-5 flex items-center justify-between hover:border-[var(--color-accent)] transition-all group shadow-sm"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] group-hover:scale-110 transition-transform">
+                                <Book size={24} />
+                            </div>
+                            <div className="text-right">
+                                <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">مخطط الختمة</h3>
+                                <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">خطط لختمتك القادمة بالورقات أو بالآيات</p>
+                            </div>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-tertiary)] group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors">
+                            <Clock size={16} />
+                        </div>
+                    </button>
                 </div>
 
                 {/* Search */}

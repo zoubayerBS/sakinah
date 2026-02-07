@@ -3,6 +3,7 @@ import { HomePage } from './pages/HomePage.jsx';
 import { ReadingPage } from './pages/ReadingPage.jsx';
 import { SettingsPage } from './pages/SettingsPage.jsx';
 import { PrayerTimesPage } from './pages/PrayerTimesPage.jsx';
+import { KhitmaPage } from './pages/KhitmaPage.jsx';
 import { NavigationBar } from './components/NavigationBar.jsx';
 import { ThemeToggle } from './components/ThemeToggle.jsx';
 import { AudioProvider } from './context/AudioContext.jsx';
@@ -65,6 +66,12 @@ const AppContent = () => {
 
                 {currentPage === 'prayer' && (
                     <PrayerTimesPage
+                        onBack={() => handleNavigate('home')}
+                    />
+                )}
+
+                {currentPage === 'khitma' && (
+                    <KhitmaPage
                         onBack={() => handleNavigate('home')}
                     />
                 )}
