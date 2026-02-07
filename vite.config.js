@@ -17,6 +17,9 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'autoUpdate',
+            devOptions: {
+                enabled: true
+            },
             includeAssets: ['**/*'],
             manifest: {
                 name: 'Sakina - Quran Audio App',
