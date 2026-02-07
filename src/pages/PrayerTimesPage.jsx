@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowBigRight, Search, MapPin, Calendar, Clock, Sun, Moon, CloudSun, Sunrise, Sunset } from 'lucide-react';
 import { usePrayerTimes } from '../hooks/usePrayerTimes.js';
-import { useNavigate } from 'react-router-dom';
 
 const PrayerTimeCard = ({ name, time, icon: Icon, isNext }) => (
     <div className={`p-4 rounded-2xl flex items-center justify-between border transition-all duration-300 ${isNext
@@ -27,8 +26,7 @@ const PrayerTimeCard = ({ name, time, icon: Icon, isNext }) => (
     </div>
 );
 
-export const PrayerTimesPage = () => {
-    const navigate = useNavigate();
+export const PrayerTimesPage = ({ onBack }) => {
     const { timings, date, meta, loading, error, city, country, fetchPrayerTimes } = usePrayerTimes();
     const [searchCity, setSearchCity] = useState('');
 
@@ -81,7 +79,7 @@ export const PrayerTimesPage = () => {
             <header className="sticky top-0 z-[var(--z-fixed)] w-full bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] px-6 py-4 shadow-[var(--shadow-sm)]">
                 <div className="max-w-[1200px] mx-auto flex items-center justify-between" dir="rtl">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => navigate(-1)} className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors">
+                        <button onClick={onBack} className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors">
                             <ArrowBigRight className="w-6 h-6 text-[var(--color-text-secondary)] rotate-180" />
                         </button>
                         <h1 className="font-arabic font-bold text-2xl text-[var(--color-text-primary)]">
