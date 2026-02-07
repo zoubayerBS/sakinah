@@ -1,0 +1,268 @@
+/* Additional Enhanced Styles for Micro-interactions */
+
+/* Smooth page transitions */
+.page {
+    animation: pageEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pageEnter {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced search input */
+.home-page__search-input {
+    position: relative;
+}
+
+.home-page__search-input:focus {
+    animation: inputFocus 0.3s ease-out;
+}
+
+@keyframes inputFocus {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Navigation bar item active indicator animation */
+.navigation-bar__item.active .navigation-bar__indicator {
+    animation: indicatorSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes indicatorSlide {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 24px;
+    }
+}
+
+/* Theme toggle smooth rotation */
+.theme-toggle__icon {
+    animation-duration: 0.5s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Verse separator pulse on hover */
+.verse:hover+.verse::before {
+    animation: separatorPulse 1s ease-in-out;
+}
+
+@keyframes separatorPulse {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        width: 60px;
+    }
+
+    50% {
+        opacity: 1;
+        width: 80px;
+    }
+}
+
+/* Reading header slide in */
+.reading-header {
+    animation: headerSlideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes headerSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scroll to top button entrance */
+.reading-page__scroll-top.visible {
+    animation: buttonBounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes buttonBounceIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.8);
+    }
+
+    50% {
+        transform: translateY(-5px) scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Bismillah glow effect */
+.reading-page__bismillah {
+    position: relative;
+    overflow: hidden;
+}
+
+.reading-page__bismillah::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg,
+            transparent 30%,
+            rgba(4, 120, 87, 0.1) 50%,
+            transparent 70%);
+    animation: bismillahShimmer 3s ease-in-out infinite;
+}
+
+@keyframes bismillahShimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+/* Verse stagger effect */
+.verse:nth-child(1) {
+    animation-delay: 0ms;
+}
+
+.verse:nth-child(2) {
+    animation-delay: 100ms;
+}
+
+.verse:nth-child(3) {
+    animation-delay: 200ms;
+}
+
+.verse:nth-child(4) {
+    animation-delay: 300ms;
+}
+
+.verse:nth-child(5) {
+    animation-delay: 400ms;
+}
+
+.verse:nth-child(6) {
+    animation-delay: 500ms;
+}
+
+.verse:nth-child(7) {
+    animation-delay: 600ms;
+}
+
+/* Loading screen fade out */
+.loading-screen {
+    animation: loadingFadeOut 0.5s ease-out 0.5s forwards;
+}
+
+@keyframes loadingFadeOut {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+/* Smooth color transitions for theme change */
+* {
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-in-out;
+}
+
+/* Prevent transition on page load */
+.preload * {
+    transition: none !important;
+}
+
+/* Focus ring animation */
+*:focus-visible {
+    animation: focusRing 0.3s ease-out;
+}
+
+@keyframes focusRing {
+    0% {
+        outline-offset: 0px;
+        outline-width: 0px;
+    }
+
+    50% {
+        outline-offset: 4px;
+    }
+
+    100% {
+        outline-offset: 2px;
+        outline-width: 2px;
+    }
+}
+
+/* Hover lift with shadow growth - Updated to exclude surah-list-item which is now Tailwind */
+.verse,
+.navigation-bar__item,
+.reading-header__back,
+.reading-header__action {
+    transition: transform var(--transition-base),
+        box-shadow var(--transition-base),
+        background-color var(--transition-base);
+}
+
+/* Subtle background pattern animation */
+.pattern-islamic {
+    animation: patternShift 20s linear infinite;
+}
+
+@keyframes patternShift {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        background-position: 100px 100px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .pattern-islamic {
+        animation: none;
+    }
+
+    .home-page__title {
+        animation: none;
+    }
+}

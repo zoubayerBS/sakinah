@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#047857">
+  <meta name="description" content="A modern, elegant Progressive Web App for reading the Noble Quran">
+  <meta name="keywords" content="Sakina, Quran, سكينة, القرآن الكريم, Islamic, PWA, Listening">
+
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sakina">
+
+  <title>Sakina - سكينة</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+
+  <!-- Manifest -->
+
+
+  <!-- Preconnect to Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Cairo:wght@300;400;500;600;700&family=Cairo+Play:wght@200..1000&family=Inter:wght@300;400;500;600;700&family=Lateef:wght@400;500;600;700&family=Rakkas&family=Reem+Kufi:wght@400;500;600;700&family=Scheherazade+New:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body class="preload">
+  <div id="app">
+    <!-- Loading State -->
+    <div class="loading-screen">
+      <div class="loading-spinner">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg>
+      </div>
+      <p class="loading-text arabic">جاري التحميل...</p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="/src/main.jsx"></script>
+
+  <style>
+    /* Loading Screen Styles */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg-primary);
+      z-index: 9999;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .loading-spinner {
+      color: var(--color-primary);
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .loading-text {
+      margin-top: var(--space-6);
+      font-size: var(--font-size-xl);
+      color: var(--color-text-secondary);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    /* Hide loading screen after app loads */
+    body.loaded .loading-screen {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+
+  <script>
+    // Remove loading screen after app initializes
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.body.classList.add('loaded');
+        document.body.classList.remove('preload');
+      }, 500);
+    });
+  </script>
+</body>
+
+</html>

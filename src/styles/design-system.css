@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+/* MINIMALIST QURAN DESIGN SYSTEM */
+@import url('https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=Amiri+Quran&family=Cairo:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* ==========================================
+     MINIMALIST BEIGE PALETTE - LIGHT MODE
+     ========================================== */
+
+  /* Backgrounds */
+  --color-bg-primary: #F5F1E8;
+  --color-bg-secondary: #FAF6EF;
+  --color-bg-tertiary: #FDFCFA;
+
+  /* Text */
+  --color-text-primary: #2C2416;
+  --color-text-secondary: #8B7355;
+  --color-text-tertiary: #A89A82;
+
+  /* Borders & Dividers */
+  --color-border: #E8DCC8;
+  --color-divider: #EFE6D5;
+
+  /* Accents */
+  --color-accent: #5C6B4A;
+  --color-highlight: #C9A961;
+
+  /* Semantic Colors */
+  --color-success: #6B8E5C;
+  --color-warning: #D4A574;
+  --color-error: #B85C5C;
+
+  /* Shadows - Minimal */
+  --shadow-sm: 0 1px 2px rgba(44, 36, 22, 0.05);
+  --shadow-md: 0 2px 8px rgba(44, 36, 22, 0.08);
+  --shadow-lg: 0 4px 16px rgba(44, 36, 22, 0.1);
+
+  /* Typography */
+  --font-arabic: 'Reem Kufi', 'Amiri Quran', serif;
+  --font-ui: 'Cairo', 'Inter', sans-serif;
+
+  /* Spacing & Layout */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Border Radius - Simple */
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+
+  /* Transitions - Subtle */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* Z-index */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal: 400;
+  --z-popover: 500;
+  --z-tooltip: 600;
+}
+
+/* Global Reset & Tailwind Integration */
+@theme {
+  --font-arabic: "Reem Kufi", "Amiri Quran", serif;
+  --font-ui: "Cairo", "Inter", sans-serif;
+
+  --color-beige-50: #FDFCFA;
+  --color-beige-100: #FAF6EF;
+  --color-beige-200: #F5F1E8;
+  --color-beige-300: #E8DCC8;
+  --color-beige-400: #D4C4A8;
+  --color-beige-500: #C9A961;
+  --color-beige-600: #8B7355;
+  --color-beige-700: #6B5744;
+  --color-beige-800: #2C2416;
+  --color-beige-900: #1A1612;
+
+  --color-olive: #5C6B4A;
+}
+
+@layer base {
+  * {
+    @apply border-[var(--color-border)];
+  }
+
+  body {
+    @apply bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] font-ui antialiased;
+  }
+
+  #app {
+    @apply min-h-screen;
+  }
+
+  .arabic {
+    font-family: var(--font-arabic);
+    @apply text-right;
+    direction: rtl;
+  }
+
+  .font-mushaf {
+    font-family: 'Amiri Quran', serif;
+    direction: rtl;
+    line-height: 2.2;
+  }
+}
+
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  --color-bg-primary: #1A1612;
+  --color-bg-secondary: #2C2416;
+  --color-bg-tertiary: #3D3426;
+
+  --color-text-primary: #F5F1E8;
+  --color-text-secondary: #B8A88A;
+  --color-text-tertiary: #8B7355;
+
+  --color-border: #3D3426;
+  --color-divider: #2C2416;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Simple Pattern Background */
+.pattern-subtle {
+  background-image:
+    linear-gradient(30deg, rgba(201, 169, 97, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(201, 169, 97, 0.03) 87.5%),
+    linear-gradient(150deg, rgba(201, 169, 97, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(201, 169, 97, 0.03) 87.5%),
+    linear-gradient(30deg, rgba(201, 169, 97, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(201, 169, 97, 0.03) 87.5%),
+    linear-gradient(150deg, rgba(201, 169, 97, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(201, 169, 97, 0.03) 87.5%);
+  background-size: 80px 140px;
+  background-position: 0 0, 0 0, 40px 70px, 40px 70px;
+}
+
+/* Utility Classes */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animation Keyframes - Minimal */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+/* Scrollbar Styling - Minimal */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
