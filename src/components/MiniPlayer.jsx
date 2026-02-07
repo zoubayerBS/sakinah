@@ -5,7 +5,8 @@ import { useAudio } from '../context/AudioContext';
 export const MiniPlayer = ({ onOpen }) => {
     const {
         activeSurah, isPlaying, togglePlay, progress,
-        setActiveSurah, isWaitingForInitialBuffer, bufferedProgress
+        setActiveSurah, isWaitingForInitialBuffer, bufferedProgress,
+        currentReciter
     } = useAudio();
 
     if (!activeSurah) return null;
@@ -32,7 +33,7 @@ export const MiniPlayer = ({ onOpen }) => {
                         </div>
                         <div className="ml-3 truncate">
                             <h4 className="text-sm font-arabic font-bold text-[var(--color-text-primary)] truncate">
-                                {activeSurah.name}
+                                {activeSurah.name} - {currentReciter.name}
                             </h4>
                             <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold">
                                 {isWaitingForInitialBuffer

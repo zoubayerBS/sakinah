@@ -21,6 +21,13 @@ export const AudioProvider = ({ children }) => {
     const [sleepTimer, setSleepTimer] = useState(null); // null or minutes
     const [sleepTimerId, setSleepTimerId] = useState(null);
 
+    // Reciter State
+    const [currentReciter, setCurrentReciter] = useState({
+        identifier: 'ar.alafasy',
+        name: 'مشاري راشد العفاسي',
+        englishName: 'Mishary Rashid Alafasy'
+    });
+
     const player = useRef(null);
     if (!player.current) {
         player.current = new Audio();
@@ -101,7 +108,14 @@ export const AudioProvider = ({ children }) => {
         }
     }, [sleepTimer]);
 
-    const playSurah = (surah, data, reciterId = 'ar.alafasy') => {
+    const playSurah = (surah, data, reciterObj) => {
+        const reciterId = typeof reciterObj === 'string' ? reciterObj : reciterObj.identifier;
+
+        // If it's a full object, update the current reciter
+        if (typeof reciterObj === 'object' && reciterObj.identifier) {
+            setCurrentReciter(reciterObj);
+        }
+
         const surahNum = surah.number;
         const paddedNum = surahNum.toString().padStart(3, '0');
 
@@ -185,7 +199,7 @@ export const AudioProvider = ({ children }) => {
         player.current.currentTime = Math.max(0, Math.min(player.current.duration, player.current.currentTime + seconds));
     };
 
-    const value = {
+    const value = React.useMemo(() => ({
         activeSurah,
         audioData,
         isPlaying,
@@ -202,9 +216,15 @@ export const AudioProvider = ({ children }) => {
         seek,
         skip,
         setActiveSurah,
+        currentReciter,
+        setCurrentReciter,
         sleepTimer,
         setSleepTimer
-    };
+    }), [
+        activeSurah, audioData, isPlaying, currentTime, duration, progress,
+        volume, isBuffering, bufferedProgress, isWaitingForInitialBuffer,
+        playSurah, togglePlay, seek, skip, activeSurah, currentReciter, sleepTimer
+    ]);
 
     return (
         <AudioContext.Provider value={value}>

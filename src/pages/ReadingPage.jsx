@@ -7,7 +7,7 @@ import { quranAPI } from '../services/quran-api.js';
 import { saveLastRead, isBookmarked, toggleBookmark } from '../utils/storage-utils.js';
 
 export function ReadingPage({ surah, onBack }) {
-    const { playSurah, activeSurah } = useAudio();
+    const { playSurah, activeSurah, currentReciter, setCurrentReciter } = useAudio();
 
     // 1. All State Definitions
     const [isLoading, setIsLoading] = useState(
@@ -15,10 +15,6 @@ export function ReadingPage({ surah, onBack }) {
     );
     const [error, setError] = useState(null);
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-    const [selectedReciter, setSelectedReciter] = useState({
-        identifier: activeSurah?.reciter || 'ar.alafasy',
-        name: 'مشاري راشد العفاسي'
-    });
 
     // Track reciter changes to force reload
     const [reciterChangeTrigger, setReciterChangeTrigger] = useState(0);
@@ -30,10 +26,10 @@ export function ReadingPage({ surah, onBack }) {
     const handleReciterSelect = useCallback((reciter) => {
         console.log('handleReciterSelect called with:', reciter);
         setIsSelectorOpen(false);
-        setSelectedReciter(reciter);
+        setCurrentReciter(reciter);
         // Increment trigger to force useEffect to run
         setReciterChangeTrigger(prev => prev + 1);
-    }, []);
+    }, [setCurrentReciter]);
 
     const handleToggleBookmark = useCallback(() => {
         toggleBookmark(surah);
@@ -47,9 +43,9 @@ export function ReadingPage({ surah, onBack }) {
             setIsLoading(true);
             setError(null);
             try {
-                const data = await quranAPI.getSurahAudioData(surah.number, selectedReciter.identifier);
+                const data = await quranAPI.getSurahAudioData(surah.number, currentReciter.identifier);
                 if (!isCancelled && data) {
-                    playSurah(surah, data, selectedReciter.identifier);
+                    playSurah(surah, data, currentReciter);
                 } else if (!isCancelled && !data) {
                     setError("Failed to load audio recitation.");
                 }
@@ -63,7 +59,7 @@ export function ReadingPage({ surah, onBack }) {
 
         fetchAudio();
         return () => { isCancelled = true; };
-    }, [surah.number, selectedReciter.identifier, reciterChangeTrigger, playSurah]);
+    }, [surah.number, currentReciter, reciterChangeTrigger, playSurah]);
 
     // Save Last Read & Check Bookmark
     useEffect(() => {
@@ -95,7 +91,7 @@ export function ReadingPage({ surah, onBack }) {
             <ReadingHeader
                 surah={surah}
                 onBack={onBack}
-                reciterName={selectedReciter.name}
+                reciterName={currentReciter.name}
                 onChangeReciter={() => setIsSelectorOpen(true)}
                 isBookmarked={bookmarked}
                 onToggleBookmark={handleToggleBookmark}
@@ -116,7 +112,7 @@ export function ReadingPage({ surah, onBack }) {
                     <div className="animate-fade-in w-full flex items-center justify-center">
                         <SurahAudioPlayer
                             surah={surah}
-                            reciterName={selectedReciter.name}
+                            reciterName={currentReciter.name}
                             isAudioLoading={isLoading}
                         />
                     </div>
@@ -126,7 +122,7 @@ export function ReadingPage({ surah, onBack }) {
             <ReciterSelector
                 isOpen={isSelectorOpen}
                 onClose={() => setIsSelectorOpen(false)}
-                selectedReciter={selectedReciter.identifier}
+                selectedReciter={currentReciter.identifier}
                 onSelect={handleReciterSelect}
             />
         </div>
