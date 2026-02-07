@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HomePage } from './pages/HomePage.jsx';
 import { ReadingPage } from './pages/ReadingPage.jsx';
 import { SettingsPage } from './pages/SettingsPage.jsx';
+import { PrayerTimesPage } from './pages/PrayerTimesPage.jsx';
 import { NavigationBar } from './components/NavigationBar.jsx';
 import { ThemeToggle } from './components/ThemeToggle.jsx';
 import { AudioProvider } from './context/AudioContext.jsx';
@@ -42,7 +43,7 @@ const AppContent = () => {
 
             <main className="animate-fade-in">
                 {currentPage === 'home' && (
-                    <HomePage onSurahSelect={handleSurahSelect} />
+                    <HomePage onSurahSelect={handleSurahSelect} onNavigate={handleNavigate} />
                 )}
 
                 {/* Other pages would go here */}
@@ -58,6 +59,12 @@ const AppContent = () => {
                     <SettingsPage
                         theme={theme}
                         toggleTheme={toggleTheme}
+                        onBack={() => handleNavigate('home')}
+                    />
+                )}
+
+                {currentPage === 'prayer' && (
+                    <PrayerTimesPage
                         onBack={() => handleNavigate('home')}
                     />
                 )}

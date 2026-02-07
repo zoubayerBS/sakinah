@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Clock } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
 import { SurahCard } from '../components/SurahCard.jsx';
 import { ContinueReading } from '../components/ContinueReading.jsx';
 import { DailyAyah } from '../components/DailyAyah.jsx';
 import { getLastRead } from '../utils/storage-utils.js';
 
-export const HomePage = ({ onSurahSelect }) => {
+export const HomePage = ({ onSurahSelect, onNavigate }) => {
     const [surahs, setSurahs] = useState([]);
     const [filteredSurahs, setFilteredSurahs] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
