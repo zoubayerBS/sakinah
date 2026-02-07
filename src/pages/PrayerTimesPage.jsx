@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Fix: Ensure useEffect is imported for Vercel build
 import { ArrowLeft, Search, MapPin, Calendar, Clock, Sun, Moon, CloudSun, Sunrise, Sunset } from 'lucide-react';
 import { usePrayerTimes } from '../hooks/usePrayerTimes.js';
 import { useCitySuggestions } from '../hooks/useCitySuggestions.js';
