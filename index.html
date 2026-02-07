@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#047857">
+  <meta name="theme-color" content="#FAF6EF">
   <meta name="description" content="A modern, elegant Progressive Web App for reading the Noble Quran">
   <meta name="keywords" content="Sakina, Quran, سكينة, القرآن الكريم, Islamic, PWA, Listening">
 
@@ -94,6 +94,22 @@
 
   <script>
     // Remove loading screen after app initializes
+    // Update theme-color meta tag based on current theme
+    const updateThemeColor = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', theme === 'dark' ? '#2C2416' : '#FAF6EF');
+      }
+    };
+
+    // Observe attribute changes on html element
+    const observer = new MutationObserver(updateThemeColor);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    // Initial check
+    updateThemeColor();
+
     window.addEventListener('load', () => {
       setTimeout(() => {
         document.body.classList.add('loaded');
