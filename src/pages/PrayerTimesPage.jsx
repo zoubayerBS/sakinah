@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowBigRight, Search, MapPin, Calendar, Clock, Sun, Moon, CloudSun, Sunrise, Sunset } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, Calendar, Clock, Sun, Moon, CloudSun, Sunrise, Sunset } from 'lucide-react';
 import { usePrayerTimes } from '../hooks/usePrayerTimes.js';
 
 const PrayerTimeCard = ({ name, time, icon: Icon, isNext }) => (
@@ -79,8 +79,12 @@ export const PrayerTimesPage = ({ onBack }) => {
             <header className="sticky top-0 z-[var(--z-fixed)] w-full bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] px-6 py-4 shadow-[var(--shadow-sm)]">
                 <div className="max-w-[1200px] mx-auto flex items-center justify-between" dir="rtl">
                     <div className="flex items-center gap-4">
-                        <button onClick={onBack} className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors">
-                            <ArrowBigRight className="w-6 h-6 text-[var(--color-text-secondary)] rotate-180" />
+                        <button
+                            onClick={onBack}
+                            className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]
+                                hover:bg-[var(--color-accent)] hover:text-white transition-all group"
+                        >
+                            <ArrowLeft size={20} className="rotate-180 group-hover:scale-110 transition-transform" />
                         </button>
                         <h1 className="font-arabic font-bold text-2xl text-[var(--color-text-primary)]">
                             مواقيت الصلاة

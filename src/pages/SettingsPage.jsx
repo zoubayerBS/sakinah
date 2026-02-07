@@ -2,15 +2,16 @@ import React from 'react';
 import {
     Moon,
     Sun,
-    ChevronRight, // Changed from ChevronLeft
-    Volume2, // Added
+    ArrowLeft,
+    ChevronRight,
+    Volume2,
     Clock,
-    Info, // Added
-    Share2, // Added
-    Github, // Added
-    Download, // Added
-    Globe, // Retained from original
-    Bell // Retained from original
+    Info,
+    Share2,
+    Github,
+    Download,
+    Globe,
+    Bell
 } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { useAudio } from '../context/AudioContext.jsx';
@@ -28,9 +29,18 @@ export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
             {/* Header */}
             <header className="sticky top-0 z-[var(--z-fixed)] w-full bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] px-6 py-4 shadow-[var(--shadow-sm)]">
                 <div className="max-w-[1200px] mx-auto flex items-center justify-between" dir="rtl">
-                    <h1 className="font-arabic font-bold text-2xl text-[var(--color-text-primary)]">
-                        الإعدادات
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={onBack}
+                            className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]
+                                hover:bg-[var(--color-accent)] hover:text-white transition-all group"
+                        >
+                            <ArrowLeft size={20} className="rotate-180 group-hover:scale-110 transition-transform" />
+                        </button>
+                        <h1 className="font-arabic font-bold text-2xl text-[var(--color-text-primary)]">
+                            الإعدادات
+                        </h1>
+                    </div>
                 </div>
             </header>
 
