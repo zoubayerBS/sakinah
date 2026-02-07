@@ -32,6 +32,48 @@ export const PrayerTimesPage = ({ onBack }) => {
     const { suggestions, loading: suggestionsLoading, fetchSuggestions, clearSuggestions } = useCitySuggestions();
     const [searchCity, setSearchCity] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [timeLeft, setTimeLeft] = useState('');
+
+    // Countdown logic
+    useEffect(() => {
+        if (!timings) return;
+
+        const updateTimer = () => {
+            const now = new Date();
+            const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+            const prayers = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+            let next = null;
+            let targetSeconds = 0;
+
+            for (const prayer of prayers) {
+                const [hours, minutes] = timings[prayer].split(':').map(Number);
+                const prayerSeconds = hours * 3600 + minutes * 60;
+                if (prayerSeconds > currentSeconds) {
+                    next = prayer;
+                    targetSeconds = prayerSeconds;
+                    break;
+                }
+            }
+
+            if (!next) {
+                // If all passed, target is tomorrow's Fajr
+                const [hours, minutes] = timings['Fajr'].split(':').map(Number);
+                targetSeconds = (24 * 3600) + (hours * 3600 + minutes * 60);
+            }
+
+            const diff = targetSeconds - currentSeconds;
+            const h = Math.floor(diff / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            const s = Math.floor(diff % 60);
+
+            setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [timings]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -155,18 +197,31 @@ export const PrayerTimesPage = ({ onBack }) => {
 
                 {/* City & Date Info */}
                 {date && (
-                    <div className="text-center space-y-2 animate-slide-up">
-                        <div className="flex items-center justify-center gap-2 text-[var(--color-text-secondary)]">
-                            <MapPin size={18} />
-                            <h2 className="font-ui font-bold text-lg">{city}</h2>
-                        </div>
-                        <div className="flex items-center justify-center gap-6 text-sm text-[var(--color-text-tertiary)]">
-                            <div className="flex items-center gap-2">
-                                <Calendar size={16} />
-                                <span className="font-ui">{date.hijri?.day} {date.hijri?.month?.ar} {date.hijri?.year}</span>
+                    <div className="text-center space-y-4 animate-slide-up">
+                        {/* Countdown Hero */}
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 shadow-sm overflow-hidden relative group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-primary)]/5 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                            <div className="flex flex-col items-center gap-2 relative z-10" dir="rtl">
+                                <p className="font-arabic text-[var(--color-text-secondary)] text-sm">باقي على صلاة {prayerNamesAr[nextPrayer]}</p>
+                                <div className="text-4xl font-ui font-black text-[var(--color-primary)] tracking-wider">
+                                    {timeLeft}
+                                </div>
                             </div>
-                            <div className="w-px h-4 bg-[var(--color-border)]"></div>
-                            <span className="font-ui">{date.gregorian?.date}</span>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-center gap-2 text-[var(--color-text-secondary)]">
+                                <MapPin size={18} />
+                                <h2 className="font-ui font-bold text-lg">{city}</h2>
+                            </div>
+                            <div className="flex items-center justify-center gap-6 text-sm text-[var(--color-text-tertiary)]">
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={16} />
+                                    <span className="font-ui">{date.hijri?.day} {date.hijri?.month?.ar} {date.hijri?.year}</span>
+                                </div>
+                                <div className="w-px h-4 bg-[var(--color-border)]"></div>
+                                <span className="font-ui">{date.gregorian?.date}</span>
+                            </div>
                         </div>
                     </div>
                 )}
