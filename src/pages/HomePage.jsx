@@ -15,10 +15,15 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
 
     const [activeTab, setActiveTab] = useState('surah'); // 'surah' or 'juz'
     const [lastRead, setLastRead] = useState(null);
+    const [khitma, setKhitma] = useState(null);
 
-    // Fetch Last Read on Mount
+    // Fetch Last Read and Khitma on Mount
     useEffect(() => {
         setLastRead(getLastRead());
+        const savedKhitma = localStorage.getItem('khitma_state');
+        if (savedKhitma) {
+            setKhitma(JSON.parse(savedKhitma));
+        }
     }, []);
 
     useEffect(() => {
@@ -80,20 +85,40 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
                     {/* Khitma Planner Button */}
                     <button
                         onClick={() => onNavigate('khitma')}
-                        className="w-full mt-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-5 flex items-center justify-between hover:border-[var(--color-accent)] transition-all group shadow-sm"
+                        className="w-full mt-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-5 flex flex-col gap-4 hover:border-[var(--color-accent)] transition-all group shadow-sm text-right"
+                        dir="rtl"
                     >
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] group-hover:scale-110 transition-transform">
-                                <Book size={24} />
+                        <div className="w-full flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] group-hover:scale-110 transition-transform">
+                                    <Book size={24} />
+                                </div>
+                                <div className="text-right">
+                                    <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">مخطط الختمة</h3>
+                                    <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">
+                                        {khitma?.isStarted ? 'تابع تقدمك في الختمة' : 'خطط لختمتك القادمة بالورقات أو بالآيات'}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">مخطط الختمة</h3>
-                                <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">خطط لختمتك القادمة بالورقات أو بالآيات</p>
+                            <div className="w-8 h-8 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-tertiary)] group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors">
+                                <Clock size={16} />
                             </div>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-tertiary)] group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors">
-                            <Clock size={16} />
-                        </div>
+
+                        {khitma?.isStarted && (
+                            <div className="w-full space-y-2">
+                                <div className="flex justify-between items-center text-[0.65rem] font-arabic text-[var(--color-text-tertiary)]">
+                                    <span>تقدمك: {Math.round((khitma.progress / (khitma.days * 5)) * 100)}%</span>
+                                    <span>المتبقي: {Math.max(0, khitma.days - Math.floor(khitma.progress / 5))} يوم</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-[var(--color-accent)] transition-all duration-500 shadow-[0_0_8px_rgba(201,162,39,0.2)]"
+                                        style={{ width: `${Math.round((khitma.progress / (khitma.days * 5)) * 100)}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )}
                     </button>
                 </div>
 
