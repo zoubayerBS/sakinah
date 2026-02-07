@@ -1,10 +1,25 @@
+```javascript
 import React from 'react';
-import { Moon, Sun, ChevronLeft, Globe, Bell, Clock } from 'lucide-react';
+import {
+    Moon,
+    Sun,
+    ChevronRight, // Changed from ChevronLeft
+    Volume2, // Added
+    Clock,
+    Info, // Added
+    Share2, // Added
+    Github, // Added
+    Download, // Added
+    Globe, // Retained from original
+    Bell // Retained from original
+} from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { useAudio } from '../context/AudioContext.jsx';
+import { usePWAInstall } from '../hooks/usePWAInstall.js';
 
 export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
     const { sleepTimer, setSleepTimer } = useAudio();
+    const { isInstallable, promptInstall } = usePWAInstall();
 
     const handleSleepTimer = (minutes) => {
         setSleepTimer(minutes);
@@ -62,7 +77,7 @@ export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
                                 <div className="text-right">
                                     <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">مؤقت النوم</h3>
                                     <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">
-                                        {sleepTimer ? `يتوقف بعد ${sleepTimer} دقيقة` : 'متوقف'}
+                                        {sleepTimer ? `يتوقف بعد ${ sleepTimer } دقيقة` : 'متوقف'}
                                     </p>
                                 </div>
                             </div>
@@ -72,12 +87,13 @@ export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
                                     <button
                                         key={mins || 'off'}
                                         onClick={() => handleSleepTimer(mins)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${sleepTimer === mins
-                                                ? 'bg-[var(--color-accent)] text-white'
-                                                : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
-                                            }`}
+                                        className={`px - 3 py - 1.5 rounded - full text - xs font - bold transition - colors ${
+    sleepTimer === mins
+        ? 'bg-[var(--color-accent)] text-white'
+        : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
+} `}
                                     >
-                                        {mins ? `${mins} دقيقة` : 'إيقاف'}
+                                        {mins ? `${ mins } دقيقة` : 'إيقاف'}
                                     </button>
                                 ))}
                             </div>
@@ -92,6 +108,20 @@ export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
                     </h2>
 
                     <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] overflow-hidden">
+                        {isInstallable && (
+                            <button
+                                onClick={promptInstall}
+                                className="w-full flex items-center justify-between p-4 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors border-b border-[var(--color-border)]"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+                                        <Download size={20} />
+                                    </div>
+                                    <span className="font-arabic text-[var(--color-text-primary)]">تثبيت التطبيق</span>
+                                </div>
+                                <ChevronRight size={20} className="text-[var(--color-text-tertiary)] rotate-180" />
+                            </button>
+                        )}
                         <div className="p-4 flex items-center justify-between border-b border-[var(--color-border)]">
                             <Globe size={20} className="text-[var(--color-text-tertiary)]" />
                             <div className="text-right">
