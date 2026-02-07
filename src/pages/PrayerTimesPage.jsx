@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Search, MapPin, Calendar, Clock, Sun, Moon, CloudSun, Sunrise, Sunset } from 'lucide-react';
 import { usePrayerTimes } from '../hooks/usePrayerTimes.js';
+import { useCitySuggestions } from '../hooks/useCitySuggestions.js';
 
 const PrayerTimeCard = ({ name, time, icon: Icon, isNext }) => (
     <div className={`p-4 rounded-2xl flex items-center justify-between border transition-all duration-300 ${isNext
@@ -27,15 +28,32 @@ const PrayerTimeCard = ({ name, time, icon: Icon, isNext }) => (
 );
 
 export const PrayerTimesPage = ({ onBack }) => {
-    const { timings, date, meta, loading, error, city, country, fetchPrayerTimes } = usePrayerTimes();
+    const { timings, date, meta, loading, error, city, fetchPrayerTimes } = usePrayerTimes();
+    const { suggestions, loading: suggestionsLoading, fetchSuggestions, clearSuggestions } = useCitySuggestions();
     const [searchCity, setSearchCity] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchCity.trim()) {
             fetchPrayerTimes(searchCity.trim());
             setSearchCity('');
+            setShowSuggestions(false);
         }
+    };
+
+    const handleInputChange = (e) => {
+        const val = e.target.value;
+        setSearchCity(val);
+        fetchSuggestions(val);
+        setShowSuggestions(true);
+    };
+
+    const handleSelectSuggestion = (suggestion) => {
+        fetchPrayerTimes(suggestion.label);
+        setSearchCity('');
+        clearSuggestions();
+        setShowSuggestions(false);
     };
 
     const prayerIcons = {
@@ -95,17 +113,45 @@ export const PrayerTimesPage = ({ onBack }) => {
 
             <div className="max-w-[600px] mx-auto px-6 py-8 space-y-8">
                 {/* Search Bar */}
-                <form onSubmit={handleSearch} className="relative group">
-                    <input
-                        type="text"
-                        value={searchCity}
-                        onChange={(e) => setSearchCity(e.target.value)}
-                        placeholder="...ابحث عن مدينتك"
-                        className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl py-4 pr-12 pl-4 text-right font-arabic placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-primary)] transition-all shadow-sm group-hover:shadow-md"
-                        dir="rtl"
-                    />
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
-                </form>
+                <div className="relative z-[var(--z-dropdown)]">
+                    <form onSubmit={handleSearch} className="relative group">
+                        <input
+                            type="text"
+                            value={searchCity}
+                            onChange={handleInputChange}
+                            onFocus={() => setShowSuggestions(true)}
+                            placeholder="...ابحث عن مدينتك"
+                            className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl py-4 pr-12 pl-4 text-right font-arabic placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-primary)] transition-all shadow-sm group-hover:shadow-md"
+                            dir="rtl"
+                        />
+                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
+                    </form>
+
+                    {/* Suggestions Dropdown */}
+                    {showSuggestions && suggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl shadow-xl overflow-hidden animate-fade-in z-50" dir="rtl">
+                            {suggestions.map((suggestion) => (
+                                <button
+                                    key={suggestion.id}
+                                    onClick={() => handleSelectSuggestion(suggestion)}
+                                    className="w-full px-6 py-4 text-right hover:bg-[var(--color-bg-tertiary)] transition-colors flex items-center justify-between group border-b border-[var(--color-border)] last:border-0 active:bg-[var(--color-bg-tertiary)]"
+                                >
+                                    <span className="font-arabic text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors">
+                                        {suggestion.label}
+                                    </span>
+                                    <MapPin size={16} className="text-[var(--color-text-tertiary)]" />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Loading State for Suggestions */}
+                    {suggestionsLoading && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl p-4 text-center z-50">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--color-primary)] mx-auto"></div>
+                        </div>
+                    )}
+                </div>
 
                 {/* City & Date Info */}
                 {date && (
