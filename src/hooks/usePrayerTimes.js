@@ -13,20 +13,14 @@ export const usePrayerTimes = (initialCity = 'Tunis', initialCountry = 'Tunisia'
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const fetchPrayerTimes = async (searchCity, searchCountry) => {
+    const fetchPrayerTimes = async (searchAddress) => {
         setLoading(true);
         setError(null);
         try {
-            // Use method 2 (ISNA) or 3 (Muslim World League) or 5 (Egyptian General Authority of Survey)
-            // Method 2 is widely used for North America, but 3 or 5 might be better for North Africa/Middle East.
-            // Let's stick to 2 (ISNA) or generic default for now, can be parameterized.
-            // Actually, for Tunisia, method 5 (Egyptian) or 1 (Umm al-Qura) is often closer, 
-            // but Aladhan auto-detects nicely or we can specify. Let's use standard method=2 for now.
-            const queryCity = searchCity || city;
-            const queryCountry = searchCountry || country;
+            const queryAddress = searchAddress || city;
 
             const response = await fetch(
-                `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(queryCity)}&country=${encodeURIComponent(queryCountry)}&method=2`
+                `https://api.aladhan.com/v1/timingsByAddress?address=${encodeURIComponent(queryAddress)}&method=2`
             );
 
             if (!response.ok) {
@@ -36,8 +30,8 @@ export const usePrayerTimes = (initialCity = 'Tunis', initialCountry = 'Tunisia'
             const result = await response.json();
             if (result.code === 200 && result.data) {
                 setData(result.data);
-                if (searchCity) setCity(searchCity);
-                if (searchCountry) setCountry(searchCountry);
+                if (searchAddress) setCity(searchAddress);
+                // Country logic simplified as it's part of the address string if user provides it
             } else {
                 throw new Error(result.status || 'Unknown error');
             }

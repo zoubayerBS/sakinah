@@ -33,7 +33,7 @@ export const PrayerTimesPage = ({ onBack }) => {
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchCity.trim()) {
-            fetchPrayerTimes(searchCity, 'Tunisia'); // Default country to Tunisia for now, can expand later
+            fetchPrayerTimes(searchCity.trim());
             setSearchCity('');
         }
     };
@@ -112,7 +112,7 @@ export const PrayerTimesPage = ({ onBack }) => {
                     <div className="text-center space-y-2 animate-slide-up">
                         <div className="flex items-center justify-center gap-2 text-[var(--color-text-secondary)]">
                             <MapPin size={18} />
-                            <h2 className="font-ui font-bold text-lg">{city}, {country}</h2>
+                            <h2 className="font-ui font-bold text-lg">{city}</h2>
                         </div>
                         <div className="flex items-center justify-center gap-6 text-sm text-[var(--color-text-tertiary)]">
                             <div className="flex items-center gap-2">
