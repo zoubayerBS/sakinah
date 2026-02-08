@@ -4,6 +4,7 @@ import { ReadingPage } from './pages/ReadingPage.jsx';
 import { SettingsPage } from './pages/SettingsPage.jsx';
 import { PrayerTimesPage } from './pages/PrayerTimesPage.jsx';
 import { KhitmaPage } from './pages/KhitmaPage.jsx';
+import MushafPage from './pages/MushafPage.jsx';
 import { NavigationBar } from './components/NavigationBar.jsx';
 import { ThemeToggle } from './components/ThemeToggle.jsx';
 import { AudioProvider } from './context/AudioContext.jsx';
@@ -74,6 +75,10 @@ const AppContent = () => {
                     <KhitmaPage
                         onBack={() => handleNavigate('home')}
                     />
+                )}
+
+                {currentPage === 'mushaf' && (
+                    <MushafPage />
                 )}
             </main>
 

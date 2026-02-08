@@ -60,7 +60,7 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
                     <h2 className="font-arabic text-2xl text-[var(--color-highlight)] mb-4">
                         ﷽
                     </h2>
-                    <h1 className="font-cairo-play font-bold text-5xl text-[#C9A227] mb-2 drop-shadow-sm">
+                    <h1 className="font-reem-kufi-fun font-bold text-5xl text-[#C9A227] mb-2 drop-shadow-sm">
                         سكينة
                     </h1>
                     <p className="font-arabic text-[var(--color-text-secondary)] text-base leading-relaxed">

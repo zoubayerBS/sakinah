@@ -1,10 +1,11 @@
 import React from 'react';
-import { Home, Star, Settings, Clock } from 'lucide-react';
+import { Home, Star, Settings, Clock, BookOpen } from 'lucide-react';
 
 export const NavigationBar = ({ currentPage, onNavigate }) => {
     const navItems = [
         { id: 'home', label: 'Home', icon: Home, ariaLabel: 'الرئيسية' },
         { id: 'prayer', label: 'Prayer', icon: Clock, ariaLabel: 'مواقيت الصلاة' },
+        { id: 'mushaf', label: 'Mushaf', icon: BookOpen, ariaLabel: 'المصحف الشريف' },
         { id: 'bookmarks', label: 'Bookmarks', icon: Star, ariaLabel: 'المفضلة' },
         { id: 'settings', label: 'Settings', icon: Settings, ariaLabel: 'إعدادات' }
     ];

@@ -33,6 +33,7 @@ export default {
                 arabic: ['Scheherazade New', 'Amiri', 'serif'], // Refined Quranic Typography
                 ui: ['Cairo', 'Inter', 'sans-serif'], // Cairo for titles/UI
                 'cairo-play': ['"Cairo Play"', 'sans-serif'], // Special font for Sakina title
+                'reem-kufi-fun': ['"Reem Kufi Fun"', 'sans-serif'], // Reem Kufi Fun for Sakinah title
             },
             spacing: {
                 '18': '4.5rem',

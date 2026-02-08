@@ -6,7 +6,11 @@
 class QuranService {
     constructor() {
         this.baseUrl = 'https://api.alquran.cloud/v1';
+        this.apiBase = import.meta.env.VITE_QURAN_API_BASE || 'https://apis-prelive.quran.foundation/content/api/v4';
+        this.oauthEndpoint = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT || 'https://prelive-oauth2.quran.foundation';
         this.cache = new Map();
+        this.token = null;
+        this.tokenExpiry = 0;
     }
 
     /**
@@ -121,6 +125,55 @@ class QuranService {
     }
 
     /**
+     * Fetch verse images for a specific surah
+     * @param {number} surahNumber 
+     */
+    async getSurahVerseImages(surahNumber) {
+        const cacheKey = `surah-images-${surahNumber}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+
+        try {
+            // mushaf_id=11 corresponds to "Uthmani Recite Quran tajweed images"
+            const url = `${this.apiBase}/verses/by_chapter/${surahNumber}?mushaf_id=11&fields=image_url,image_width,verse_number`;
+            const response = await this.authenticatedFetch(url);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[QuranAPI] API Error (${response.status}):`, errorText);
+                return null;
+            }
+
+            const data = await response.json();
+
+            if (data.verses) {
+                // Process image URLs to ensure they're absolute and use SSL
+                const processedVerses = data.verses.map(verse => {
+                    let imageUrl = verse.image_url;
+                    if (imageUrl) {
+                        // Fix rackcdn SSL certificate error
+                        imageUrl = imageUrl.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com');
+                        imageUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl;
+                    }
+                    return {
+                        ...verse,
+                        image_url: imageUrl,
+                        numberInSurah: verse.verse_number
+                    };
+                });
+
+                this.cache.set(cacheKey, processedVerses);
+                return processedVerses;
+            }
+            return null;
+        } catch (error) {
+            console.error(`[QuranAPI] Error fetching verse images for surah ${surahNumber}:`, error);
+            return null;
+        }
+    }
+
+    /**
      * Fetch surah audio data (recitation)
      */
     async getSurahAudioData(surahNumber, reciter = 'ar.alafasy') {
@@ -173,6 +226,129 @@ class QuranService {
             console.error('[QuranAPI] Error fetching reciters:', error);
             return [];
         }
+    }
+
+    /**
+     * Get an OAuth2 access token using client credentials
+     */
+    async getAccessToken() {
+        if (this.token && this.tokenExpiry > Date.now()) {
+            return this.token;
+        }
+
+        const clientId = import.meta.env.VITE_QURAN_CLIENT_ID;
+        const clientSecret = import.meta.env.VITE_QURAN_CLIENT_SECRET;
+
+        if (!clientId || !clientSecret) {
+            console.warn('[QuranAPI] Missing Client ID or Secret for authentication');
+            return null;
+        }
+
+        try {
+            // Encode client_id:client_secret for Basic Authentication
+            const credentials = btoa(`${clientId}:${clientSecret}`);
+
+            const response = await fetch(`${this.oauthEndpoint}/oauth2/token`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': `Basic ${credentials}`
+                },
+                body: new URLSearchParams({
+                    grant_type: 'client_credentials',
+                    scope: 'content'
+                })
+            });
+
+            const data = await response.json();
+            if (data.access_token) {
+                this.token = data.access_token;
+                // Tokens are usually valid for 1 hour (3600 seconds)
+                this.tokenExpiry = Date.now() + (data.expires_in || 3600) * 1000 - 60000; // 1 minute buffer
+                return this.token;
+            }
+            throw new Error(data.error_description || 'Authentication failed');
+        } catch (error) {
+            console.error('[QuranAPI] OAuth2 Token Error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Wrapper for fetch that includes authentication headers
+     */
+    async authenticatedFetch(url, options = {}) {
+        const token = await this.getAccessToken();
+        if (!token) {
+            throw new Error('No authentication token available');
+        }
+
+        const clientId = import.meta.env.VITE_QURAN_CLIENT_ID;
+
+        const authHeaders = {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-auth-token': token,
+            'x-client-id': clientId,
+            ...options.headers
+        };
+
+        return fetch(url, { ...options, headers: authHeaders });
+    }
+
+    /**
+     * Get Mushaf page data (verses with image URLs)
+     * @param {number} pageNumber 
+     */
+    async getAuthenticatedMushafPage(pageNumber) {
+        const cacheKey = `mushaf-page-${pageNumber}`;
+        if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
+
+        try {
+            // Found working endpoint and parameters for high-quality authenticated images
+            // mushaf_id=11 corresponds to "Uthmani Recite Quran tajweed images"
+            const url = `${this.apiBase}/verses/by_page/${pageNumber}?mushaf_id=11&fields=image_url,image_width`;
+            const response = await this.authenticatedFetch(url);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[QuranAPI] API Error (${response.status}):`, errorText);
+                return null;
+            }
+
+            const data = await response.json();
+
+            if (data.verses) {
+                // Ensure image URLs are absolute with https protocol
+                const processedVerses = data.verses.map(verse => {
+                    let imageUrl = verse.image_url;
+                    if (imageUrl) {
+                        // Fix rackcdn SSL certificate error by using the .ssl. subdomain
+                        imageUrl = imageUrl.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com');
+                        imageUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl;
+                    }
+                    return { ...verse, image_url: imageUrl };
+                });
+
+                this.cache.set(cacheKey, processedVerses);
+                return processedVerses;
+            }
+            return null;
+        } catch (error) {
+            console.error(`[QuranAPI] Error fetching authenticated mushaf page ${pageNumber}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Get the URL for a Mushaf page image
+     * @param {number} pageNumber - 1 to 604
+     */
+    getPageImageUrl(pageNumber) {
+        const paddedPage = pageNumber.toString().padStart(3, '0');
+        // Standard high-quality Madani Mushaf images
+        return `https://android.quran.com/data/page_images/page${paddedPage}.png`;
     }
 }
 

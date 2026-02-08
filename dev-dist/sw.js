@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-ca84f546'], (function (workbox) { 'use strict';
+define(['./workbox-30ad1a2e'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,11 +82,12 @@ define(['./workbox-ca84f546'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.2j2ol5j43eg"
+    "revision": "0.8obugv2t8co"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
-    allowlist: [/^\/$/]
+    allowlist: [/^\/$/],
+    denylist: [/^\/oauth2-proxy/, /^\/api-proxy/]
   }));
   workbox.registerRoute(/^https:\/\/fonts\.googleapis\.com\/.*/i, new workbox.CacheFirst({
     "cacheName": "google-fonts-cache",
@@ -104,6 +105,14 @@ define(['./workbox-ca84f546'], (function (workbox) { 'use strict';
       maxAgeSeconds: 31536000
     }), new workbox.CacheableResponsePlugin({
       statuses: [0, 200]
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^\/(oauth2-proxy|api-proxy)/, new workbox.NetworkOnly(), 'GET');
+  workbox.registerRoute(/^https:\/\/api\.alquran\.cloud\/.*/i, new workbox.NetworkFirst({
+    "cacheName": "alquran-api-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 100,
+      maxAgeSeconds: 86400
     })]
   }), 'GET');
 

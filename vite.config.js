@@ -50,6 +50,7 @@ export default defineConfig({
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
+                navigateFallbackDenylist: [/^\/oauth2-proxy/, /^\/api-proxy/],
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -58,7 +59,7 @@ export default defineConfig({
                             cacheName: 'google-fonts-cache',
                             expiration: {
                                 maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                                maxAgeSeconds: 60 * 60 * 24 * 365
                             },
                             cacheableResponse: {
                                 statuses: [0, 200]
@@ -72,10 +73,25 @@ export default defineConfig({
                             cacheName: 'gstatic-fonts-cache',
                             expiration: {
                                 maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                                maxAgeSeconds: 60 * 60 * 24 * 365
                             },
                             cacheableResponse: {
                                 statuses: [0, 200]
+                            }
+                        }
+                    },
+                    {
+                        urlPattern: /^\/(oauth2-proxy|api-proxy)/,
+                        handler: 'NetworkOnly'
+                    },
+                    {
+                        urlPattern: /^https:\/\/api\.alquran\.cloud\/.*/i,
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'alquran-api-cache',
+                            expiration: {
+                                maxEntries: 100,
+                                maxAgeSeconds: 60 * 60 * 24 // 24 hours
                             }
                         }
                     }
@@ -91,6 +107,22 @@ export default defineConfig({
                 manualChunks: {
                     'vendor': ['react', 'react-dom', 'lucide-react']
                 }
+            }
+        }
+    },
+    server: {
+        proxy: {
+            '/oauth2-proxy': {
+                target: 'https://oauth2.quran.foundation',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/oauth2-proxy/, ''),
+                secure: false,
+            },
+            '/api-proxy': {
+                target: 'https://apis.quran.foundation/content/api/v4',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api-proxy/, ''),
+                secure: false,
             }
         }
     }

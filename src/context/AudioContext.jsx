@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { getAudioUrls } from '../utils/audio-utils';
 
 const AudioContext = createContext();
@@ -17,6 +17,9 @@ export const AudioProvider = ({ children }) => {
     const [bufferedProgress, setBufferedProgress] = useState(0);
     const [isWaitingForInitialBuffer, setIsWaitingForInitialBuffer] = useState(false);
 
+    // Verse Tracking
+    const [currentAyahNumber, setCurrentAyahNumber] = useState(null); // The ayah numberInSurah being played
+
     // Sleep Timer State
     const [sleepTimer, setSleepTimer] = useState(null); // null or minutes
     const [sleepTimerId, setSleepTimerId] = useState(null);
@@ -33,6 +36,10 @@ export const AudioProvider = ({ children }) => {
         player.current = new Audio();
     }
     const isComponentMounted = useRef(true);
+
+    // Ref to track audio URL fallback index
+    const audioUrlsRef = useRef([]);
+    const currentUrlIndexRef = useRef(0);
 
     useEffect(() => {
         const audio = player.current;
@@ -61,7 +68,27 @@ export const AudioProvider = ({ children }) => {
 
         const handleBuffering = () => setIsBuffering(true);
         const handleReady = () => setIsBuffering(false);
-        const handleEnded = () => setIsPlaying(false);
+        const handleEnded = () => {
+            setIsPlaying(false);
+            setCurrentAyahNumber(null);
+        };
+
+        // Handle audio load errors - try fallback URLs
+        const handleError = () => {
+            const urls = audioUrlsRef.current;
+            const nextIndex = currentUrlIndexRef.current + 1;
+            if (nextIndex < urls.length) {
+                console.log(`[AudioContext] Audio source failed, trying fallback URL ${nextIndex + 1}/${urls.length}`);
+                currentUrlIndexRef.current = nextIndex;
+                audio.src = urls[nextIndex];
+                audio.load();
+                audio.play().then(() => setIsPlaying(true)).catch(console.error);
+            } else {
+                console.error("[AudioContext] All audio URLs failed.");
+                setIsPlaying(false);
+                setIsBuffering(false);
+            }
+        };
 
         audio.addEventListener('timeupdate', updateProgress);
         audio.addEventListener('progress', updateBuffer);
@@ -69,6 +96,7 @@ export const AudioProvider = ({ children }) => {
         audio.addEventListener('playing', handleReady);
         audio.addEventListener('canplay', handleReady);
         audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('error', handleError);
 
         return () => {
             audio.removeEventListener('timeupdate', updateProgress);
@@ -77,6 +105,7 @@ export const AudioProvider = ({ children }) => {
             audio.removeEventListener('playing', handleReady);
             audio.removeEventListener('canplay', handleReady);
             audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('error', handleError);
         };
     }, [isWaitingForInitialBuffer]);
 
@@ -108,74 +137,77 @@ export const AudioProvider = ({ children }) => {
         }
     }, [sleepTimer]);
 
-    const playSurah = (surah, data, reciterObj) => {
-        const reciterId = typeof reciterObj === 'string' ? reciterObj : reciterObj.identifier;
 
-        // If it's a full object, update the current reciter
+    /**
+     * Play a specific ayah - kept for verse-tap functionality
+     * This still uses per-ayah audio from the API data
+     */
+    const playAyah = useCallback((ayahNumber) => {
+        if (!audioData) return;
+
+        const ayah = audioData.ayahs.find(a => a.numberInSurah === ayahNumber);
+        if (!ayah || !ayah.audio) {
+            console.warn(`[AudioContext] No audio found for ayah ${ayahNumber}`);
+            return;
+        }
+
+        console.log(`[AudioContext] Playing single ayah ${ayahNumber}: ${ayah.audio}`);
+        setCurrentAyahNumber(ayahNumber);
+
+        const audio = player.current;
+        audio.src = ayah.audio;
+        audio.load();
+        audio.play()
+            .then(() => setIsPlaying(true))
+            .catch(err => {
+                console.error("[AudioContext] Playback failed for ayah:", err);
+                setIsPlaying(false);
+            });
+    }, [audioData]);
+
+    /**
+     * Play the full surah as a single continuous audio stream.
+     * Uses getAudioUrls() to get full surah audio URLs (mp3quran.net, etc.)
+     * with automatic fallback to alternative CDNs.
+     */
+    const playFullSurah = useCallback((surah, data, reciterObj) => {
+        const reciterId = typeof reciterObj === 'string' ? reciterObj : reciterObj.identifier;
         if (typeof reciterObj === 'object' && reciterObj.identifier) {
             setCurrentReciter(reciterObj);
         }
 
-        const surahNum = surah.number;
-        const paddedNum = surahNum.toString().padStart(3, '0');
-
-        // Potential sources - Order by reliability and availability
-        // Generate sources using our utility
-        const sources = [
-            ...getAudioUrls(reciterId, surahNum),
-            // Final fallback from the data object itself (often single ayah or different format) -- use with caution or as last resort
-            data?.ayahs?.[0]?.audio
-        ].filter(Boolean); // Remove null/undefined
-
-        if (sources.length === 0) {
-            console.error("No audio sources available for reciter", reciterId);
-            return;
-        }
-
-        let currentSourceIndex = 0;
-
-        const tryLoad = (index) => {
-            if (index >= sources.length) {
-                console.error("All audio sources failed for surah", surahNum);
-                setIsWaitingForInitialBuffer(false);
-                setIsBuffering(false);
-                return;
-            }
-
-            const audio = player.current;
-            const url = sources[index];
-
-            console.log(`[AudioContext] Trying source ${index + 1}: ${url}`);
-
-            const handleError = (e) => {
-                console.warn(`[AudioContext] Source ${index + 1} failed (${url}), trying next...`);
-                // cleanup listener to avoid leaks or double calls
-                audio.removeEventListener('error', handleError);
-                tryLoad(index + 1);
-            };
-
-            // Ensure we clean up any previous error listeners if they persist (though 'once: true' handles most)
-            // But if we are looping, we want to be clean.
-            // basic 'once' is fine for the recursion structure.
-
-            audio.addEventListener('error', handleError, { once: true });
-            audio.src = url;
-            audio.load();
-        };
-
-        // Check if same surah AND same reciter - if so, don't reload
-        if (activeSurah?.number === surahNum && activeSurah?.reciter === reciterId) {
-            return;
-        }
-
-        // Trigger smart buffering for new audio
-        setBufferedProgress(0);
-        setIsWaitingForInitialBuffer(true);
         setActiveSurah({ ...surah, reciter: reciterId });
         setAudioData(data);
+        setCurrentAyahNumber(null);
 
-        tryLoad(0);
-    };
+        // Get full surah audio URLs (with fallbacks)
+        const urls = getAudioUrls(reciterId, surah.number);
+        audioUrlsRef.current = urls;
+        currentUrlIndexRef.current = 0;
+
+        if (urls.length > 0) {
+            console.log(`[AudioContext] Playing full surah ${surah.number} (${surah.name}) with reciter ${reciterId}`);
+            console.log(`[AudioContext] Audio URL: ${urls[0]}`);
+
+            const audio = player.current;
+            audio.src = urls[0];
+            audio.load();
+            audio.play()
+                .then(() => setIsPlaying(true))
+                .catch(err => {
+                    console.error("[AudioContext] Playback failed:", err);
+                    // Try next URL on play failure
+                    if (urls.length > 1) {
+                        currentUrlIndexRef.current = 1;
+                        audio.src = urls[1];
+                        audio.load();
+                        audio.play().then(() => setIsPlaying(true)).catch(console.error);
+                    }
+                });
+        } else {
+            console.error("[AudioContext] No audio URLs available for this surah/reciter combination.");
+        }
+    }, []);
 
     const togglePlay = () => {
         const audio = player.current;
@@ -211,7 +243,9 @@ export const AudioProvider = ({ children }) => {
         isBuffering,
         bufferedProgress,
         isWaitingForInitialBuffer,
-        playSurah,
+        currentAyahNumber,
+        playSurah: playFullSurah,
+        playAyah,
         togglePlay,
         seek,
         skip,
@@ -223,7 +257,8 @@ export const AudioProvider = ({ children }) => {
     }), [
         activeSurah, audioData, isPlaying, currentTime, duration, progress,
         volume, isBuffering, bufferedProgress, isWaitingForInitialBuffer,
-        playSurah, togglePlay, seek, skip, activeSurah, currentReciter, sleepTimer
+        currentAyahNumber, playFullSurah, playAyah, togglePlay, seek, skip,
+        currentReciter, sleepTimer
     ]);
 
     return (
