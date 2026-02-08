@@ -6,6 +6,7 @@
 class QuranService {
     constructor() {
         this.baseUrl = 'https://api.alquran.cloud/v1';
+        this.publicBase = 'https://api.quran.com/api/v4';
         this.apiBase = import.meta.env.VITE_QURAN_API_BASE || 'https://apis.quran.foundation/content/api/v4';
         this.oauthEndpoint = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT || 'https://oauth2.quran.foundation';
         this.cache = new Map();
@@ -134,11 +135,11 @@ class QuranService {
             return this.cache.get(cacheKey);
         }
 
-        // Try authenticated API first
+        // Try public API first (reliable, no 403)
         try {
-            // mushaf_id=1 corresponds to "Madani" which is the most widely supported
-            const url = `${this.apiBase}/verses/by_chapter/${surahNumber}?mushaf_id=1&fields=image_url,image_width,verse_number`;
-            const response = await this.authenticatedFetch(url);
+            // mushaf=4 corresponds to Indopak/Madani images on quran.com
+            const url = `${this.publicBase}/verses/by_chapter/${surahNumber}?mushaf=4&fields=image_url,image_width,verse_number`;
+            const response = await fetch(url);
 
             if (response && response.ok) {
                 const data = await response.json();
@@ -312,7 +313,7 @@ class QuranService {
 
         const clientId = import.meta.env.VITE_QURAN_CLIENT_ID;
 
-        // Try using only the specific Quran.Foundation headers to avoid WAF conflicts
+        // Use only the specific Quran.Foundation headers
         const authHeaders = {
             'Accept': 'application/json',
             'x-auth-token': token,
@@ -320,53 +321,23 @@ class QuranService {
             ...options.headers
         };
 
-        // Debug: Log header composition (masking token)
-        console.log('[QuranAPI] Requesting:', url, {
-            clientId,
-            tokenPrefix: token.substring(0, 10) + '...',
-            hasAuthHeader: !!authHeaders['Authorization'],
-            hasXTokenHeader: !!authHeaders['x-auth-token']
-        });
-
-        const response = await fetch(url, { ...options, headers: authHeaders });
-
-        if (response.status === 403) {
-            try {
-                const errorData = await response.clone().json();
-                console.error('[QuranAPI] 403 Forbidden details:', JSON.stringify({
-                    url,
-                    status: response.status,
-                    error: errorData
-                }, null, 2));
-            } catch (e) {
-                const text = await response.clone().text();
-                console.error('[QuranAPI] 403 Forbidden (text):', text);
-            }
-        }
-
-        return response;
+        return fetch(url, { ...options, headers: authHeaders });
     }
 
     /**
      * Get Mushaf page data (verses with image URLs)
      * @param {number} pageNumber 
      */
-    async getAuthenticatedMushafPage(pageNumber) {
+    async getMushafPage(pageNumber) {
         const cacheKey = `mushaf-page-${pageNumber}`;
         if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
 
         try {
-            // Found working endpoint and parameters for high-quality authenticated images
-            // mushaf_id=1 corresponds to "Madani"
-            const url = `${this.apiBase}/verses/by_page/${pageNumber}?mushaf_id=1&fields=image_url,image_width`;
-            const response = await this.authenticatedFetch(url);
+            // Use public API for mushaf pages
+            const url = `${this.publicBase}/verses/by_page/${pageNumber}?mushaf=4&fields=image_url,image_width`;
+            const response = await fetch(url);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`[QuranAPI] API Error (${response.status}):`, errorText);
-                return null;
-            }
-
+            if (!response.ok) return null;
             const data = await response.json();
 
             if (data.verses) {

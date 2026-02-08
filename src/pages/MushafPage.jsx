@@ -103,7 +103,7 @@ const MushafPage = () => {
         const fetchMushafPage = async () => {
             setIsLoading(true);
             try {
-                const data = await quranAPI.getAuthenticatedMushafPage(pageNumber);
+                const data = await quranAPI.getMushafPage(pageNumber);
                 if (!isCancelled && data) {
                     setVerses(data);
                     const infoResponse = await fetch(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
@@ -145,7 +145,7 @@ const MushafPage = () => {
     useEffect(() => {
         const preload = async (pn) => {
             if (pn >= 1 && pn <= 604 && !preloadedPages[pn]) {
-                const data = await quranAPI.getAuthenticatedMushafPage(pn);
+                const data = await quranAPI.getMushafPage(pn);
                 if (data) {
                     setPreloadedPages(prev => ({ ...prev, [pn]: data }));
                 }
