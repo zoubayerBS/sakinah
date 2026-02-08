@@ -484,10 +484,13 @@ const MushafPage = ({ onBack }) => {
                                             const surahsOnPage = new Map(); // surahNumber -> { name, firstLineNum }
 
                                             verses.forEach(verse => {
+                                                // Safety check for verse.surah
+                                                if (!verse.surah) return;
+
                                                 const isFirstVerse = verse.numberInSurah === 1 || verse.verseNumber === 1;
                                                 const surahNum = verse.surah.number;
                                                 // Get surah name from textAyahs (SDK data with proper glyphs)
-                                                const surahName = textAyahs.find(t => t.surah.number === surahNum)?.surah?.name || SURAH_NAMES[surahNum - 1] || `Surah ${surahNum}`;
+                                                const surahName = textAyahs.find(t => t.surah?.number === surahNum)?.surah?.name || SURAH_NAMES[surahNum - 1] || `Surah ${surahNum}`;
 
                                                 if (isFirstVerse && !surahsOnPage.has(surahNum)) {
                                                     surahsOnPage.set(surahNum, { name: surahName, firstLineNum: null });
@@ -602,10 +605,13 @@ const MushafPage = ({ onBack }) => {
                                             const surahsOnPage = new Map(); // surahNumber -> { name, firstLineNum }
 
                                             verses.forEach(verse => {
+                                                // Safety check for verse.surah
+                                                if (!verse.surah) return;
+
                                                 const isFirstVerse = verse.numberInSurah === 1 || verse.verseNumber === 1;
                                                 const surahNum = verse.surah.number;
                                                 // Get surah name from textAyahs (SDK data with proper glyphs)
-                                                const surahName = textAyahs.find(t => t.surah.number === surahNum)?.surah?.name || SURAH_NAMES[surahNum - 1] || `Surah ${surahNum}`;
+                                                const surahName = textAyahs.find(t => t.surah?.number === surahNum)?.surah?.name || SURAH_NAMES[surahNum - 1] || `Surah ${surahNum}`;
 
                                                 if (isFirstVerse && !surahsOnPage.has(surahNum)) {
                                                     surahsOnPage.set(surahNum, { name: surahName, firstLineNum: null });
