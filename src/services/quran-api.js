@@ -134,43 +134,65 @@ class QuranService {
             return this.cache.get(cacheKey);
         }
 
+        // Try authenticated API first
         try {
             // mushaf_id=11 corresponds to "Uthmani Recite Quran tajweed images"
             const url = `${this.apiBase}/verses/by_chapter/${surahNumber}?mushaf_id=11&fields=image_url,image_width,verse_number`;
             const response = await this.authenticatedFetch(url);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`[QuranAPI] API Error (${response.status}):`, errorText);
-                return null;
-            }
+            if (response && response.ok) {
+                const data = await response.json();
 
+                if (data.verses) {
+                    // Process image URLs to ensure they're absolute and use SSL
+                    const processedVerses = data.verses.map(verse => {
+                        let imageUrl = verse.image_url;
+                        if (imageUrl) {
+                            // Fix rackcdn SSL certificate error
+                            imageUrl = imageUrl.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com');
+                            imageUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl;
+                        }
+                        return {
+                            ...verse,
+                            image_url: imageUrl,
+                            numberInSurah: verse.verse_number
+                        };
+                    });
+
+                    this.cache.set(cacheKey, processedVerses);
+                    return processedVerses;
+                }
+            }
+        } catch (error) {
+            console.warn(`[QuranAPI] Authenticated API failed, falling back to public API:`, error);
+        }
+
+        // Fallback: Use alquran.cloud public API (no authentication needed)
+        try {
+            const url = `${this.baseUrl}/surah/${surahNumber}/quran-uthmani`;
+            const response = await fetch(url, {
+                headers: { 'Accept-Encoding': 'gzip' }
+            });
             const data = await response.json();
 
-            if (data.verses) {
-                // Process image URLs to ensure they're absolute and use SSL
-                const processedVerses = data.verses.map(verse => {
-                    let imageUrl = verse.image_url;
-                    if (imageUrl) {
-                        // Fix rackcdn SSL certificate error
-                        imageUrl = imageUrl.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com');
-                        imageUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl;
-                    }
-                    return {
-                        ...verse,
-                        image_url: imageUrl,
-                        numberInSurah: verse.verse_number
-                    };
-                });
+            if (data.code === 200 && data.data.ayahs) {
+                // Return verse data without images (text only fallback)
+                const verses = data.data.ayahs.map(ayah => ({
+                    verse_number: ayah.numberInSurah,
+                    numberInSurah: ayah.numberInSurah,
+                    text: ayah.text,
+                    image_url: null,
+                    hasImage: false
+                }));
 
-                this.cache.set(cacheKey, processedVerses);
-                return processedVerses;
+                this.cache.set(cacheKey, verses);
+                return verses;
             }
-            return null;
         } catch (error) {
-            console.error(`[QuranAPI] Error fetching verse images for surah ${surahNumber}:`, error);
-            return null;
+            console.error(`[QuranAPI] Fallback API also failed for surah ${surahNumber}:`, error);
         }
+
+        return null;
     }
 
     /**
