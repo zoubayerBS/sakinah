@@ -6,8 +6,8 @@
 class QuranService {
     constructor() {
         this.baseUrl = 'https://api.alquran.cloud/v1';
-        this.apiBase = import.meta.env.VITE_QURAN_API_BASE || 'https://apis-prelive.quran.foundation/content/api/v4';
-        this.oauthEndpoint = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT || 'https://prelive-oauth2.quran.foundation';
+        this.apiBase = import.meta.env.VITE_QURAN_API_BASE || 'https://apis.quran.foundation/content/api/v4';
+        this.oauthEndpoint = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT || 'https://oauth2.quran.foundation';
         this.cache = new Map();
         this.token = null;
         this.tokenExpiry = 0;
@@ -262,7 +262,11 @@ class QuranService {
         const clientSecret = import.meta.env.VITE_QURAN_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
-            console.warn('[QuranAPI] Missing Client ID or Secret for authentication');
+            console.error('[QuranAPI] CRITICAL: Missing Client ID or Secret for authentication.', {
+                hasClientId: !!clientId,
+                hasClientSecret: !!clientSecret,
+                env: import.meta.env.MODE
+            });
             return null;
         }
 
@@ -308,15 +312,34 @@ class QuranService {
 
         const clientId = import.meta.env.VITE_QURAN_CLIENT_ID;
 
+        // Try using x-auth-token and x-client-id as primary headers for Quran.Foundation
         const authHeaders = {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`,
             'x-auth-token': token,
             'x-client-id': clientId,
             ...options.headers
         };
 
-        return fetch(url, { ...options, headers: authHeaders });
+        // Note: Some endpoints might prefer Authorization: Bearer, but x-auth-token is standard for Quran.Foundation v4
+        // If x-auth-token fails, we might need to add Bearer back, but redundancy often causes 403s on strict WAFs
+
+        const response = await fetch(url, { ...options, headers: authHeaders });
+
+        if (response.status === 403) {
+            try {
+                const errorData = await response.clone().json();
+                console.error('[QuranAPI] 403 Forbidden details:', {
+                    url,
+                    headers: { 'x-client-id': clientId }, // Don't log token
+                    error: errorData
+                });
+            } catch (e) {
+                const text = await response.clone().text();
+                console.error('[QuranAPI] 403 Forbidden (could not parse JSON):', text);
+            }
+        }
+
+        return response;
     }
 
     /**
