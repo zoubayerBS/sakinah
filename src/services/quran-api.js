@@ -328,14 +328,14 @@ class QuranService {
         if (response.status === 403) {
             try {
                 const errorData = await response.clone().json();
-                console.error('[QuranAPI] 403 Forbidden details:', {
+                console.error('[QuranAPI] 403 Forbidden details:', JSON.stringify({
                     url,
-                    headers: { 'x-client-id': clientId }, // Don't log token
+                    status: response.status,
                     error: errorData
-                });
+                }, null, 2));
             } catch (e) {
                 const text = await response.clone().text();
-                console.error('[QuranAPI] 403 Forbidden (could not parse JSON):', text);
+                console.error('[QuranAPI] 403 Forbidden (text):', text);
             }
         }
 
