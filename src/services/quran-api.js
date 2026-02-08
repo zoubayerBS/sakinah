@@ -163,8 +163,41 @@ class QuranService {
             return null;
         } catch (error) {
             console.error(`[QuranAPI] Error fetching mushaf page ${pageNumber} via SDK:`, error);
-            return null;
         }
+
+        // Fallback to public API (alquran.cloud)
+        try {
+            console.log(`[QuranAPI] Falling back to alquran.cloud for page ${pageNumber}`);
+            const response = await fetch(`${this.legacyBase}/page/${pageNumber}/quran-uthmani`);
+            const data = await response.json();
+
+            if (data.code === 200 && data.data) {
+                const processed = data.data.map((verse, index) => {
+                    const verseKeyParts = verse.verseKey.split(':');
+                    return {
+                        id: index + 1,
+                        verse_key: verse.verseKey,
+                        numberInSurah: verse.numberInSurah,
+                        text: verse.textUthmani,
+                        image_url: null,
+                        image_width: null,
+                        code_v2: null,
+                        juz: verse.juz,
+                        words: [],
+                        surah: {
+                            number: parseInt(verseKeyParts[0]),
+                        }
+                    };
+                });
+
+                this.cache.set(cacheKey, processed);
+                return processed;
+            }
+        } catch (fallbackError) {
+            console.error('[QuranAPI] Fallback also failed:', fallbackError);
+        }
+
+        return null;
     }
 
     /**
