@@ -136,8 +136,8 @@ class QuranService {
 
         // Try authenticated API first
         try {
-            // mushaf_id=11 corresponds to "Uthmani Recite Quran tajweed images"
-            const url = `${this.apiBase}/verses/by_chapter/${surahNumber}?mushaf_id=11&fields=image_url,image_width,verse_number`;
+            // mushaf_id=1 corresponds to "Madani" which is the most widely supported
+            const url = `${this.apiBase}/verses/by_chapter/${surahNumber}?mushaf_id=1&fields=image_url,image_width,verse_number`;
             const response = await this.authenticatedFetch(url);
 
             if (response && response.ok) {
@@ -312,10 +312,9 @@ class QuranService {
 
         const clientId = import.meta.env.VITE_QURAN_CLIENT_ID;
 
-        // Try using both Authorization: Bearer and x-auth-token to cover all bases
+        // Try using only the specific Quran.Foundation headers to avoid WAF conflicts
         const authHeaders = {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`,
             'x-auth-token': token,
             'x-client-id': clientId,
             ...options.headers
@@ -358,8 +357,8 @@ class QuranService {
 
         try {
             // Found working endpoint and parameters for high-quality authenticated images
-            // mushaf_id=11 corresponds to "Uthmani Recite Quran tajweed images"
-            const url = `${this.apiBase}/verses/by_page/${pageNumber}?mushaf_id=11&fields=image_url,image_width`;
+            // mushaf_id=1 corresponds to "Madani"
+            const url = `${this.apiBase}/verses/by_page/${pageNumber}?mushaf_id=1&fields=image_url,image_width`;
             const response = await this.authenticatedFetch(url);
 
             if (!response.ok) {
