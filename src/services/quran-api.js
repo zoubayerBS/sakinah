@@ -312,16 +312,22 @@ class QuranService {
 
         const clientId = import.meta.env.VITE_QURAN_CLIENT_ID;
 
-        // Try using x-auth-token and x-client-id as primary headers for Quran.Foundation
+        // Try using both Authorization: Bearer and x-auth-token to cover all bases
         const authHeaders = {
             'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
             'x-auth-token': token,
             'x-client-id': clientId,
             ...options.headers
         };
 
-        // Note: Some endpoints might prefer Authorization: Bearer, but x-auth-token is standard for Quran.Foundation v4
-        // If x-auth-token fails, we might need to add Bearer back, but redundancy often causes 403s on strict WAFs
+        // Debug: Log header composition (masking token)
+        console.log('[QuranAPI] Requesting:', url, {
+            clientId,
+            tokenPrefix: token.substring(0, 10) + '...',
+            hasAuthHeader: !!authHeaders['Authorization'],
+            hasXTokenHeader: !!authHeaders['x-auth-token']
+        });
 
         const response = await fetch(url, { ...options, headers: authHeaders });
 
