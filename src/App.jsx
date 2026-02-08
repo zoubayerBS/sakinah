@@ -36,14 +36,16 @@ const AppContent = () => {
 
     return (
         <div className="min-h-screen transition-colors duration-300 bg-[var(--color-bg-primary)]">
-            <NavigationBar
-                currentPage={currentPage}
-                onNavigate={handleNavigate}
-            />
+            {currentPage !== 'mushaf' && (
+                <NavigationBar
+                    currentPage={currentPage}
+                    onNavigate={handleNavigate}
+                />
+            )}
 
 
 
-            <main className="animate-fade-in">
+            <main>
                 {currentPage === 'home' && (
                     <HomePage onSurahSelect={handleSurahSelect} onNavigate={handleNavigate} />
                 )}
@@ -78,7 +80,7 @@ const AppContent = () => {
                 )}
 
                 {currentPage === 'mushaf' && (
-                    <MushafPage />
+                    <MushafPage onBack={() => handleNavigate('home')} />
                 )}
             </main>
 

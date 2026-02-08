@@ -201,6 +201,16 @@
     transition: none !important;
 }
 
+/* Font loading state to prevent FOIT */
+.font-loading {
+    opacity: 0;
+    transition: opacity 0.2s ease-in;
+}
+
+.font-loaded {
+    opacity: 1;
+}
+
 /* Focus ring animation */
 *:focus-visible {
     animation: focusRing 0.3s ease-out;
