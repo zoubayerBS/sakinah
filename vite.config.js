@@ -119,7 +119,7 @@ export default defineConfig({
                 secure: false,
             },
             '/api-proxy': {
-                target: 'https://apis.quran.foundation/content/api/v4',
+                target: 'https://apis.quran.foundation',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api-proxy/, ''),
                 secure: false,

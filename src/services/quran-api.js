@@ -15,12 +15,12 @@ class QuranService {
         const contentBaseUrl = import.meta.env.VITE_QURAN_API_BASE;
         const authBaseUrl = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT;
 
-        // Initialize SDK Client with direct API endpoints (bypasses proxy)
+        // Initialize SDK Client with proxied endpoints
         this.client = new QuranClient({
             clientId,
             clientSecret,
-            contentBaseUrl: 'https://apis.quran.foundation',
-            authBaseUrl: 'https://oauth2.quran.foundation',
+            contentBaseUrl: contentBaseUrl || 'https://apis.quran.foundation',
+            authBaseUrl: authBaseUrl || 'https://oauth2.quran.foundation',
         });
 
         // Backup bases for direct fetch if needed

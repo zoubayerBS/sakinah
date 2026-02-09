@@ -6,7 +6,7 @@
         },
         {
             "source": "/api-proxy/:path*",
-            "destination": "https://apis.quran.foundation/content/api/v4/:path*"
+            "destination": "https://apis.quran.foundation/:path*"
         }
     ]
 }
