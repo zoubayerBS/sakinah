@@ -27,7 +27,7 @@ class QuranService {
             }
         };
 
-        // Initialize SDK Client with a Documentation-Strict Interceptor
+        // Initialize SDK Client with an Investigative Interceptor
         const customFetcher = async (url, options = {}) => {
             const isTokenRequest = url.includes('/oauth2/token') || url.includes('oauth2.foundation');
 
@@ -44,22 +44,19 @@ class QuranService {
                 bodyParams.set('grant_type', 'client_credentials');
                 bodyParams.set('scope', 'content');
 
-                // If the SDK provided other params (not expected but safe), merge them
                 if (options.body) {
                     const provided = new URLSearchParams(options.body);
                     provided.forEach((val, key) => bodyParams.set(key, val));
                 }
                 options.body = bodyParams;
 
-                console.log(`[QuranAPI] Token Request (${this.isPreliveFallback ? 'PRELIVE' : 'PROD'}): ${url}?${bodyParams.toString()}`);
+                console.log(`[QuranAPI] Token Request: ${url}`);
             } else if (this.accessToken) {
-                // 3. Robust Content API Header Injection
-                // Injecting both cases and Bearer for absolute maximum compatibility
-                robustSetHeader(options.headers, 'X-Auth-Token', this.accessToken);
+                // 3. Content API Header Injection (Strictly following SDK grepped patterns)
                 robustSetHeader(options.headers, 'x-auth-token', this.accessToken);
-                robustSetHeader(options.headers, 'X-Client-Id', clientId);
                 robustSetHeader(options.headers, 'x-client-id', clientId);
-                robustSetHeader(options.headers, 'Authorization', `Bearer ${this.accessToken}`);
+                // Also adding a custom User-Agent to avoid generic blocks
+                robustSetHeader(options.headers, 'User-Agent', 'Sakinah-App-V1');
             }
 
             try {
@@ -71,29 +68,32 @@ class QuranService {
                     const data = await clonedResponse.json();
                     if (data.access_token) {
                         this.accessToken = data.access_token;
-                        console.log(`[QuranAPI] Captured ${this.isPreliveFallback ? 'PRELIVE' : 'PROD'} Token (starts with: ${this.accessToken.substring(0, 10)}...)`);
+                        console.log(`[QuranAPI] Token Captured: ${this.accessToken.substring(0, 15)}...`);
                     }
                 }
 
-                // 5. SMART RECONFIGURATION: If content fails with 403
-                if (response.status === 403 && !isTokenRequest && !this.isPreliveFallback) {
-                    console.warn('[QuranAPI] 403 Forbidden on Production Content API. Reconfiguring for Prelive...');
-                    this.isPreliveFallback = true;
-                    this.accessToken = null;
+                // 5. ERROR DIAGNOSTICS: If any 4xx error occurs
+                if (!response.ok && response.status >= 400 && response.status < 500) {
+                    try {
+                        const errorClone = response.clone();
+                        const errorText = await errorClone.text();
+                        console.error(`[QuranAPI] ${response.status} Error at ${url}. Body:`, errorText);
 
-                    if (this.client) {
-                        this.client.clearCachedToken();
-                        this.client.updateConfig({
-                            contentBaseUrl: '/prelive-api-proxy',
-                            authBaseUrl: '/prelive-oauth2-proxy'
-                        });
-                        console.log('[QuranAPI] Reconfigured SDK for PRELIVE environment');
+                        // Parse JSON if possible for more clarity
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            if (errorJson.message) {
+                                console.error(`[QuranAPI] Error Message: ${errorJson.message}`);
+                            }
+                        } catch (e) { /* ignore non-json */ }
+                    } catch (err) {
+                        console.error('[QuranAPI] Could not read error body');
                     }
                 }
 
                 return response;
             } catch (err) {
-                console.error(`[QuranAPI] SDK Fetch Interruption:`, err);
+                console.error(`[QuranAPI] SDK Fetch Failure:`, err);
                 throw err;
             }
         };
