@@ -30,9 +30,49 @@ class QuranService {
             authBaseUrl: authBaseUrl || 'https://oauth2.quran.foundation',
         });
 
+        // Run manual auth health check if credentials exist
+        if (clientId && clientSecret) {
+            this._testAuth(clientId, clientSecret, authBaseUrl).catch(err => {
+                console.error('[QuranAPI] Manual Auth Check Error:', err);
+            });
+        }
+
         // Backup bases for direct fetch if needed
         this.publicBase = 'https://api.quran.com/api/v4';
         this.legacyBase = 'https://api.alquran.cloud/v1';
+    }
+
+    /**
+     * Manual OAuth2 Token Health Check
+     */
+    async _testAuth(clientId, clientSecret, authBaseUrl) {
+        const url = `${authBaseUrl || '/oauth2-proxy'}/oauth2/token`;
+        console.log(`[QuranAPI] Testing OAuth2 endpoint: ${url}`);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    grant_type: 'client_credentials',
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    scope: 'content'
+                })
+            });
+
+            const data = await response.json();
+            console.log('[QuranAPI] Manual Auth Response Status:', response.status);
+            if (!response.ok) {
+                console.warn('[QuranAPI] Manual Auth Failed Info:', data);
+            } else {
+                console.log('[QuranAPI] Manual Auth Successful. Token starts with:', data.access_token?.substring(0, 10));
+            }
+        } catch (error) {
+            console.error('[QuranAPI] Manual Auth Fetch Failed:', error);
+        }
     }
 
     /**
