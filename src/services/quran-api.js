@@ -18,65 +18,82 @@ class QuranService {
         this.accessToken = null;
         this.isPreliveFallback = false;
 
-        // Initialize SDK Client with a Dynamic Reconfiguration Interceptor
-        const customFetcher = async (url, options = {}) => {
-            let currentUrl = url;
-            const isTokenRequest = currentUrl.includes('/oauth2/token') || currentUrl.includes('oauth2.foundation');
+        // Helper to robustly set headers on either plain objects or Headers instances
+        const robustSetHeader = (headers, key, value) => {
+            if (headers instanceof Headers) {
+                headers.set(key, value);
+            } else {
+                headers[key] = value;
+            }
+        };
 
-            // 1. Prepare/Inject Request Headers
+        // Initialize SDK Client with a Documentation-Strict Interceptor
+        const customFetcher = async (url, options = {}) => {
+            const isTokenRequest = url.includes('/oauth2/token') || url.includes('oauth2.foundation');
+
+            // Ensure headers object exists
             options.headers = options.headers || {};
 
             if (isTokenRequest) {
+                // 1. Basic Auth for Token Request
                 const creds = btoa(`${clientId}:${clientSecret}`);
-                options.headers['Authorization'] = `Basic ${creds}`;
+                robustSetHeader(options.headers, 'Authorization', `Basic ${creds}`);
 
-                // Force scope=content
-                if (options.body instanceof URLSearchParams) {
-                    options.body.set('scope', 'content');
-                } else if (typeof options.body === 'string' && options.body.includes('grant_type')) {
-                    const params = new URLSearchParams(options.body);
-                    params.set('scope', 'content');
-                    options.body = params.toString();
+                // 2. Strict Body Normalization (Force grant_type=client_credentials and scope=content)
+                const bodyParams = new URLSearchParams();
+                bodyParams.set('grant_type', 'client_credentials');
+                bodyParams.set('scope', 'content');
+
+                // If the SDK provided other params (not expected but safe), merge them
+                if (options.body) {
+                    const provided = new URLSearchParams(options.body);
+                    provided.forEach((val, key) => bodyParams.set(key, val));
                 }
-                console.log(`[QuranAPI] Token Request (${this.isPreliveFallback ? 'PRELIVE' : 'PROD'}): ${currentUrl}`);
+                options.body = bodyParams;
+
+                console.log(`[QuranAPI] Token Request (${this.isPreliveFallback ? 'PRELIVE' : 'PROD'}): ${url}?${bodyParams.toString()}`);
             } else if (this.accessToken) {
-                options.headers['x-auth-token'] = this.accessToken;
-                options.headers['x-client-id'] = clientId;
+                // 3. Robust Content API Header Injection
+                // Injecting both cases and Bearer for absolute maximum compatibility
+                robustSetHeader(options.headers, 'X-Auth-Token', this.accessToken);
+                robustSetHeader(options.headers, 'x-auth-token', this.accessToken);
+                robustSetHeader(options.headers, 'X-Client-Id', clientId);
+                robustSetHeader(options.headers, 'x-client-id', clientId);
+                robustSetHeader(options.headers, 'Authorization', `Bearer ${this.accessToken}`);
             }
 
             try {
-                const response = await fetch(currentUrl, options);
+                const response = await fetch(url, options);
 
-                // 2. Handle Token Capture
+                // 4. Handle Token Capture
                 if (isTokenRequest && response.ok) {
                     const clonedResponse = response.clone();
                     const data = await clonedResponse.json();
                     if (data.access_token) {
                         this.accessToken = data.access_token;
-                        console.log(`[QuranAPI] Captured ${this.isPreliveFallback ? 'PRELIVE' : 'PROD'} Token`);
+                        console.log(`[QuranAPI] Captured ${this.isPreliveFallback ? 'PRELIVE' : 'PROD'} Token (starts with: ${this.accessToken.substring(0, 10)}...)`);
                     }
                 }
 
-                // 3. DYNAMIC RECONFIGURATION: If content fails with 403
+                // 5. SMART RECONFIGURATION: If content fails with 403
                 if (response.status === 403 && !isTokenRequest && !this.isPreliveFallback) {
-                    console.warn('[QuranAPI] 403 Forbidden on Production. RECONFIGURING SDK FOR PRELIVE...');
+                    console.warn('[QuranAPI] 403 Forbidden on Production Content API. Reconfiguring for Prelive...');
                     this.isPreliveFallback = true;
                     this.accessToken = null;
 
-                    // Force the SDK to forget its token and switch endpoints
                     if (this.client) {
                         this.client.clearCachedToken();
                         this.client.updateConfig({
                             contentBaseUrl: '/prelive-api-proxy',
                             authBaseUrl: '/prelive-oauth2-proxy'
                         });
-                        console.log('[QuranAPI] SDK configuration updated to PRELIVE');
+                        console.log('[QuranAPI] Reconfigured SDK for PRELIVE environment');
                     }
                 }
 
                 return response;
             } catch (err) {
-                console.error(`[QuranAPI] SDK Fetch Error:`, err);
+                console.error(`[QuranAPI] SDK Fetch Interruption:`, err);
                 throw err;
             }
         };
