@@ -38,6 +38,7 @@ class QuranService {
                 // 1. Basic Auth for Token Request
                 const creds = btoa(`${clientId}:${clientSecret}`);
                 robustSetHeader(options.headers, 'Authorization', `Basic ${creds}`);
+                robustSetHeader(options.headers, 'Content-Type', 'application/x-www-form-urlencoded');
 
                 // 2. Strict Body Normalization (Force grant_type=client_credentials and scope=content)
                 const bodyParams = new URLSearchParams();
@@ -73,7 +74,19 @@ class QuranService {
                     const data = await clonedResponse.json();
                     if (data.access_token) {
                         this.accessToken = data.access_token;
-                        console.log(`[QuranAPI] Token Captured: ${this.accessToken.substring(0, 15)}...`);
+
+                        // JWT Claim Diagnostics (Safe logging of payloads)
+                        try {
+                            const parts = this.accessToken.split('.');
+                            if (parts.length === 3) {
+                                const payload = JSON.parse(atob(parts[1]));
+                                console.log(`[QuranAPI] Token Claims: scp=${JSON.stringify(payload.scp || payload.scope)}, aud=${payload.aud}, exp=${payload.exp}`);
+                            }
+                        } catch (e) {
+                            console.warn('[QuranAPI] Could not decode token claims');
+                        }
+
+                        console.log(`[QuranAPI] ${this.isPreliveFallback ? 'PRELIVE' : 'PROD'} Token Captured`);
                     }
                 }
 
