@@ -16,6 +16,13 @@ class QuranService {
         const authBaseUrl = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT;
 
         // Initialize SDK Client with proxied endpoints
+        console.log('[QuranService] Configuration:', {
+            hasClientId: !!clientId,
+            hasClientSecret: !!clientSecret,
+            contentBaseUrl: contentBaseUrl || 'https://apis.quran.foundation',
+            authBaseUrl: authBaseUrl || 'https://oauth2.quran.foundation'
+        });
+
         this.client = new QuranClient({
             clientId,
             clientSecret,
@@ -55,7 +62,12 @@ class QuranService {
             this.cache.set('allSurahs', surahs);
             return surahs;
         } catch (error) {
-            console.error('[QuranAPI] Error fetching all surahs via SDK:', error);
+            console.error('[QuranAPI] Error fetching all surahs via SDK:', {
+                message: error.message,
+                status: error.status,
+                stack: error.stack,
+                error
+            });
             // Fallback to direct fetch if SDK fails
             try {
                 const response = await fetch(`${this.legacyBase}/surah`);
@@ -91,7 +103,11 @@ class QuranService {
             this.cache.set(cacheKey, verses);
             return verses;
         } catch (error) {
-            console.error(`[QuranAPI] Error fetching surah ${surahNumber}:`, error);
+            console.error(`[QuranAPI] Error fetching surah ${surahNumber}:`, {
+                message: error.message,
+                status: error.status,
+                error
+            });
             return null;
         }
     }
@@ -161,7 +177,11 @@ class QuranService {
             }
             return null;
         } catch (error) {
-            console.error(`[QuranAPI] Error fetching mushaf page ${pageNumber} via SDK:`, error);
+            console.error(`[QuranAPI] Error fetching mushaf page ${pageNumber} via SDK:`, {
+                message: error.message,
+                status: error.status,
+                error
+            });
             return null;
         }
     }
