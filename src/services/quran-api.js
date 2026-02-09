@@ -53,16 +53,11 @@ class QuranService {
 
                 console.log(`[QuranAPI] Token Request: ${url}`);
             } else if (this.accessToken) {
-                // 3. Robust Content API Header Injection & Origin Masking
-                // Many OAuth2 gateways check Origin/Referer to prevent unauthorized embedding
-                robustSetHeader(options.headers, 'X-Auth-Token', this.accessToken);
+                // 3. Slim Content API Header Injection
+                // Reverting spoofing as it didn't solve the "inactive" error.
+                // Stick strictly to the two official headers.
                 robustSetHeader(options.headers, 'x-auth-token', this.accessToken);
-                robustSetHeader(options.headers, 'X-Client-Id', clientId);
                 robustSetHeader(options.headers, 'x-client-id', clientId);
-
-                // Spoofing Referer to appear like it comes from the official domain
-                robustSetHeader(options.headers, 'Referer', 'https://quran.foundation');
-                robustSetHeader(options.headers, 'Origin', 'https://quran.foundation');
             }
 
             try {
