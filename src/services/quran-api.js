@@ -18,7 +18,7 @@ class QuranService {
         // Initialize SDK Client with proxied endpoints
         console.log('[QuranService] Initialization Info:', {
             clientId: clientId ? `${clientId.substring(0, 6)}...` : 'MISSING',
-            clientSecret: clientSecret ? 'PRESENT (HIDDEN)' : 'MISSING',
+            clientSecretSnippet: clientSecret ? `Len:${clientSecret.length}, Suffix:${clientSecret.slice(-3)}` : 'MISSING',
             contentBaseUrl,
             authBaseUrl,
             isProduction: import.meta.env.PROD
@@ -64,12 +64,36 @@ class QuranService {
                 })
             });
 
-            const data = await response.json();
-            console.log('[QuranAPI] Manual Auth Response Status:', response.status);
-            console.log('[QuranAPI] Manual Auth Response Body:', data);
+            let data = await response.json();
+            console.log('[QuranAPI] Manual Auth (Body Method) Status:', response.status);
 
-            if (response.ok) {
-                console.log('[QuranAPI] Manual Auth Successful. Token starts with:', data.access_token?.substring(0, 10));
+            if (!response.ok) {
+                console.warn('[QuranAPI] Manual Auth (Body Method) Failed:', data);
+
+                // Try alternate: Basic Auth
+                console.log('[QuranAPI] Retrying with Basic Auth method...');
+                const credentials = btoa(`${clientId}:${clientSecret}`);
+                const basicResponse = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'client_credentials',
+                        scope: 'content'
+                    })
+                });
+
+                const basicData = await basicResponse.json();
+                console.log('[QuranAPI] Manual Auth (Basic Method) Status:', basicResponse.status);
+                if (basicResponse.ok) {
+                    console.log('[QuranAPI] Manual Auth Successful via Basic Auth!');
+                } else {
+                    console.warn('[QuranAPI] Manual Auth (Basic Method) Failed:', basicData);
+                }
+            } else {
+                console.log('[QuranAPI] Manual Auth Successful via Body Method. Token starts with:', data.access_token?.substring(0, 10));
             }
         } catch (error) {
             console.error('[QuranAPI] Manual Auth Fetch Failed:', error);
