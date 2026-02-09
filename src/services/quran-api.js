@@ -10,17 +10,18 @@ class QuranService {
         this.cache = new Map();
 
         // Configuration from environment variables
-        const clientId = import.meta.env.VITE_QURAN_CLIENT_ID || '';
-        const clientSecret = import.meta.env.VITE_QURAN_CLIENT_SECRET || '';
+        const clientId = (import.meta.env.VITE_QURAN_CLIENT_ID || '').trim();
+        const clientSecret = (import.meta.env.VITE_QURAN_CLIENT_SECRET || '').trim();
         const contentBaseUrl = import.meta.env.VITE_QURAN_API_BASE;
         const authBaseUrl = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT;
 
         // Initialize SDK Client with proxied endpoints
-        console.log('[QuranService] Configuration:', {
-            hasClientId: !!clientId,
-            hasClientSecret: !!clientSecret,
-            contentBaseUrl: contentBaseUrl || 'https://apis.quran.foundation',
-            authBaseUrl: authBaseUrl || 'https://oauth2.quran.foundation'
+        console.log('[QuranService] Initialization Info:', {
+            clientId: clientId ? `${clientId.substring(0, 6)}...` : 'MISSING',
+            clientSecret: clientSecret ? 'PRESENT (HIDDEN)' : 'MISSING',
+            contentBaseUrl,
+            authBaseUrl,
+            isProduction: import.meta.env.PROD
         });
 
         this.client = new QuranClient({
@@ -65,9 +66,9 @@ class QuranService {
 
             const data = await response.json();
             console.log('[QuranAPI] Manual Auth Response Status:', response.status);
-            if (!response.ok) {
-                console.warn('[QuranAPI] Manual Auth Failed Info:', data);
-            } else {
+            console.log('[QuranAPI] Manual Auth Response Body:', data);
+
+            if (response.ok) {
                 console.log('[QuranAPI] Manual Auth Successful. Token starts with:', data.access_token?.substring(0, 10));
             }
         } catch (error) {
