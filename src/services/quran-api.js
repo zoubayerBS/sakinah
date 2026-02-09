@@ -16,60 +16,71 @@ class QuranService {
         const authBaseUrl = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT;
 
         this.accessToken = null;
+        this.isPreliveFallback = false;
 
-        // Initialize SDK Client with a Full Auth Interceptor
+        // Initialize SDK Client with a Smart Auth Interceptor
         const customFetcher = async (url, options = {}) => {
-            const isTokenRequest = url.includes('/oauth2/token') || url.includes('oauth2.quran.foundation');
+            let currentUrl = url;
+            const isTokenRequest = currentUrl.includes('/oauth2/token') || currentUrl.includes('oauth2.foundation');
 
-            // 1. Prepare/Inject Request Headers
+            // 1. URL Patching for Fallback
+            if (this.isPreliveFallback && isTokenRequest) {
+                // Redirect token requests to prelive proxy if in fallback mode
+                currentUrl = currentUrl.replace('/oauth2-proxy', '/prelive-oauth2-proxy');
+                currentUrl = currentUrl.replace('oauth2.quran.foundation', 'prelive-oauth2.quran.foundation');
+            }
+
+            // 2. Prepare/Inject Request Headers
             options.headers = options.headers || {};
 
             if (isTokenRequest) {
                 const creds = btoa(`${clientId}:${clientSecret}`);
                 options.headers['Authorization'] = `Basic ${creds}`;
-                console.log('[QuranAPI] Injected Basic Auth for token request');
+
+                // Force scope=content if it's a form-data request
+                if (options.body instanceof URLSearchParams) {
+                    options.body.set('scope', 'content');
+                } else if (typeof options.body === 'string' && options.body.includes('grant_type')) {
+                    const params = new URLSearchParams(options.body);
+                    params.set('scope', 'content');
+                    options.body = params.toString();
+                }
+                console.log(`[QuranAPI] Token Request (${this.isPreliveFallback ? 'PRELIVE' : 'PROD'}): ${currentUrl}`);
             } else if (this.accessToken) {
-                // Manually inject required headers for content API
                 options.headers['x-auth-token'] = this.accessToken;
                 options.headers['x-client-id'] = clientId;
-                console.log(`[QuranAPI] Injected Auth Headers for content request: ${url}`);
             }
 
-            console.log(`[QuranAPI] SDK Fetching: ${url}`, {
-                method: options.method || 'GET',
-                hasAuth: !!options.headers['Authorization'],
-                hasToken: !!options.headers['x-auth-token'],
-                hasClientId: !!options.headers['x-client-id']
-            });
-
             try {
-                const response = await fetch(url, options);
+                const response = await fetch(currentUrl, options);
 
-                // 2. Intercept and capture the token if this was a token request
+                // 3. Handle Token Capture
                 if (isTokenRequest && response.ok) {
                     const clonedResponse = response.clone();
                     const data = await clonedResponse.json();
                     if (data.access_token) {
                         this.accessToken = data.access_token;
-                        console.log('[QuranAPI] Captured Access Token successfully');
+                        console.log(`[QuranAPI] Captured ${this.isPreliveFallback ? 'PRELIVE' : 'PROD'} Token`);
                     }
                 }
 
-                console.log(`[QuranAPI] SDK Response [${response.status}] for ${url}`);
+                // 4. SMART FALLBACK: If content fails with 403, and we haven't tried Prelive yet
+                if (response.status === 403 && !isTokenRequest && !this.isPreliveFallback) {
+                    console.warn('[QuranAPI] 403 Forbidden on Production. Attempting Smart Fallback to Prelive...');
+                    this.isPreliveFallback = true;
+                    this.accessToken = null; // Clear production token
+
+                    // The SDK will naturally retry or we can just let this one fail and the next one will trigger re-auth
+                    // To handle the immediate request, we'd need more complex logic. 
+                    // For now, let's just mark it so the next SDK call uses Prelive.
+                }
+
                 return response;
             } catch (err) {
-                console.error(`[QuranAPI] SDK Fetch Error for ${url}:`, err);
+                console.error(`[QuranAPI] Fetch Error:`, err);
                 throw err;
             }
         };
-
-        console.log('[QuranService] Initialization Info:', {
-            clientId: clientId ? `${clientId.substring(0, 6)}...` : 'MISSING',
-            clientSecretSnippet: clientSecret ? `Len:${clientSecret.length}, Suffix:${clientSecret.slice(-3)}` : 'MISSING',
-            contentBaseUrl,
-            authBaseUrl,
-            isProduction: import.meta.env.PROD
-        });
 
         this.client = new QuranClient({
             clientId,

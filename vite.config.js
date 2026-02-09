@@ -118,6 +118,12 @@ export default defineConfig({
                 rewrite: (path) => path.replace(/^\/oauth2-proxy/, ''),
                 secure: false,
             },
+            '/prelive-oauth2-proxy': {
+                target: 'https://prelive-oauth2.quran.foundation',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/prelive-oauth2-proxy/, ''),
+                secure: false,
+            },
             '/api-proxy': {
                 target: 'https://apis.quran.foundation',
                 changeOrigin: true,
