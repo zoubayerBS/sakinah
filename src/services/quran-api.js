@@ -15,29 +15,46 @@ class QuranService {
         const contentBaseUrl = import.meta.env.VITE_QURAN_API_BASE;
         const authBaseUrl = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT;
 
-        // Initialize SDK Client with proxied endpoints and custom fetcher for Basic Auth
+        this.accessToken = null;
+
+        // Initialize SDK Client with a Full Auth Interceptor
         const customFetcher = async (url, options = {}) => {
             const isTokenRequest = url.includes('/oauth2/token') || url.includes('oauth2.quran.foundation');
 
-            console.log(`[QuranAPI] SDK Fetching: ${url}`, {
-                method: options.method || 'GET',
-                isTokenRequest,
-                hasAuthHeader: !!(options.headers?.['Authorization'] || options.headers?.['authorization']),
-                hasXAuthToken: !!(options.headers?.['x-auth-token'] || options.headers?.['X-Auth-Token'])
-            });
+            // 1. Prepare/Inject Request Headers
+            options.headers = options.headers || {};
 
-            // If it's a token request, inject Basic Auth header
             if (isTokenRequest) {
                 const creds = btoa(`${clientId}:${clientSecret}`);
-                options.headers = {
-                    ...options.headers,
-                    'Authorization': `Basic ${creds}`
-                };
+                options.headers['Authorization'] = `Basic ${creds}`;
                 console.log('[QuranAPI] Injected Basic Auth for token request');
+            } else if (this.accessToken) {
+                // Manually inject required headers for content API
+                options.headers['x-auth-token'] = this.accessToken;
+                options.headers['x-client-id'] = clientId;
+                console.log(`[QuranAPI] Injected Auth Headers for content request: ${url}`);
             }
+
+            console.log(`[QuranAPI] SDK Fetching: ${url}`, {
+                method: options.method || 'GET',
+                hasAuth: !!options.headers['Authorization'],
+                hasToken: !!options.headers['x-auth-token'],
+                hasClientId: !!options.headers['x-client-id']
+            });
 
             try {
                 const response = await fetch(url, options);
+
+                // 2. Intercept and capture the token if this was a token request
+                if (isTokenRequest && response.ok) {
+                    const clonedResponse = response.clone();
+                    const data = await clonedResponse.json();
+                    if (data.access_token) {
+                        this.accessToken = data.access_token;
+                        console.log('[QuranAPI] Captured Access Token successfully');
+                    }
+                }
+
                 console.log(`[QuranAPI] SDK Response [${response.status}] for ${url}`);
                 return response;
             } catch (err) {
@@ -62,49 +79,9 @@ class QuranService {
             fetch: customFetcher
         });
 
-        // Run manual auth health check to verify connectivity
-        if (clientId && clientSecret) {
-            this._testAuth(clientId, clientSecret, authBaseUrl).catch(err => {
-                console.error('[QuranAPI] Manual Auth Check Error:', err);
-            });
-        }
-
         // Backup bases for direct fetch if needed
         this.publicBase = 'https://api.quran.com/api/v4';
         this.legacyBase = 'https://api.alquran.cloud/v1';
-    }
-
-    /**
-     * Manual OAuth2 Token Health Check (Debug)
-     */
-    async _testAuth(clientId, clientSecret, authBaseUrl) {
-        const url = `${authBaseUrl || '/oauth2-proxy'}/oauth2/token`;
-        console.log(`[QuranAPI] Manual Debug Auth Test: ${url}`);
-
-        try {
-            const credentials = btoa(`${clientId}:${clientSecret}`);
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    grant_type: 'client_credentials',
-                    scope: 'content'
-                })
-            });
-
-            const data = await response.json();
-            console.log('[QuranAPI] Manual Debug Auth Status:', response.status);
-            if (response.ok) {
-                console.log('[QuranAPI] Manual Debug Auth SUCCESS!');
-            } else {
-                console.warn('[QuranAPI] Manual Debug Auth FAILED:', data);
-            }
-        } catch (error) {
-            console.error('[QuranAPI] Manual Debug Auth ERROR:', error);
-        }
     }
 
     /**
