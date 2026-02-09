@@ -15,7 +15,19 @@ class QuranService {
         const contentBaseUrl = import.meta.env.VITE_QURAN_API_BASE;
         const authBaseUrl = import.meta.env.VITE_QURAN_OAUTH_ENDPOINT;
 
-        // Initialize SDK Client with proxied endpoints
+        // Initialize SDK Client with proxied endpoints and custom fetcher for Basic Auth
+        const customFetcher = async (url, options = {}) => {
+            // If it's a token request, inject Basic Auth header
+            if (url.includes('/oauth2/token') || url.includes('oauth2.quran.foundation')) {
+                const creds = btoa(`${clientId}:${clientSecret}`);
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Basic ${creds}`
+                };
+            }
+            return fetch(url, options);
+        };
+
         console.log('[QuranService] Initialization Info:', {
             clientId: clientId ? `${clientId.substring(0, 6)}...` : 'MISSING',
             clientSecretSnippet: clientSecret ? `Len:${clientSecret.length}, Suffix:${clientSecret.slice(-3)}` : 'MISSING',
@@ -29,75 +41,12 @@ class QuranService {
             clientSecret,
             contentBaseUrl: contentBaseUrl || 'https://apis.quran.foundation',
             authBaseUrl: authBaseUrl || 'https://oauth2.quran.foundation',
+            fetch: customFetcher
         });
-
-        // Run manual auth health check if credentials exist
-        if (clientId && clientSecret) {
-            this._testAuth(clientId, clientSecret, authBaseUrl).catch(err => {
-                console.error('[QuranAPI] Manual Auth Check Error:', err);
-            });
-        }
 
         // Backup bases for direct fetch if needed
         this.publicBase = 'https://api.quran.com/api/v4';
         this.legacyBase = 'https://api.alquran.cloud/v1';
-    }
-
-    /**
-     * Manual OAuth2 Token Health Check
-     */
-    async _testAuth(clientId, clientSecret, authBaseUrl) {
-        const url = `${authBaseUrl || '/oauth2-proxy'}/oauth2/token`;
-        console.log(`[QuranAPI] Testing OAuth2 endpoint: ${url}`);
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    grant_type: 'client_credentials',
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    scope: 'content'
-                })
-            });
-
-            let data = await response.json();
-            console.log('[QuranAPI] Manual Auth (Body Method) Status:', response.status);
-
-            if (!response.ok) {
-                console.warn('[QuranAPI] Manual Auth (Body Method) Failed:', data);
-
-                // Try alternate: Basic Auth
-                console.log('[QuranAPI] Retrying with Basic Auth method...');
-                const credentials = btoa(`${clientId}:${clientSecret}`);
-                const basicResponse = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Basic ${credentials}`,
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        grant_type: 'client_credentials',
-                        scope: 'content'
-                    })
-                });
-
-                const basicData = await basicResponse.json();
-                console.log('[QuranAPI] Manual Auth (Basic Method) Status:', basicResponse.status);
-                if (basicResponse.ok) {
-                    console.log('[QuranAPI] Manual Auth Successful via Basic Auth!');
-                } else {
-                    console.warn('[QuranAPI] Manual Auth (Basic Method) Failed:', basicData);
-                }
-            } else {
-                console.log('[QuranAPI] Manual Auth Successful via Body Method. Token starts with:', data.access_token?.substring(0, 10));
-            }
-        } catch (error) {
-            console.error('[QuranAPI] Manual Auth Fetch Failed:', error);
-        }
     }
 
     /**
