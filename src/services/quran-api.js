@@ -18,26 +18,19 @@ class QuranService {
         this.accessToken = null;
         this.isPreliveFallback = false;
 
-        // Initialize SDK Client with a Smart Auth Interceptor
+        // Initialize SDK Client with a Dynamic Reconfiguration Interceptor
         const customFetcher = async (url, options = {}) => {
             let currentUrl = url;
             const isTokenRequest = currentUrl.includes('/oauth2/token') || currentUrl.includes('oauth2.foundation');
 
-            // 1. URL Patching for Fallback
-            if (this.isPreliveFallback && isTokenRequest) {
-                // Redirect token requests to prelive proxy if in fallback mode
-                currentUrl = currentUrl.replace('/oauth2-proxy', '/prelive-oauth2-proxy');
-                currentUrl = currentUrl.replace('oauth2.quran.foundation', 'prelive-oauth2.quran.foundation');
-            }
-
-            // 2. Prepare/Inject Request Headers
+            // 1. Prepare/Inject Request Headers
             options.headers = options.headers || {};
 
             if (isTokenRequest) {
                 const creds = btoa(`${clientId}:${clientSecret}`);
                 options.headers['Authorization'] = `Basic ${creds}`;
 
-                // Force scope=content if it's a form-data request
+                // Force scope=content
                 if (options.body instanceof URLSearchParams) {
                     options.body.set('scope', 'content');
                 } else if (typeof options.body === 'string' && options.body.includes('grant_type')) {
@@ -54,7 +47,7 @@ class QuranService {
             try {
                 const response = await fetch(currentUrl, options);
 
-                // 3. Handle Token Capture
+                // 2. Handle Token Capture
                 if (isTokenRequest && response.ok) {
                     const clonedResponse = response.clone();
                     const data = await clonedResponse.json();
@@ -64,20 +57,26 @@ class QuranService {
                     }
                 }
 
-                // 4. SMART FALLBACK: If content fails with 403, and we haven't tried Prelive yet
+                // 3. DYNAMIC RECONFIGURATION: If content fails with 403
                 if (response.status === 403 && !isTokenRequest && !this.isPreliveFallback) {
-                    console.warn('[QuranAPI] 403 Forbidden on Production. Attempting Smart Fallback to Prelive...');
+                    console.warn('[QuranAPI] 403 Forbidden on Production. RECONFIGURING SDK FOR PRELIVE...');
                     this.isPreliveFallback = true;
-                    this.accessToken = null; // Clear production token
+                    this.accessToken = null;
 
-                    // The SDK will naturally retry or we can just let this one fail and the next one will trigger re-auth
-                    // To handle the immediate request, we'd need more complex logic. 
-                    // For now, let's just mark it so the next SDK call uses Prelive.
+                    // Force the SDK to forget its token and switch endpoints
+                    if (this.client) {
+                        this.client.clearCachedToken();
+                        this.client.updateConfig({
+                            contentBaseUrl: '/prelive-api-proxy',
+                            authBaseUrl: '/prelive-oauth2-proxy'
+                        });
+                        console.log('[QuranAPI] SDK configuration updated to PRELIVE');
+                    }
                 }
 
                 return response;
             } catch (err) {
-                console.error(`[QuranAPI] Fetch Error:`, err);
+                console.error(`[QuranAPI] SDK Fetch Error:`, err);
                 throw err;
             }
         };
