@@ -40,10 +40,12 @@ class QuranService {
                 robustSetHeader(options.headers, 'Authorization', `Basic ${creds}`);
                 robustSetHeader(options.headers, 'Content-Type', 'application/x-www-form-urlencoded');
 
-                // 2. Strict Body Normalization (Force grant_type=client_credentials and scope=content)
+                // 2. Strict Body Normalization (Force grant_type, scope, and audience)
                 const bodyParams = new URLSearchParams();
                 bodyParams.set('grant_type', 'client_credentials');
                 bodyParams.set('scope', 'content');
+                // Adding audience is CRITICAL for production auth to target the content APIs
+                bodyParams.set('audience', 'https://apis.quran.foundation');
 
                 if (options.body) {
                     const provided = new URLSearchParams(options.body);
