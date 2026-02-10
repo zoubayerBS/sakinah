@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, BookmarkCheck, Maximize2, Minimize2, Sun, Moon, Coffee, Layers, X, BookMarked, Hash, List, Type, Home, Minus, Plus } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
-import { FrameCorner, JuzMarker } from '../components/MushafDecorations';
 import { surahPageMapping } from '../data/surah-pages.js';
 
 // Juz data for quick navigation
@@ -50,6 +49,11 @@ const toArabicIndicDigits = (value) => {
     return digits.map((d) => (/\d/.test(d) ? map[Number(d)] : d)).join('');
 };
 
+const formatSurahTitle = (name) => {
+    if (!name) return '';
+    return name.startsWith('سورة') ? name : `سورة ${name}`;
+};
+
 const MushafPage = ({ onBack }) => {
     // Core state
     const [pageNumber, setPageNumber] = useState(() => {
@@ -93,6 +97,7 @@ const MushafPage = ({ onBack }) => {
     const pageContentRef = useRef(null);
     const surahNameMapRef = useRef(new Map());
     const scrollStyleRef = useRef(null);
+    const showControlsRef = useRef(showControls);
 
     // Derived state
     const mode = READING_MODES[readingMode] || READING_MODES.light;
@@ -128,6 +133,10 @@ const MushafPage = ({ onBack }) => {
     useEffect(() => {
         localStorage.setItem('mushaf-bookmarks', JSON.stringify(bookmarkedPages));
     }, [bookmarkedPages]);
+
+    useEffect(() => {
+        showControlsRef.current = showControls;
+    }, [showControls]);
 
     // Dynamic Font Loading for QPC V2 with Preloading
     useEffect(() => {
@@ -180,35 +189,74 @@ const MushafPage = ({ onBack }) => {
             });
     }, [pageNumber]);
 
-    // Lock vertical scrolling only when font is enlarged
+    // Lock page scrolling while on MushafPage
     useEffect(() => {
         if (!scrollStyleRef.current) {
             scrollStyleRef.current = {
+                htmlOverflow: document.documentElement.style.overflow,
+                htmlHeight: document.documentElement.style.height,
+                htmlOverscrollY: document.documentElement.style.overscrollBehaviorY,
                 bodyOverflow: document.body.style.overflow,
+                bodyPosition: document.body.style.position,
+                bodyTop: document.body.style.top,
+                bodyLeft: document.body.style.left,
+                bodyRight: document.body.style.right,
+                bodyWidth: document.body.style.width,
+                bodyHeight: document.body.style.height,
                 bodyTouchAction: document.body.style.touchAction,
-                overscrollY: document.documentElement.style.overscrollBehaviorY,
             };
         }
 
-        const shouldLockScroll = fontScale > 1 && viewMode === 'authentic';
-        if (shouldLockScroll) {
-            document.body.style.overflow = 'hidden';
-            document.body.style.touchAction = 'pan-x';
-            document.documentElement.style.overscrollBehaviorY = 'none';
-        } else if (scrollStyleRef.current) {
-            document.body.style.overflow = scrollStyleRef.current.bodyOverflow;
-            document.body.style.touchAction = scrollStyleRef.current.bodyTouchAction;
-            document.documentElement.style.overscrollBehaviorY = scrollStyleRef.current.overscrollY;
-        }
+        document.documentElement.style.overflow = 'hidden';
+        document.documentElement.style.height = '100%';
+        document.documentElement.style.overscrollBehaviorY = 'none';
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = '0';
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
+        document.documentElement.style.overscrollBehaviorY = 'none';
+
+        const allowScrollInNav = (target) => {
+            if (!showNavPanel) return false;
+            return Boolean(target.closest && target.closest('.nav-panel-scroll'));
+        };
+
+        const handleTouchMove = (e) => {
+            if (!allowScrollInNav(e.target)) {
+                e.preventDefault();
+            }
+        };
+
+        const handleWheel = (e) => {
+            if (!allowScrollInNav(e.target)) {
+                e.preventDefault();
+            }
+        };
+
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('wheel', handleWheel, { passive: false });
 
         return () => {
             if (scrollStyleRef.current) {
+                document.documentElement.style.overflow = scrollStyleRef.current.htmlOverflow;
+                document.documentElement.style.height = scrollStyleRef.current.htmlHeight;
+                document.documentElement.style.overscrollBehaviorY = scrollStyleRef.current.htmlOverscrollY;
                 document.body.style.overflow = scrollStyleRef.current.bodyOverflow;
+                document.body.style.position = scrollStyleRef.current.bodyPosition;
+                document.body.style.top = scrollStyleRef.current.bodyTop;
+                document.body.style.left = scrollStyleRef.current.bodyLeft;
+                document.body.style.right = scrollStyleRef.current.bodyRight;
+                document.body.style.width = scrollStyleRef.current.bodyWidth;
+                document.body.style.height = scrollStyleRef.current.bodyHeight;
                 document.body.style.touchAction = scrollStyleRef.current.bodyTouchAction;
-                document.documentElement.style.overscrollBehaviorY = scrollStyleRef.current.overscrollY;
             }
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('wheel', handleWheel);
         };
-    }, [fontScale, viewMode]);
+    }, [showNavPanel]);
 
     // Helper to process page data
     const processPageData = async (data) => {
@@ -349,12 +397,12 @@ const MushafPage = ({ onBack }) => {
 
         if (isSwiping.current) {
             const threshold = 60;
-            if (touchDeltaX.current < -threshold && pageNumber < 604) {
-                navigateTo(pageNumber + 1, 'left');
-            } else if (touchDeltaX.current > threshold && pageNumber > 1) {
+            if (touchDeltaX.current < -threshold && pageNumber > 1) {
                 navigateTo(pageNumber - 1, 'right');
+            } else if (touchDeltaX.current > threshold && pageNumber < 604) {
+                navigateTo(pageNumber + 1, 'left');
             }
-        } else {
+        } else if (showControlsRef.current) {
             resetControlsTimer();
         }
         isSwiping.current = false;
@@ -408,19 +456,23 @@ const MushafPage = ({ onBack }) => {
             style={{
                 backgroundColor: mode.bg,
                 color: mode.text,
-                touchAction: fontScale > 1 && viewMode === 'authentic' ? 'pan-x' : 'auto',
+                touchAction: viewMode === 'authentic' && !showNavPanel ? 'pan-x' : 'auto',
                 '--mushaf-scale': String(fontScale)
             }}
             dir="rtl"
             onClick={() => {
-                if (isFullscreen) setShowControls(prev => !prev);
+                setShowControls(prev => !prev);
             }}
         >
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* MINIMAL FLOATING HEADER BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <header
-                className={`fixed top-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] transition-all duration-500 ease-out ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}
+                className={`fixed top-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-24 opacity-0 pointer-events-none'}`}
+                style={{
+                    transition: 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    willChange: 'transform, opacity',
+                }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
@@ -445,7 +497,7 @@ const MushafPage = ({ onBack }) => {
                     {/* Title Info */}
                     <div className="flex flex-col items-center min-w-[100px]">
                         <h1 className="font-arabic font-bold text-base leading-tight" style={{ color: mode.text }}>
-                            {pageInfo ? pageInfo.surah : 'المصحف'}
+                            {pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف'}
                         </h1>
                         {pageInfo && (
                             <span className="text-[9px] font-bold opacity-50" style={{ color: mode.text }}>
@@ -500,6 +552,23 @@ const MushafPage = ({ onBack }) => {
                         scrollbarWidth: fontScale > 1 && viewMode === 'authentic' ? 'none' : undefined,
                     }}
                 >
+                    {/* Page Header Labels (Mushaf style) */}
+                    <div
+                        className="absolute top-12 left-6 right-6 flex items-center justify-between text-[11px] font-bold opacity-70 pointer-events-none"
+                        style={{ color: mode.text }}
+                    >
+                        <span
+                            className="font-kfgqpc text-[20.8px]"
+                            style={{ direction: 'rtl', textAlign: 'right' }}
+                            aria-label={pageInfo ? pageInfo.surah : 'المصحف'}
+                            title={pageInfo ? pageInfo.surah : 'المصحف'}
+                        >
+                            {pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف'}
+                        </span>
+                        <span className="font-kfgqpc text-[18.2px]" style={{ direction: 'rtl', textAlign: 'left' }}>
+                            {pageInfo ? `الجزء ${toArabicIndicDigits(pageInfo.juz)}` : ''}
+                        </span>
+                    </div>
                     {/* Page Content - Full page reader style */}
                     <div className={`relative z-10 w-full flex-1 flex flex-col justify-start items-center ${isFullscreen ? 'p-2 md:p-4 h-full' : 'py-2 min-h-[100dvh]'}`}>
                         {isLoading || isFontLoading ? (
@@ -746,7 +815,7 @@ const MushafPage = ({ onBack }) => {
                     {/* Subtle Page Footer */}
                     <div className="fixed bottom-24 left-0 right-0 z-[700] flex items-center justify-center pointer-events-none">
                         <div
-                            className="px-3 py-1 rounded-full text-[11px] font-bold tracking-[0.25em]"
+                            className="px-3 py-1 rounded-full text-[14px] font-bold font-kfgqpc"
                             style={{
                                 color: mode.text,
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
@@ -754,7 +823,7 @@ const MushafPage = ({ onBack }) => {
                                 opacity: 0.8
                             }}
                         >
-                            <span>{pageNumber}</span>
+                            <span>{`صفحة ${toArabicIndicDigits(pageNumber)}`}</span>
                         </div>
                     </div>
                 </div>
@@ -764,7 +833,11 @@ const MushafPage = ({ onBack }) => {
             {/* MINIMAL FLOATING BOTTOM NAV BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <nav
-                className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] transition-all duration-500 ease-out ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}
+                className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'}`}
+                style={{
+                    transition: 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    willChange: 'transform, opacity',
+                }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
@@ -833,7 +906,11 @@ const MushafPage = ({ onBack }) => {
             {/* NAVIGATION PANEL (Full-screen slide-up) */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             {showNavPanel && (
-                <div className="fixed inset-0 z-[9999] flex items-end justify-center" onClick={() => setShowNavPanel(false)}>
+                <div
+                    className="fixed inset-0 z-[9999] flex items-end justify-center"
+                    onClick={() => setShowNavPanel(false)}
+                    style={{ touchAction: 'pan-y', overscrollBehaviorY: 'contain' }}
+                >
                     <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} />
                     <div
                         className={`relative flex flex-col w-full max-w-[500px] h-[85vh] rounded-t-[2.5rem] overflow-hidden shadow-none animate-slide-up ${isDarkMode ? 'bg-[#121212] text-white' : 'bg-[#FDFCFA] text-[#2C2C2C]'}`}
