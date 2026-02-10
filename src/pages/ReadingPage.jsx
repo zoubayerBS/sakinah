@@ -70,7 +70,11 @@ export function ReadingPage({ surah, onBack }) {
                     return;
                 }
 
-                const data = await quranAPI.getSurahAudioData(surah.number, reciterId);
+                const data = await quranAPI.getSurahAudioData(
+                    surah.number,
+                    reciterId,
+                    reciter?.selectedMoshafId || reciter?.defaultMoshafId
+                );
                 if (!isCancelled && data) {
                     playSurah(surah, data, reciter);
                 } else if (!isCancelled && !data) {
@@ -263,6 +267,7 @@ export function ReadingPage({ surah, onBack }) {
                 isOpen={isSelectorOpen}
                 onClose={() => setIsSelectorOpen(false)}
                 selectedReciter={currentReciter.identifier}
+                selectedMoshafId={currentReciter.selectedMoshafId || currentReciter.defaultMoshafId}
                 onSelect={handleReciterSelect}
             />
         </div>

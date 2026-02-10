@@ -41,6 +41,83 @@ const normalizeServerUrl = (server) => {
     return server.endsWith('/') ? server : `${server}/`;
 };
 
+const parseSurahList = (list) => {
+    if (!list) return [];
+    return String(list)
+        .split(',')
+        .map((v) => parseInt(v.trim(), 10))
+        .filter((v) => Number.isFinite(v));
+};
+
+const hasArabic = (value, pattern) => {
+    if (!value) return false;
+    return pattern.test(String(value));
+};
+
+const includesText = (value, needles) => {
+    if (!value) return false;
+    const text = String(value).toLowerCase();
+    return needles.some((needle) => text.includes(needle));
+};
+
+const RECITER_SERVER_HINTS = [
+    {
+        match: [/maher/i, /muaiqly/i, /muaiqil/i, /المعيقلي/, /ماهر/],
+        includes: ['maher']
+    },
+];
+
+const getServerHintsForReciter = (name) => {
+    if (!name) return [];
+    const value = String(name);
+    const hit = RECITER_SERVER_HINTS.find((entry) => entry.match.some((rx) => rx.test(value)));
+    return hit ? hit.includes : [];
+};
+
+const scoreMoshaf = (moshaf, chapterId, reciterName) => {
+    if (!moshaf?.server) return -999;
+    const name = moshaf.name || '';
+    const rewaya = moshaf.rewaya || '';
+    const surahTotal = Number(moshaf.surah_total || 0);
+    const surahList = parseSurahList(moshaf.surah_list);
+    const server = String(moshaf.server || '').toLowerCase();
+
+    let score = 0;
+    const serverHints = getServerHintsForReciter(reciterName);
+    if (serverHints.length > 0 && serverHints.some((hint) => server.includes(hint))) {
+        score += 6;
+    }
+    if (includesText(name, ['hafs', "hafs a'n assem", "hafs an asim"]) || includesText(rewaya, ['hafs']) || hasArabic(name, /حفص/) || hasArabic(rewaya, /حفص/)) {
+        score += 5;
+    }
+    if (includesText(name, ['murattal', 'muratal', 'murrattal']) || hasArabic(name, /مرتل|مرتّل/)) {
+        score += 3;
+    }
+    if (includesText(name, ['mujawwad']) || hasArabic(name, /مجود/)) {
+        score -= 1;
+    }
+    if (surahTotal >= 114) score += 2;
+
+    if (chapterId && surahList.length > 0) {
+        score += surahList.includes(Number(chapterId)) ? 4 : -2;
+    }
+
+    return score;
+};
+
+const pickBestMoshaf = (moshafList, chapterId, reciterName, reciterId) => {
+    if (!Array.isArray(moshafList) || moshafList.length === 0) return null;
+    const directMatch = reciterId
+        ? moshafList.find((m) => String(m.id) === String(reciterId) && m.server)
+        : null;
+    if (directMatch) return directMatch;
+
+    const scored = moshafList
+        .map((m) => ({ m, score: scoreMoshaf(m, chapterId, reciterName) }))
+        .sort((a, b) => b.score - a.score);
+    return scored[0]?.m || null;
+};
+
 const fetchMp3QuranReciters = async () => {
     const response = await fetch(`${MP3QURAN_API_BASE}/reciters?language=ar`);
     if (!response.ok) {
@@ -61,7 +138,7 @@ const fetchMp3QuranReciters = async () => {
             rewaya: m.rewaya || null,
         }));
 
-        const defaultMoshaf = moshaf.find((m) => m.server) || moshaf[0] || null;
+        const defaultMoshaf = pickBestMoshaf(moshaf, null, r.name, r.id) || moshaf.find((m) => m.server) || moshaf[0] || null;
 
         return {
             identifier: String(r.id),
@@ -153,6 +230,7 @@ router.get('/chapter/:id/images', async (req, res) => {
 router.get('/audio/:recitationId/:chapterId', async (req, res) => {
     try {
         const { recitationId, chapterId } = req.params;
+        const { moshafId } = req.query;
         const reciterId = String(recitationId);
 
         if (!recitersCache.data || Date.now() - recitersCache.ts >= RECITER_CACHE_TTL) {
@@ -161,12 +239,22 @@ router.get('/audio/:recitationId/:chapterId', async (req, res) => {
         }
 
         const reciter = recitersCache.byId.get(reciterId);
-        if (!reciter?.server) {
+        if (!reciter) {
             throw new Error('Reciter server not found');
         }
 
+        const moshafList = reciter.moshaf || [];
+        const requestedMoshaf = moshafId
+            ? moshafList.find((m) => String(m.id) === String(moshafId))
+            : null;
+        const selectedMoshaf = (requestedMoshaf && requestedMoshaf.server)
+            ? requestedMoshaf
+            : pickBestMoshaf(moshafList, Number(chapterId), reciter.name, reciterId);
+        const server = selectedMoshaf?.server || reciter.server;
+        if (!server) throw new Error('Reciter server not found');
+
         const padded = String(chapterId).padStart(3, '0');
-        const audioUrl = `${reciter.server}${padded}.mp3`;
+        const audioUrl = `${server}${padded}.mp3`;
 
         res.json({
             audioUrl,

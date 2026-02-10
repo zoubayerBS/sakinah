@@ -35,6 +35,11 @@ export const MiniPlayer = ({ onOpen }) => {
                             <h4 className="text-sm font-arabic font-bold text-[var(--color-text-primary)] truncate">
                                 {activeSurah.name} - {currentReciter.name || currentReciter.englishName}
                             </h4>
+                            {currentReciter.selectedMoshafLabel && (
+                                <p className="text-[10px] text-[var(--color-text-secondary)] font-arabic truncate">
+                                    {currentReciter.selectedMoshafLabel}
+                                </p>
+                            )}
                             <p className="text-[9px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold">
                                 {isWaitingForInitialBuffer
                                     ? `Optimisation du flux (${Math.round(bufferedProgress)}%)`

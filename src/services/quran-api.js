@@ -178,9 +178,12 @@ class QuranService {
     /**
      * Get Surah Audio Data
      */
-    async getSurahAudioData(surahNumber, recitationId) {
+    async getSurahAudioData(surahNumber, recitationId, moshafId) {
         try {
-            const response = await fetch(`/api/audio/${recitationId}/${surahNumber}`);
+            const params = new URLSearchParams();
+            if (moshafId) params.set('moshafId', moshafId);
+            const query = params.toString();
+            const response = await fetch(`/api/audio/${recitationId}/${surahNumber}${query ? `?${query}` : ''}`);
             if (!response.ok) throw new Error('Proxy error');
             
             const data = await response.json();
