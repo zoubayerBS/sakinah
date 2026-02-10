@@ -40,12 +40,11 @@
   <div id="app">
     <!-- Loading State -->
     <div class="loading-screen">
-      <div class="loading-spinner">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5z" />
-          <path d="M2 17l10 5 10-5" />
-          <path d="M2 12l10 5 10-5" />
-        </svg>
+      <div class="loading-logo-wrap">
+        <img src="/logo2.png" alt="سكينة" class="loading-logo" />
+      </div>
+      <div class="loading-bar">
+        <div class="loading-bar-fill"></div>
       </div>
       <p class="loading-text arabic">جاري التحميل...</p>
     </div>
@@ -68,15 +67,40 @@
       transition: opacity 0.5s ease-out;
     }
 
-    .loading-spinner {
-      color: var(--color-primary);
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    .loading-logo-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .loading-logo {
+      width: 280px;
+      height: auto;
+      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
     }
 
     .loading-text {
       margin-top: var(--space-6);
       font-size: var(--font-size-xl);
       color: var(--color-text-secondary);
+    }
+
+    .loading-bar {
+      position: relative;
+      width: min(260px, 70vw);
+      height: 6px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .loading-bar-fill {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(201, 169, 97, 0.2), rgba(201, 169, 97, 0.9), rgba(201, 169, 97, 0.2));
+      transform: translateX(-100%);
+      animation: loading-bar 2.4s ease-in-out infinite;
     }
 
     @keyframes pulse {
@@ -88,6 +112,18 @@
 
       50% {
         opacity: 0.5;
+      }
+    }
+
+    @keyframes loading-bar {
+      0% {
+        transform: translateX(-100%);
+      }
+      50% {
+        transform: translateX(0%);
+      }
+      100% {
+        transform: translateX(100%);
       }
     }
 

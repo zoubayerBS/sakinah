@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 200" role="img" aria-label="سكينة">
+  <g fill="none" stroke="#8B7355" stroke-width="2">
+    <path d="M260 10 L292 45 L340 50 L302 82 L312 132 L260 106 L208 132 L218 82 L180 50 L228 45 Z" fill="#C9A227" fill-opacity="0.9"/>
+    <circle cx="260" cy="70" r="28" fill="none"/>
+    <circle cx="260" cy="70" r="4" fill="#8B7355" stroke="none"/>
+  </g>
+  <text x="260" y="182" text-anchor="middle" font-family="Amiri Quran, 'Scheherazade New', serif" font-size="72" fill="#000000">سكينة</text>
+</svg>

@@ -125,7 +125,33 @@ router.get('/reciters', async (req, res) => {
     }
 });
 
-// 7. Search
+// 7. Random Verse (Ayah of the Day)
+router.get('/verse/random', async (req, res) => {
+    try {
+        const verse = await client.verses.findRandom({
+            fields: {
+                textUthmani: true,
+                textUthmaniSimple: true,
+            },
+        });
+
+        const chapterId = verse?.chapterId ? String(verse.chapterId) : null;
+        const chapter = chapterId ? await client.chapters.findById(chapterId) : null;
+
+        res.json({
+            text: verse?.textUthmani || verse?.textUthmaniSimple || '',
+            surah: chapter?.nameArabic || '',
+            number: verse?.verseNumber || null,
+            surahNumber: chapter?.id || null,
+            verseKey: verse?.verseKey || null,
+        });
+    } catch (error) {
+        console.error('Error fetching random verse:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 8. Search
 router.get('/search', async (req, res) => {
     try {
         const { q } = req.query;

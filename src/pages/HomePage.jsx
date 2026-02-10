@@ -60,9 +60,12 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
                     <h2 className="font-arabic text-2xl text-[var(--color-highlight)] mb-4">
                         ﷽
                     </h2>
-                    <h1 className="font-reem-kufi-fun font-bold text-5xl text-[#C9A227] mb-2 drop-shadow-sm">
-                        سكينة
-                    </h1>
+                    <img
+                        src="/logo2.png"
+                        alt="سكينة"
+                        className="mx-auto h-36 md:h-40 w-auto mb-2"
+                        loading="eager"
+                    />
                     <p className="font-arabic text-[var(--color-text-secondary)] text-base leading-relaxed">
                         شَهْرُ رَمَضَانَ الَّذِي أُنزِلَ فِيهِ الْقُرْآنُ هُدًى لِّلنَّاسِ
                     </p>

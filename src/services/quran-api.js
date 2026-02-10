@@ -197,6 +197,20 @@ class QuranService {
     }
 
     /**
+     * Get a random verse (for Ayah of the Day)
+     */
+    async getRandomVerse() {
+        try {
+            const response = await fetch('/api/verse/random');
+            if (!response.ok) throw new Error('Proxy error');
+            return await response.json();
+        } catch (error) {
+            console.error('[QuranAPI] Error fetching random verse via Proxy:', error);
+        }
+        return null;
+    }
+
+    /**
      * Get Reciters (Recitations)
      */
     async getReciters() {

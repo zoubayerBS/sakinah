@@ -140,6 +140,16 @@
     letter-spacing: 0;
   }
 
+  .surahnames-hero {
+    font-family: "surahnames", "SurahNamesV1", "Amiri Quran", serif;
+    font-size: 64px;
+    color: rgb(0, 0, 0);
+    display: inline;
+    line-height: normal;
+    vertical-align: baseline;
+    direction: rtl;
+  }
+
   .surah-title {
     font-family: "surahnames", "SurahNamesV1", "Amiri Quran", serif;
     font-size: 64px;
