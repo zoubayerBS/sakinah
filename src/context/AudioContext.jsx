@@ -25,11 +25,25 @@ export const AudioProvider = ({ children }) => {
     const [sleepTimerId, setSleepTimerId] = useState(null);
 
     // Reciter State
-    const [currentReciter, setCurrentReciter] = useState({
-        identifier: '',
-        name: '',
-        englishName: ''
-    });
+    const getStoredReciter = () => {
+        try {
+            const raw = localStorage.getItem('quran-reciter');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed?.identifier) return null;
+            return parsed;
+        } catch {
+            return null;
+        }
+    };
+
+    const [currentReciter, setCurrentReciter] = useState(() => (
+        getStoredReciter() || {
+            identifier: '',
+            name: '',
+            englishName: ''
+        }
+    ));
 
     const player = useRef(null);
     if (!player.current) {
@@ -186,10 +200,13 @@ export const AudioProvider = ({ children }) => {
         if (apiUrl) {
             urls.push(apiUrl);
         }
-        const fallbackUrls = getAudioUrls(reciterId, surah.number);
-        fallbackUrls.forEach((url) => {
-            if (url && !urls.includes(url)) urls.push(url);
-        });
+        const shouldAddFallbacks = !apiUrl || !String(apiUrl).includes('mp3quran.net');
+        if (shouldAddFallbacks) {
+            const fallbackUrls = getAudioUrls(reciterId, surah.number);
+            fallbackUrls.forEach((url) => {
+                if (url && !urls.includes(url)) urls.push(url);
+            });
+        }
         audioUrlsRef.current = urls;
         currentUrlIndexRef.current = 0;
 
@@ -272,6 +289,12 @@ export const AudioProvider = ({ children }) => {
         currentAyahNumber, playFullSurah, playAyah, togglePlay, seek, skip,
         currentReciter, sleepTimer
     ]);
+
+    useEffect(() => {
+        if (currentReciter?.identifier) {
+            localStorage.setItem('quran-reciter', JSON.stringify(currentReciter));
+        }
+    }, [currentReciter]);
 
     return (
         <AudioContext.Provider value={value}>

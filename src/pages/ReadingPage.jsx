@@ -57,9 +57,33 @@ export function ReadingPage({ surah, onBack }) {
                 let reciter = currentReciter;
                 const reciterId = reciter?.identifier;
                 if (!reciterId) {
+                    let savedReciter = null;
+                    try {
+                        const raw = localStorage.getItem('quran-reciter');
+                        savedReciter = raw ? JSON.parse(raw) : null;
+                    } catch {
+                        savedReciter = null;
+                    }
                     const reciters = await quranAPI.getReciters();
                     if (!isCancelled && reciters && reciters.length > 0) {
-                        reciter = reciters[0];
+                        if (savedReciter?.identifier) {
+                            const match = reciters.find(r => String(r.identifier) === String(savedReciter.identifier));
+                            if (match) {
+                                const selectedMoshafId = savedReciter.selectedMoshafId || match.defaultMoshafId;
+                                const selectedMoshaf = Array.isArray(match.moshaf)
+                                    ? match.moshaf.find(m => String(m.id) === String(selectedMoshafId))
+                                    : null;
+                                reciter = {
+                                    ...match,
+                                    selectedMoshafId: selectedMoshaf?.id || selectedMoshafId || null,
+                                    selectedMoshafLabel: savedReciter.selectedMoshafLabel || selectedMoshaf?.rewaya || selectedMoshaf?.name || null,
+                                };
+                            } else {
+                                reciter = reciters[0];
+                            }
+                        } else {
+                            reciter = reciters[0];
+                        }
                         setCurrentReciter(reciter);
                         setReciterChangeTrigger(prev => prev + 1);
                         return;
