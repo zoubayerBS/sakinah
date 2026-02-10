@@ -19,8 +19,8 @@ export const ReciterSelector = ({ isOpen, onClose, selectedReciter, onSelect }) 
     }, [isOpen]);
 
     const filteredReciters = reciters.filter(r =>
-        r.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.name.includes(searchQuery)
+        (r.englishName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.name || '').includes(searchQuery)
     );
 
     if (!isOpen) return null;

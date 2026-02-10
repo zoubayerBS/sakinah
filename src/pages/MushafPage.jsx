@@ -64,7 +64,7 @@ const MushafPage = ({ onBack }) => {
         catch { return []; }
     });
     const [slideDirection, setSlideDirection] = useState(null);
-    const [viewMode, setViewMode] = useState('text'); // 'image' or 'text'
+    const [viewMode, setViewMode] = useState('authentic'); // 'authentic' or 'text'
     const [textAyahs, setTextAyahs] = useState([]);
 
     // Navigation panel state
@@ -81,6 +81,18 @@ const MushafPage = ({ onBack }) => {
     const isSwiping = useRef(false);
     const controlsTimeout = useRef(null);
     const pageContentRef = useRef(null);
+
+    // Derived state
+    const mode = READING_MODES[readingMode] || READING_MODES.light;
+    const isDarkMode = readingMode === 'dark' || readingMode === 'midnight';
+    const progressPercent = ((pageNumber / 604) * 100).toFixed(1);
+    
+    // Find current juz
+    const currentJuz = JUZ_PAGES.reduce((acc, j) => pageNumber >= j.page ? j.juz : acc, 1);
+
+    // Filter surahs by search
+    const filteredSurahs = SURAH_NAMES.map((name, idx) => ({ name, number: idx + 1 }))
+        .filter(s => searchQuery === '' || s.name.includes(searchQuery) || s.number.toString().includes(searchQuery));
 
     // Preloaded pages cache
     const [preloadedPages, setPreloadedPages] = useState({});
@@ -102,35 +114,43 @@ const MushafPage = ({ onBack }) => {
 
     // Dynamic Font Loading for QPC V2 with Preloading
     useEffect(() => {
-        setIsFontLoading(true);
-        const loadFont = async (pn) => {
-            const fontName = `p${pn}-v2`;
-            const fontUrl = `https://static-cdn.tarteel.ai/qul/fonts/quran_fonts/v2/woff2/p${pn}.woff2`;
+        const fontName = `p${pageNumber}-v2`;
+        const fontUrl = `https://static-cdn.tarteel.ai/qul/fonts/quran_fonts/v2/woff2/p${pageNumber}.woff2`;
 
-            if (!document.getElementById(`font-${fontName}`)) {
+        // Check if font is already loaded to avoid blinking
+        if (document.fonts.check(`12px "${fontName}"`)) {
+            setIsFontLoading(false);
+        } else {
+            setIsFontLoading(true);
+        }
+
+        const loadFont = async (pn) => {
+            const fName = `p${pn}-v2`;
+            const fUrl = `https://static-cdn.tarteel.ai/qul/fonts/quran_fonts/v2/woff2/p${pn}.woff2`;
+
+            if (!document.getElementById(`font-${fName}`)) {
                 const style = document.createElement('style');
-                style.id = `font-${fontName}`;
+                style.id = `font-${fName}`;
                 style.innerHTML = `
                     @font-face {
-                        font-family: '${fontName}';
-                        src: url('${fontUrl}') format('woff2');
-                        font-display: optional;
+                        font-family: '${fName}';
+                        src: url('${fUrl}') format('woff2');
+                        font-display: block;
                     }
                 `;
                 document.head.appendChild(style);
 
-                // Preload the font using Font Loading API
                 try {
-                    const font = new FontFace(fontName, `url('${fontUrl}')`);
+                    const font = new FontFace(fName, `url('${fUrl}')`);
                     await font.load();
                     document.fonts.add(font);
                 } catch (err) {
-                    console.warn(`Failed to preload font ${fontName}:`, err);
+                    console.warn(`Failed to preload font ${fName}:`, err);
                 }
             }
         };
 
-        // Load fonts in parallel for better performance
+        // Load fonts in parallel
         const fontsToLoad = [pageNumber];
         if (pageNumber < 604) fontsToLoad.push(pageNumber + 1);
         if (pageNumber > 1) fontsToLoad.push(pageNumber - 1);
@@ -143,48 +163,60 @@ const MushafPage = ({ onBack }) => {
             });
     }, [pageNumber]);
 
+    // Helper to process page data
+    const processPageData = async (data) => {
+        setVerses(data);
+
+        // Calculate page metadata from verses
+        const firstAyah = data[0];
+        const lastAyah = data[data.length - 1];
+        const surahs = await quranAPI.getAllSurahs();
+        const getSurahName = (num) => surahs.find(s => s.number === num)?.name || `Surah ${num}`;
+        const getSurahEnglish = (num) => surahs.find(s => s.number === num)?.transliteration || `Surah ${num}`;
+
+        const surahsOnPage = [...new Set(data.map(v => getSurahName(v.surah.number)))];
+
+        setPageInfo({
+            surah: getSurahName(firstAyah.surah.number),
+            surahEnglish: getSurahEnglish(firstAyah.surah.number),
+            surahNumber: firstAyah.surah.number,
+            juz: firstAyah.juz,
+            number: pageNumber,
+            surahsOnPage,
+            firstVerse: firstAyah.numberInSurah,
+            lastVerse: lastAyah.numberInSurah,
+            lastSurah: getSurahName(lastAyah.surah.number),
+        });
+
+        // Save text ayahs for text mode
+        const textAyahsFormatted = data.map(v => ({
+            ...v,
+            numberInSurah: v.numberInSurah,
+            surah: {
+                number: v.surah.number,
+                name: getSurahName(v.surah.number)
+            }
+        }));
+        setTextAyahs(textAyahsFormatted);
+    };
+
     // Fetch page data
     useEffect(() => {
         let isCancelled = false;
+        
         const fetchMushafPage = async () => {
+            // Check preloaded cache first to avoid loading state
+            if (preloadedPages[pageNumber]) {
+                await processPageData(preloadedPages[pageNumber]);
+                setIsLoading(false);
+                return;
+            }
+
             setIsLoading(true);
             try {
                 const data = await quranAPI.getMushafPage(pageNumber);
                 if (!isCancelled && data) {
-                    setVerses(data);
-
-                    // Calculate page metadata from verses
-                    const firstAyah = data[0];
-                    const lastAyah = data[data.length - 1];
-                    const surahs = await quranAPI.getAllSurahs();
-                    const getSurahName = (num) => surahs.find(s => s.number === num)?.name || `Surah ${num}`;
-                    const getSurahEnglish = (num) => surahs.find(s => s.number === num)?.transliteration || `Surah ${num}`;
-
-                    const surahsOnPage = [...new Set(data.map(v => getSurahName(v.surah.number)))];
-
-                    setPageInfo({
-                        surah: getSurahName(firstAyah.surah.number),
-                        surahEnglish: getSurahEnglish(firstAyah.surah.number),
-                        surahNumber: firstAyah.surah.number,
-                        juz: firstAyah.juz,
-                        number: pageNumber,
-                        surahsOnPage,
-                        firstVerse: firstAyah.numberInSurah,
-                        lastVerse: lastAyah.numberInSurah,
-                        lastSurah: getSurahName(lastAyah.surah.number),
-                    });
-
-                    // Save text ayahs for text mode (Paragraph mode)
-                    // Map SDK verse results to match expected structure for Paragraph rendering
-                    const textAyahsFormatted = data.map(v => ({
-                        ...v,
-                        numberInSurah: v.numberInSurah,
-                        surah: {
-                            number: v.surah.number,
-                            name: getSurahName(v.surah.number)
-                        }
-                    }));
-                    setTextAyahs(textAyahsFormatted);
+                    await processPageData(data);
                 }
             } catch (err) {
                 console.error('Error fetching mushaf page:', err);
@@ -195,7 +227,8 @@ const MushafPage = ({ onBack }) => {
 
         fetchMushafPage();
         return () => { isCancelled = true; };
-    }, [pageNumber]);
+    }, [pageNumber]); // preloadedPages is stable or read from closure, but adding it might loop if not careful. 
+                      // Ideally we'd use a ref for cache, but here we trust the preload effect ran before.
 
     // Preload adjacent pages
     useEffect(() => {
@@ -209,7 +242,20 @@ const MushafPage = ({ onBack }) => {
         };
         preload(pageNumber + 1);
         preload(pageNumber - 1);
-    }, [pageNumber]);
+    }, [pageNumber]); // Keep this separate
+
+    // Update body background to match theme (fixes overscroll/rubber-banding color)
+    useEffect(() => {
+        document.body.style.backgroundColor = mode.bg;
+        // Also meta theme-color for mobile browsers
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', mode.bg);
+        }
+        return () => {
+            document.body.style.backgroundColor = ''; // Cleanup? Optional, or reset to default
+        };
+    }, [mode.bg]);
 
     // Auto-hide controls in fullscreen
     const resetControlsTimer = useCallback(() => {
@@ -306,21 +352,11 @@ const MushafPage = ({ onBack }) => {
     };
 
     const isCurrentPageBookmarked = bookmarkedPages.includes(pageNumber);
-    const mode = READING_MODES[readingMode] || READING_MODES.light;
-    const isDarkMode = readingMode === 'dark' || readingMode === 'midnight';
-    const progressPercent = ((pageNumber / 604) * 100).toFixed(1);
-
-    // Filter surahs by search
-    const filteredSurahs = SURAH_NAMES.map((name, idx) => ({ name, number: idx + 1 }))
-        .filter(s => searchQuery === '' || s.name.includes(searchQuery) || s.number.toString().includes(searchQuery));
-
-    // Find current juz
-    const currentJuz = JUZ_PAGES.reduce((acc, j) => pageNumber >= j.page ? j.juz : acc, 1);
 
     return (
         <div
             ref={containerRef}
-            className={`min-h-screen relative overflow-hidden transition-all duration-700 ${isFullscreen ? 'fixed inset-0 z-[9999]' : ''}`}
+            className={`min-h-[100dvh] relative overflow-hidden transition-all duration-700 ${isFullscreen ? 'fixed inset-0 z-[9999]' : ''}`}
             style={{
                 backgroundColor: mode.bg,
                 color: mode.text
@@ -331,106 +367,75 @@ const MushafPage = ({ onBack }) => {
             }}
         >
             {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* FLOATING HEADER BAR (Glassmorphism) */}
+            {/* MINIMAL FLOATING HEADER BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <header
-                className={`fixed top-4 left-1/2 -translate-x-1/2 z-[600] w-[92%] max-w-[800px] transition-all duration-700 ease-in-out ${showControls ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-24 opacity-0 scale-95 pointer-events-none'}`}
+                className={`fixed top-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] transition-all duration-500 ease-out ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="relative overflow-hidden rounded-2xl border shadow-2xl"
+                    className="flex items-center justify-between gap-4 pl-2 pr-4 py-2 rounded-full shadow-2xl backdrop-blur-md border border-white/10"
                     style={{
-                        backgroundColor: readingMode === 'dark' || readingMode === 'midnight' ? '#1E1E28' : '#FFFFFF',
-                        borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                        backgroundColor: isDarkMode ? 'rgba(20,20,30,0.85)' : 'rgba(255,255,255,0.9)',
+                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.1)',
                     }}
                 >
-                    {/* Progress indicator line */}
-                    <div className="absolute top-0 left-0 right-0 h-[3px] bg-white/5">
-                        <div
-                            className="h-full transition-all duration-700 ease-out"
-                            style={{
-                                width: `${progressPercent}%`,
-                                backgroundColor: mode.accent,
-                                boxShadow: `0 0 8px ${mode.accent}`
-                            }}
-                        />
+                    {/* Home / Back */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onBack) onBack();
+                        }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90"
+                        style={{ color: mode.text }}
+                    >
+                        <Home size={20} />
+                    </button>
+
+                    {/* Title Info */}
+                    <div className="flex flex-col items-center min-w-[100px]">
+                        <h1 className="font-arabic font-bold text-base leading-tight" style={{ color: mode.text }}>
+                            {pageInfo ? pageInfo.surah : 'المصحف'}
+                        </h1>
+                        {pageInfo && (
+                            <span className="text-[9px] font-bold opacity-50" style={{ color: mode.text }}>
+                                الجزء {pageInfo.juz} • {pageInfo.surahEnglish}
+                            </span>
+                        )}
                     </div>
 
-                    <div className="px-5 py-3 flex items-center justify-between gap-4">
-                        {/* Exit/Home Button */}
+                    {/* Actions Group */}
+                    <div className="flex items-center gap-1">
+                        {/* Bookmark */}
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (onBack) onBack();
-                            }}
-                            className="p-2.5 rounded-xl transition-all hover:bg-white/10 active:scale-90"
-                            title="الرئيسية"
+                            onClick={toggleBookmark}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 ${isCurrentPageBookmarked ? '' : 'hover:bg-black/5'}`}
+                            style={{ color: isCurrentPageBookmarked ? mode.accent : mode.text, opacity: isCurrentPageBookmarked ? 1 : 0.6 }}
                         >
-                            <Home size={20} />
+                            {isCurrentPageBookmarked ? <BookmarkCheck size={18} fill="currentColor" /> : <Bookmark size={18} />}
                         </button>
 
-                        {/* Info Section */}
-                        <div className="flex flex-col min-w-0 mr-auto">
-                            <div className="flex items-center gap-2">
-                                <h1 className="font-arabic font-bold text-lg truncate tracking-wide">
-                                    {pageInfo ? pageInfo.surah : 'المصحف'}
-                                </h1>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/10 font-bold opacity-60">
-                                    {pageNumber}
-                                </span>
-                            </div>
-                            {pageInfo && (
-                                <div className="flex items-center gap-1.5 opacity-60 text-[10px] font-medium">
-                                    <span>الجزء {pageInfo.juz}</span>
-                                    <span className="w-1 h-1 rounded-full bg-current opacity-30" />
-                                    <span>{pageInfo.surahEnglish}</span>
-                                </div>
-                            )}
-                        </div>
+                        {/* View Mode Toggle */}
+                        <button
+                            onClick={() => setViewMode(prev => prev === 'authentic' ? 'text' : 'authentic')}
+                            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 opacity-60 hover:opacity-100"
+                            style={{ color: mode.text }}
+                        >
+                            {viewMode === 'authentic' ? <Type size={18} /> : <BookOpen size={18} />}
+                        </button>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1">
-                            {/* Bookmark */}
-                            <button
-                                onClick={toggleBookmark}
-                                className={`p-2.5 rounded-xl transition-all active:scale-90 ${isCurrentPageBookmarked
-                                    ? 'shadow-[0_0_15px_rgba(201,162,39,0.3)]'
-                                    : 'hover:bg-white/10'
-                                    }`}
-                                style={{ color: isCurrentPageBookmarked ? mode.accent : 'inherit' }}
-                            >
-                                {isCurrentPageBookmarked ? <BookmarkCheck size={20} fill="currentColor" fillOpacity={0.2} /> : <Bookmark size={20} />}
-                            </button>
-
-                            {/* Theme Toggle */}
-                            <button
-                                onClick={() => {
-                                    const modes = Object.keys(READING_MODES);
-                                    const idx = modes.indexOf(readingMode);
-                                    setReadingMode(modes[(idx + 1) % modes.length]);
-                                }}
-                                className="p-2.5 rounded-xl transition-all hover:bg-white/5 active:scale-90"
-                            >
-                                {React.createElement(mode.icon, { size: 20 })}
-                            </button>
-
-                            {/* View Mode */}
-                            <button
-                                onClick={() => setViewMode(prev => prev === 'image' ? 'text' : 'image')}
-                                className="p-2.5 rounded-xl transition-all hover:bg-white/5 active:scale-90"
-                                title={viewMode === 'image' ? 'الوضع النصي' : 'عرض الصور'}
-                            >
-                                {viewMode === 'image' ? <Type size={20} /> : <BookOpen size={20} />}
-                            </button>
-
-                            {/* Fullscreen/Focus */}
-                            <button
-                                onClick={() => setIsFullscreen(prev => !prev)}
-                                className="p-2.5 rounded-xl transition-all hover:bg-white/5 active:scale-90"
-                            >
-                                {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-                            </button>
-                        </div>
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={() => {
+                                const modes = Object.keys(READING_MODES);
+                                const idx = modes.indexOf(readingMode);
+                                setReadingMode(modes[(idx + 1) % modes.length]);
+                            }}
+                            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 opacity-60 hover:opacity-100"
+                            style={{ color: mode.text }}
+                        >
+                            {React.createElement(mode.icon, { size: 18 })}
+                        </button>
                     </div>
                 </div>
             </header>
@@ -439,21 +444,21 @@ const MushafPage = ({ onBack }) => {
             {/* MAIN MUSHAF CONTENT */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <main
-                className={`transition-all duration-700 ease-in-out ${isFullscreen ? 'h-screen pt-0' : 'min-h-screen pt-24 pb-32 flex items-center justify-center px-4'}`}
+                className={`transition-all duration-700 ease-in-out ${isFullscreen ? 'h-screen pt-0' : 'min-h-[100dvh] pt-16 pb-24 flex items-stretch justify-center px-3 md:px-6'}`}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
             >
                 <div
                     ref={pageContentRef}
-                    className={`relative w-full max-w-[800px] overflow-hidden transition-all duration-500 ${isFullscreen ? 'h-full' : ''}`}
+                    className={`relative w-full max-w-4xl overflow-hidden transition-all duration-500 ${isFullscreen ? 'h-full' : 'min-h-[100dvh]'}`}
                     style={{
                         backgroundColor: mode.bg,
                         minHeight: isFullscreen ? '100%' : '100%',
                     }}
                 >
                     {/* Page Content - Full page reader style */}
-                    <div className={`relative z-10 w-full flex flex-col justify-start items-center ${isFullscreen ? 'p-2 md:p-4 h-full' : 'py-4'}`}>
+                    <div className={`relative z-10 w-full flex-1 flex flex-col justify-start items-center ${isFullscreen ? 'p-2 md:p-4 h-full' : 'py-2 min-h-[100dvh]'}`}>
                         {isLoading || isFontLoading ? (
                             <div className="flex flex-col items-center justify-center py-40 space-y-8 animate-pulse">
                                 <div className="relative">
@@ -468,7 +473,7 @@ const MushafPage = ({ onBack }) => {
                                 {viewMode === 'text' ? (
                                     // MUSHAF READING MODE - Quran.com style: words grouped by line
                                     <div
-                                        className="w-full flex flex-col items-center justify-start py-4 md:py-8 transition-all duration-500"
+                                        className="w-full flex flex-col items-center justify-start py-2 md:py-6 transition-all duration-500"
                                         style={{
                                             fontFamily: `p${pageNumber}-v2`,
                                             direction: 'rtl',
@@ -528,7 +533,7 @@ const MushafPage = ({ onBack }) => {
                                             }
 
                                             return (
-                                                <div className="w-full flex flex-col" style={{ gap: '0.25rem' }}>
+                                                <div className="w-full flex flex-col" style={{ gap: '0.5rem' }}>
                                                     {lines.map(([lineNum, words]) => {
                                                         const isFirstSurahLine = firstVerseLines.has(lineNum);
                                                         // Check if this line is the start of a new surah
@@ -539,9 +544,9 @@ const MushafPage = ({ onBack }) => {
                                                             <React.Fragment key={lineNum}>
                                                                 {/* Display surah name before the first verse of each surah */}
                                                                 {surahName && (
-                                                                    <div className="w-full flex justify-center py-4">
+                                                                    <div className="w-full flex justify-center py-6">
                                                                         <div
-                                                                            className="px-6 py-2 rounded-full text-center"
+                                                                            className="px-8 py-2.5 rounded-full text-center"
                                                                             style={{
                                                                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                                                                 color: mode.accent,
@@ -549,25 +554,23 @@ const MushafPage = ({ onBack }) => {
                                                                                 fontFamily: `p${pageNumber}-v2`,
                                                                             }}
                                                                         >
-                                                                            <span className="font-bold text-lg" dangerouslySetInnerHTML={{ __html: surahName }} />
+                                                                            <span className="font-bold text-xl md:text-2xl" dangerouslySetInnerHTML={{ __html: surahName }} />
                                                                         </div>
                                                                     </div>
                                                                 )}
                                                                 <div
-                                                                    className={`w-full flex ${isFirstSurahLine ? 'justify-center' : 'justify-between'}`}
+                                                                    className={`w-full flex justify-center`}
                                                                     style={{
-                                                                        minHeight: '4rem',
+                                                                        minHeight: '4.5rem',
                                                                         color: mode.text,
-                                                                        lineHeight: 1,
+                                                                        lineHeight: 1.1,
                                                                     }}
                                                                 >
                                                                     {/* Wrap words in centered inline container for proper centering */}
                                                                     <div
-                                                                        className="flex items-baseline"
+                                                                        className="flex items-baseline justify-center"
                                                                         style={{
-                                                                            display: isFirstSurahLine ? 'inline-flex' : 'flex',
-                                                                            width: isFirstSurahLine ? 'auto' : '100%',
-                                                                            justifyContent: 'center',
+                                                                            width: 'auto',
                                                                         }}
                                                                     >
                                                                         {words.map((word, wIdx) => (
@@ -577,6 +580,7 @@ const MushafPage = ({ onBack }) => {
                                                                                 className="inline-block text-center select-none mushaf-word"
                                                                                 style={{
                                                                                     marginLeft: word.char_type === 'end' ? '0.5rem' : '0',
+                                                                                    fontSize: 'clamp(1.5rem, 3.5vw + 1vh, 3rem)', // Clamp size: min 1.5rem, pref dynamic, max 3rem
                                                                                 }}
                                                                             />
                                                                         ))}
@@ -590,9 +594,9 @@ const MushafPage = ({ onBack }) => {
                                         })()}
                                     </div>
                                 ) : (
-                                    // MUSHAF IMAGE MODE - Quran.com style: words grouped by line with Mushaf styling
+                                    // AUTHENTIC MUSHAF MODE - render full lines with QPC V2 glyphs
                                     <div
-                                        className="w-full flex flex-col items-center justify-start py-4 md:py-8 transition-all duration-700"
+                                        className="w-full flex flex-col items-center justify-start py-4 md:py-8 transition-all duration-700 mushaf-page"
                                         style={{
                                             fontFamily: `p${pageNumber}-v2`,
                                             direction: 'rtl',
@@ -649,12 +653,16 @@ const MushafPage = ({ onBack }) => {
                                             }
 
                                             return (
-                                                <div className="w-full flex flex-col" style={{ gap: '0.25rem' }}>
+                                                <div className="w-full flex flex-col" style={{ gap: '0.85rem' }}>
                                                     {lines.map(([lineNum, words]) => {
                                                         const isFirstSurahLine = firstVerseLines.has(lineNum);
                                                         // Check if this line is the start of a new surah
                                                         const surahStart = Array.from(surahsOnPage.entries()).find(([_, info]) => info.firstLineNum === lineNum);
                                                         const surahName = surahStart ? surahStart[1].name : null;
+                                                        const sortedWords = [...words].sort((a, b) => (a.position || 0) - (b.position || 0));
+                                                        const lineGlyphs = sortedWords
+                                                            .map((word) => word.code_v2 || word.codeV2 || '')
+                                                            .join('');
 
                                                         return (
                                                             <React.Fragment key={lineNum}>
@@ -675,24 +683,13 @@ const MushafPage = ({ onBack }) => {
                                                                     </div>
                                                                 )}
                                                                 <div
-                                                                    className={`w-full flex items-baseline ${isFirstSurahLine ? 'justify-center' : 'justify-between'}`}
-                                                                    style={{
-                                                                        minHeight: '4rem',
-                                                                        color: mode.text,
-                                                                        lineHeight: 1,
-                                                                        paddingLeft: isFirstSurahLine ? '2rem' : '0',
-                                                                    }}
+                                                                    className={`mushaf-line-auth ${isFirstSurahLine ? 'mushaf-line-auth--center' : ''}`}
+                                                                    style={{ color: mode.text }}
                                                                 >
-                                                                    {words.map((word, wIdx) => (
-                                                                        <span
-                                                                            key={`${lineNum}-${wIdx}`}
-                                                                            dangerouslySetInnerHTML={{ __html: word.code_v2 || word.codeV2 || '' }}
-                                                                            className="inline-block text-center select-none mushaf-word"
-                                                                            style={{
-                                                                                marginLeft: word.char_type === 'end' ? '0.5rem' : '0',
-                                                                            }}
-                                                                        />
-                                                                    ))}
+                                                                    <span
+                                                                        className="mushaf-line-glyphs"
+                                                                        dangerouslySetInnerHTML={{ __html: lineGlyphs }}
+                                                                    />
                                                                 </div>
                                                             </React.Fragment>
                                                         );
@@ -707,105 +704,88 @@ const MushafPage = ({ onBack }) => {
                     </div>
 
                     {/* Subtle Page Footer */}
-                    <div className="absolute bottom-4 left-0 right-0 z-30 flex items-center justify-center opacity-30 text-[10px] font-bold tracking-[0.2em]">
-                        {pageNumber}
+                    <div className="absolute bottom-3 left-0 right-0 z-30 flex items-center justify-center">
+                        <div
+                            className="px-3 py-1 rounded-full text-[11px] font-bold tracking-[0.25em]"
+                            style={{
+                                color: mode.text,
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                                border: `1px solid ${mode.accent}30`,
+                                opacity: 0.8
+                            }}
+                        >
+                            {pageNumber}
+                        </div>
                     </div>
                 </div>
             </main>
 
             {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* FLOATING BOTTOM NAV BAR */}
+            {/* MINIMAL FLOATING BOTTOM NAV BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <nav
-                className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[600] w-[94%] max-w-[800px] transition-all duration-700 ease-in-out ${showControls ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-32 opacity-0 scale-95 pointer-events-none'}`}
+                className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] transition-all duration-500 ease-out ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="rounded-3xl border shadow-2xl overflow-hidden"
+                    className="flex items-center gap-3 px-2 py-2 rounded-full shadow-2xl backdrop-blur-md border border-white/10"
                     style={{
-                        backgroundColor: readingMode === 'dark' || readingMode === 'midnight' ? '#14141E' : '#FFFFFF',
-                        borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                        backgroundColor: isDarkMode ? 'rgba(20,20,30,0.85)' : 'rgba(255,255,255,0.9)',
+                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.1)',
                     }}
                 >
-                    {/* Compact Slider area */}
-                    <div className="px-6 pt-4 pb-1">
-                        <div className="flex items-center gap-4" dir="ltr">
-                            <span className="text-[10px] font-bold opacity-30 w-4">1</span>
-                            <div className="flex-1 relative group py-2">
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="604"
-                                    value={pageNumber}
-                                    onChange={(e) => setPageNumber(parseInt(e.target.value))}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-white/10 mushaf-slider transition-all"
-                                    style={{
-                                        background: `linear-gradient(to right, ${mode.accent} 0%, ${mode.accent} ${progressPercent}%, rgba(255,255,255,0.1) ${progressPercent}%)`,
-                                    }}
-                                />
-                            </div>
-                            <span className="text-[10px] font-bold opacity-30 w-8">604</span>
-                        </div>
+                    {/* Prev Page Button */}
+                    <button
+                        onClick={handleNext}
+                        disabled={pageNumber >= 604}
+                        className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
+                        style={{ color: mode.text }}
+                    >
+                        <ChevronRight size={22} />
+                    </button>
+
+                    {/* Page Info & Slider Container */}
+                    <div className="flex flex-col items-center w-32 sm:w-48 gap-1">
+                        <span className="text-[10px] font-bold opacity-60 font-arabic" style={{ color: mode.text }}>
+                            صفحة {pageNumber}
+                        </span>
+                        <input
+                            type="range"
+                            min="1"
+                            max="604"
+                            value={pageNumber}
+                            onChange={(e) => setPageNumber(parseInt(e.target.value))}
+                            className="w-full h-1 rounded-full appearance-none cursor-pointer bg-current opacity-20 hover:opacity-100 transition-opacity"
+                            style={{ color: mode.accent }}
+                        />
                     </div>
 
-                    {/* Navigation Buttons Row */}
-                    <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-2">
-                        {/* Right/Next in Arabic */}
-                        <button
-                            onClick={handlePrev}
-                            disabled={pageNumber <= 1}
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:bg-white/10 active:scale-90 disabled:opacity-10"
-                        >
-                            <ChevronRight size={26} />
-                        </button>
+                    {/* Next Page Button */}
+                    <button
+                        onClick={handlePrev}
+                        disabled={pageNumber <= 1}
+                        className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
+                        style={{ color: mode.text }}
+                    >
+                        <ChevronLeft size={22} />
+                    </button>
 
-                        {/* Navigation Groups */}
-                        <div className={`flex items-center rounded-2xl p-1 gap-1 ${isDarkMode ? 'bg-white/10' : 'bg-black/5'}`}>
-                            <button
-                                onClick={() => { setShowNavPanel(true); setNavTab('surah'); }}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${navTab === 'surah' ? 'bg-white/10 text-white' : 'opacity-40 hover:opacity-100 hover:bg-white/5'}`}
-                            >
-                                <BookOpen size={16} />
-                                <span className="font-arabic md:inline hidden">السور</span>
-                            </button>
+                    {/* Divider */}
+                    <div className="w-px h-6 bg-current opacity-10 mx-1" style={{ color: mode.text }} />
 
-                            <button
-                                onClick={() => { setShowNavPanel(true); setNavTab('juz'); }}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${navTab === 'juz' ? 'bg-white/10 text-white' : 'opacity-40 hover:opacity-100 hover:bg-white/5'}`}
-                            >
-                                <Layers size={16} />
-                                <span className="font-arabic md:inline hidden">الأجزاء</span>
-                            </button>
-
-                            <button
-                                onClick={() => { setShowNavPanel(true); setNavTab('page'); }}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${navTab === 'page' ? 'bg-white/10 text-white' : 'opacity-40 hover:opacity-100 hover:bg-white/5'}`}
-                            >
-                                <Hash size={16} />
-                                <span className="font-arabic md:inline hidden">صفحة</span>
-                            </button>
-
-                            {bookmarkedPages.length > 0 && (
-                                <button
-                                    onClick={() => { setShowNavPanel(true); setNavTab('bookmarks'); }}
-                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-[var(--color-accent)] animate-pulse"
-                                    style={{ color: mode.accent }}
-                                >
-                                    <BookMarked size={16} />
-                                    <span className="font-arabic">{bookmarkedPages.length}</span>
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Left/Prev in Arabic */}
-                        <button
-                            onClick={handleNext}
-                            disabled={pageNumber >= 604}
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:bg-white/10 active:scale-90 disabled:opacity-10"
-                        >
-                            <ChevronLeft size={26} />
-                        </button>
-                    </div>
+                    {/* Menu Button */}
+                    <button
+                        onClick={() => { setShowNavPanel(true); setNavTab('surah'); }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 hover:bg-black/5"
+                        style={{
+                            backgroundColor: mode.accent,
+                            color: '#fff',
+                            boxShadow: `0 4px 12px ${mode.accent}40`
+                        }}
+                    >
+                        <List size={18} />
+                        <span className="text-xs font-bold hidden sm:inline font-arabic">الفهرس</span>
+                    </button>
                 </div>
             </nav>
 
@@ -1094,16 +1074,16 @@ const MushafPage = ({ onBack }) => {
             {/* Custom animations & styles */}
             <style>{`
                 @keyframes fade-in {
-                    from { opacity: 0; }
+                    from { opacity: 0.4; }
                     to { opacity: 1; }
                 }
                 @keyframes slide-in-left {
-                    from { opacity: 0; transform: translateX(-40px) scale(0.98); }
-                    to { opacity: 1; transform: translateX(0) scale(1); }
+                    from { opacity: 0.6; transform: translateX(-20px); }
+                    to { opacity: 1; transform: translateX(0); }
                 }
                 @keyframes slide-in-right {
-                    from { opacity: 0; transform: translateX(40px) scale(0.98); }
-                    to { opacity: 1; transform: translateX(0) scale(1); }
+                    from { opacity: 0.6; transform: translateX(20px); }
+                    to { opacity: 1; transform: translateX(0); }
                 }
                 @keyframes slide-up {
                     from { transform: translateY(100%); opacity: 0; }
@@ -1172,6 +1152,11 @@ const MushafPage = ({ onBack }) => {
                     /* Ensure words flow naturally like the printed Mushaf */
                     transition: opacity 0.2s ease;
                 }
+                @media (min-width: 1024px) {
+                    .mushaf-word {
+                        font-size: 3.5rem !important; /* Cap font size on desktops */
+                    }
+                }
                 .mushaf-word:hover {
                     opacity: 0.8;
                 }
@@ -1184,6 +1169,25 @@ const MushafPage = ({ onBack }) => {
                     width: 100%;
                     min-height: 4rem;
                     line-height: 1;
+                }
+
+                /* Authentic Mushaf line layout */
+                .mushaf-line-auth {
+                    width: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: baseline;
+                    white-space: nowrap;
+                    line-height: 1.25;
+                    overflow: hidden;
+                }
+                .mushaf-line-auth--center {
+                    justify-content: center;
+                }
+                .mushaf-line-glyphs {
+                    display: inline-block;
+                    font-size: clamp(1.35rem, 3.6vw + 0.4rem, 2.6rem);
+                    letter-spacing: 0;
                 }
 
                 /* Page container for Mushaf layout */

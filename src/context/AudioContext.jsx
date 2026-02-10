@@ -26,9 +26,9 @@ export const AudioProvider = ({ children }) => {
 
     // Reciter State
     const [currentReciter, setCurrentReciter] = useState({
-        identifier: 'ar.alafasy',
-        name: 'مشاري راشد العفاسي',
-        englishName: 'Mishary Rashid Alafasy'
+        identifier: '',
+        name: '',
+        englishName: ''
     });
 
     const player = useRef(null);
@@ -181,7 +181,15 @@ export const AudioProvider = ({ children }) => {
         setCurrentAyahNumber(null);
 
         // Get full surah audio URLs (with fallbacks)
-        const urls = getAudioUrls(reciterId, surah.number);
+        const urls = [];
+        const apiUrl = data?.audio_url || data?.audioUrl;
+        if (apiUrl) {
+            urls.push(apiUrl);
+        }
+        const fallbackUrls = getAudioUrls(reciterId, surah.number);
+        fallbackUrls.forEach((url) => {
+            if (url && !urls.includes(url)) urls.push(url);
+        });
         audioUrlsRef.current = urls;
         currentUrlIndexRef.current = 0;
 
@@ -211,6 +219,10 @@ export const AudioProvider = ({ children }) => {
 
     const togglePlay = () => {
         const audio = player.current;
+        if (!audio.src) {
+            console.warn("[AudioContext] No audio source set. Waiting for audio to load.");
+            return;
+        }
         if (isPlaying) {
             audio.pause();
             setIsPlaying(false);

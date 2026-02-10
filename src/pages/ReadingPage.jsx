@@ -54,9 +54,22 @@ export function ReadingPage({ surah, onBack }) {
             setIsAudioLoading(true);
             setError(null);
             try {
-                const data = await quranAPI.getSurahAudioData(surah.number, currentReciter.identifier);
+                let reciter = currentReciter;
+                const reciterId = reciter?.identifier;
+                const reciterIdNum = Number(reciterId);
+                if (!reciterId || !Number.isFinite(reciterIdNum) || reciterIdNum <= 0) {
+                    const reciters = await quranAPI.getReciters();
+                    if (!isCancelled && reciters && reciters.length > 0) {
+                        reciter = reciters[0];
+                        setCurrentReciter(reciter);
+                        setReciterChangeTrigger(prev => prev + 1);
+                        return;
+                    }
+                }
+
+                const data = await quranAPI.getSurahAudioData(surah.number, reciter.identifier);
                 if (!isCancelled && data) {
-                    playSurah(surah, data, currentReciter);
+                    playSurah(surah, data, reciter);
                 } else if (!isCancelled && !data) {
                     setError("Failed to load audio recitation.");
                 }
