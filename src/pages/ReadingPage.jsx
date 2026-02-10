@@ -65,9 +65,13 @@ export function ReadingPage({ surah, onBack }) {
                         setReciterChangeTrigger(prev => prev + 1);
                         return;
                     }
+                    if (!isCancelled) {
+                        setError("No reciters available.");
+                    }
+                    return;
                 }
 
-                const data = await quranAPI.getSurahAudioData(surah.number, reciter.identifier);
+                const data = await quranAPI.getSurahAudioData(surah.number, reciterId);
                 if (!isCancelled && data) {
                     playSurah(surah, data, reciter);
                 } else if (!isCancelled && !data) {

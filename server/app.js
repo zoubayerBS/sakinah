@@ -117,8 +117,8 @@ router.get('/audio/:recitationId/:chapterId', async (req, res) => {
 // 6. Get Reciters (Recitations)
 router.get('/reciters', async (req, res) => {
     try {
-        const recitations = await client.resources.findAllRecitations();
-        res.json(recitations);
+        const reciters = await client.resources.findAllChapterReciters();
+        res.json(reciters);
     } catch (error) {
         console.error('Error fetching reciters:', error);
         res.status(500).json({ error: error.message });

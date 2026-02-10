@@ -206,11 +206,11 @@ class QuranService {
             const response = await fetch('/api/reciters');
             if (!response.ok) throw new Error('Proxy error');
 
-            const recitations = await response.json();
-            const mapped = recitations.map(r => ({
+            const reciters = await response.json();
+            const mapped = reciters.map(r => ({
                 identifier: String(r.id),
-                name: resolveReciterName(r),
-                englishName: resolveReciterEnglishName(r)
+                name: r.arabicName || resolveReciterName({ reciterName: r.name }),
+                englishName: r.name || resolveReciterEnglishName({ translatedName: { name: r.name } })
             }));
 
             this.cache.set('reciters', mapped);
