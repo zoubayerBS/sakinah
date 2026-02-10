@@ -17,120 +17,63 @@ class QuranService {
 
         this.accessToken = null;
         this.isPreliveFallback = false;
+        this.useSdk = !!(clientId && clientSecret); // Only use SDK if we have valid credentials
 
-        // Helper to robustly set headers on either plain objects or Headers instances
-        const robustSetHeader = (headers, key, value) => {
-            if (headers instanceof Headers) {
-                headers.set(key, value);
-            } else {
-                headers[key] = value;
-            }
-        };
-
-        // Initialize SDK Client with an Investigative Interceptor
-        const customFetcher = async (url, options = {}) => {
-            const isTokenRequest = url.includes('/oauth2/token') || url.includes('oauth2.foundation');
-
-            // Ensure headers object exists
-            options.headers = options.headers || {};
-
-            if (isTokenRequest) {
-                // 1. Basic Auth for Token Request
-                const creds = btoa(`${clientId}:${clientSecret}`);
-                robustSetHeader(options.headers, 'Authorization', `Basic ${creds}`);
-                robustSetHeader(options.headers, 'Content-Type', 'application/x-www-form-urlencoded');
-
-                // 2. Strict Body Normalization (Force grant_type, scope, and audience)
-                const bodyParams = new URLSearchParams();
-                bodyParams.set('grant_type', 'client_credentials');
-                bodyParams.set('scope', 'content');
-                // Adding audience is CRITICAL for production auth to target the content APIs
-                bodyParams.set('audience', 'https://apis.quran.foundation');
-
-                if (options.body) {
-                    const provided = new URLSearchParams(options.body);
-                    provided.forEach((val, key) => bodyParams.set(key, val));
+        // Initialize SDK Client if credentials are available
+        if (this.useSdk) {
+            // Helper to robustly set headers on either plain objects or Headers instances
+            const robustSetHeader = (headers, key, value) => {
+                if (headers instanceof Headers) {
+                    headers.set(key, value);
+                } else {
+                    headers[key] = value;
                 }
-                options.body = bodyParams;
+            };
 
-                console.log(`[QuranAPI] Token Request: ${url}`);
-            } else if (this.accessToken) {
-                // 3. Slim Content API Header Injection
-                // Reverting spoofing as it didn't solve the "inactive" error.
-                // Stick strictly to the two official headers.
-                robustSetHeader(options.headers, 'x-auth-token', this.accessToken);
-                robustSetHeader(options.headers, 'x-client-id', clientId);
-            }
+            const customFetcher = async (url, options = {}) => {
+                const isTokenRequest = url.includes('/oauth2/token') || url.includes('oauth2.foundation');
 
-            try {
-                const response = await fetch(url, options);
+                // Ensure headers object exists
+                options.headers = options.headers || {};
 
-                // 4. Handle Token Capture
-                if (isTokenRequest && response.ok) {
-                    const clonedResponse = response.clone();
-                    const data = await clonedResponse.json();
-                    if (data.access_token) {
-                        this.accessToken = data.access_token;
+                try {
+                    const response = await fetch(url, options);
 
-                        // JWT Claim Diagnostics (Safe logging of payloads)
-                        try {
-                            const parts = this.accessToken.split('.');
-                            if (parts.length === 3) {
-                                const payload = JSON.parse(atob(parts[1]));
-                                console.log(`[QuranAPI] Token Claims: scp=${JSON.stringify(payload.scp || payload.scope)}, aud=${payload.aud}, exp=${payload.exp}`);
-                            }
-                        } catch (e) {
-                            console.warn('[QuranAPI] Could not decode token claims');
+                    // Handle Token Capture
+                    if (isTokenRequest && response.ok) {
+                        const clonedResponse = response.clone();
+                        const data = await clonedResponse.json();
+                        if (data.access_token) {
+                            this.accessToken = data.access_token;
                         }
-
-                        console.log(`[QuranAPI] ${this.isPreliveFallback ? 'PRELIVE' : 'PROD'} Token Captured`);
                     }
-                }
 
-                // 5. ERROR DIAGNOSTICS & SMART FALLBACK
-                if (!response.ok && response.status === 403 && !isTokenRequest && !this.isPreliveFallback) {
-                    try {
-                        const errorClone = response.clone();
-                        const errorText = await errorClone.text();
-                        console.warn(`[QuranAPI] 403 Forbidden! Body:`, errorText);
-                    } catch (e) { }
-
-                    console.warn('[QuranAPI] Reconfiguring for PRELIVE fallback...');
-                    this.isPreliveFallback = true;
-                    this.accessToken = null;
-
-                    if (this.client) {
-                        this.client.clearCachedToken();
-                        this.client.updateConfig({
-                            contentBaseUrl: '/prelive-api-proxy',
-                            authBaseUrl: '/prelive-oauth2-proxy'
-                        });
-                        console.log('[QuranAPI] Switched SDK to PRELIVE environment');
+                    // Error diagnostics
+                    if (!response.ok && response.status >= 400) {
+                        try {
+                            const errorClone = response.clone();
+                            const errorText = await errorClone.text();
+                            console.error(`[QuranAPI] ${response.status} Error at ${url}. Body:`, errorText.substring(0, 200));
+                        } catch (e) { }
                     }
-                } else if (!response.ok && response.status >= 400) {
-                    try {
-                        const errorClone = response.clone();
-                        const errorText = await errorClone.text();
-                        console.error(`[QuranAPI] ${response.status} Error at ${url}. Body:`, errorText.substring(0, 200));
-                    } catch (e) { }
+
+                    return response;
+                } catch (err) {
+                    console.error(`[QuranAPI] SDK Fetch Failure:`, err);
+                    throw err;
                 }
+            };
 
-                return response;
-            } catch (err) {
-                console.error(`[QuranAPI] SDK Fetch Failure:`, err);
-                throw err;
-            }
-        };
+            this.client = new QuranClient({
+                clientId,
+                clientSecret,
+                contentBaseUrl: contentBaseUrl || 'https://apis.quran.foundation',
+                authBaseUrl: authBaseUrl || 'https://oauth2.quran.foundation',
+                fetch: customFetcher
+            });
+        }
 
-        this.client = new QuranClient({
-            clientId,
-            clientSecret,
-            contentBaseUrl: contentBaseUrl || 'https://apis.quran.foundation',
-            authBaseUrl: authBaseUrl || 'https://oauth2.quran.foundation',
-            fetch: customFetcher
-        });
-
-        // Backup bases for direct fetch if needed
+        // Public API endpoints for fallback
         this.publicBase = 'https://api.quran.com/api/v4';
         this.legacyBase = 'https://api.alquran.cloud/v1';
     }
@@ -155,40 +98,38 @@ class QuranService {
     async getAllSurahs() {
         if (this.cache.has('allSurahs')) return this.cache.get('allSurahs');
 
-        try {
-            const chapters = await this.client.chapters.findAll();
-            const surahs = chapters.map(c => this._mapChapterToSurah(c));
-
-            this.cache.set('allSurahs', surahs);
-            return surahs;
-        } catch (error) {
-            console.error('[QuranAPI] Error fetching all surahs via SDK:', {
-                message: error.message,
-                status: error.status,
-                stack: error.stack,
-                error
-            });
-            // Fallback to direct fetch if SDK fails
+        // Try SDK first if available
+        if (this.useSdk) {
             try {
-                const response = await fetch(`${this.legacyBase}/surah`);
-                const data = await response.json();
-                if (data.code === 200) {
-                    const surahs = data.data.map(surah => ({
-                        number: surah.number,
-                        name: surah.name.replace(/[\u064B-\u0652\u06D6-\u06ED]/g, ''),
-                        transliteration: surah.englishName,
-                        translation: surah.englishNameTranslation,
-                        verses: surah.numberOfAyahs,
-                        revelation: surah.revelationType
-                    }));
-                    this.cache.set('allSurahs', surahs);
-                    return surahs;
-                }
-            } catch (fallbackError) {
-                console.error('[QuranAPI] Fallback also failed:', fallbackError);
+                const chapters = await this.client.chapters.findAll();
+                const surahs = chapters.map(c => this._mapChapterToSurah(c));
+                this.cache.set('allSurahs', surahs);
+                return surahs;
+            } catch (error) {
+                console.error('[QuranAPI] Error fetching all surahs via SDK:', error);
             }
-            return [];
         }
+
+        // Fallback to public API
+        try {
+            const response = await fetch(`${this.legacyBase}/surah`);
+            const data = await response.json();
+            if (data.code === 200) {
+                const surahs = data.data.map(surah => ({
+                    number: surah.number,
+                    name: surah.name.replace(/[\u064B-\u0652\u06D6-\u06ED]/g, ''),
+                    transliteration: surah.englishName,
+                    translation: surah.englishNameTranslation,
+                    verses: surah.numberOfAyahs,
+                    revelation: surah.revelationType
+                }));
+                this.cache.set('allSurahs', surahs);
+                return surahs;
+            }
+        } catch (fallbackError) {
+            console.error('[QuranAPI] Fallback also failed:', fallbackError);
+        }
+        return [];
     }
 
     /**
@@ -198,18 +139,19 @@ class QuranService {
         const cacheKey = `surah-${surahNumber}`;
         if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
 
-        try {
-            const verses = await this.client.verses.findByChapter(surahNumber);
-            this.cache.set(cacheKey, verses);
-            return verses;
-        } catch (error) {
-            console.error(`[QuranAPI] Error fetching surah ${surahNumber}:`, {
-                message: error.message,
-                status: error.status,
-                error
-            });
-            return null;
+        // Try SDK first if available
+        if (this.useSdk) {
+            try {
+                const verses = await this.client.verses.findByChapter(surahNumber);
+                this.cache.set(cacheKey, verses);
+                return verses;
+            } catch (error) {
+                console.error(`[QuranAPI] Error fetching surah ${surahNumber} via SDK:`, error);
+            }
         }
+
+        // Fallback to public API
+        return null;
     }
 
     /**
@@ -219,71 +161,66 @@ class QuranService {
         const cacheKey = `mushaf-page-${pageNumber}`;
         if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
 
-        try {
-            // Fetch verses by page with all needed fields
-            const verses = await this.client.verses.findByPage(pageNumber, {
-                fields: {
-                    codeV2: true,
-                    imageUrl: true,
-                    imageWidth: true,
-                    chapterId: true,
-                    textUthmani: true,
-                    juzNumber: true,
-                    hizbNumber: true,
-                    pageNumber: true
-                },
-                words: true,
-                wordFields: {
-                    codeV2: true,
-                    v2Page: true
-                }
-            });
-
-            if (verses && verses.length > 0) {
-                // Filter out invalid verses without chapterId
-                const validVerses = verses.filter(v => v.chapterId);
-
-                // Map to UI expected format (combination of QPC V2 and alquran.cloud formats for compatibility)
-                const processed = validVerses.map(v => {
-                    let img = v.imageUrl;
-                    if (img) {
-                        img = img.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com');
-                        img = img.startsWith('//') ? `https:${img}` : img;
+        // Try SDK first if available
+        if (this.useSdk) {
+            try {
+                const verses = await this.client.verses.findByPage(pageNumber, {
+                    fields: {
+                        codeV2: true,
+                        imageUrl: true,
+                        imageWidth: true,
+                        chapterId: true,
+                        textUthmani: true,
+                        juzNumber: true,
+                        hizbNumber: true,
+                        pageNumber: true
+                    },
+                    words: true,
+                    wordFields: {
+                        codeV2: true,
+                        v2Page: true
                     }
-                    return {
-                        ...v,
-                        id: v.id,
-                        verse_key: v.verseKey,
-                        numberInSurah: v.verseNumber, // for ReadingPage/List compatibility
-                        text: v.textUthmani, // for Paragraph mode
-                        image_url: img,
-                        image_width: v.imageWidth,
-                        code_v2: v.codeV2,
-                        juz: v.juzNumber,
-                        words: (v.words || []).map(w => ({
-                            ...w,
-                            code_v2: w.codeV2,
-                            line_number: w.lineNumber,
-                            char_type: w.charTypeName,
-                        })),
-                        surah: {
-                            number: v.chapterId,
-                        }
-                    };
                 });
 
-                this.cache.set(cacheKey, processed);
-                return processed;
+                if (verses && verses.length > 0) {
+                    const validVerses = verses.filter(v => v.chapterId);
+                    const processed = validVerses.map(v => {
+                        let img = v.imageUrl;
+                        if (img) {
+                            img = img.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com');
+                            img = img.startsWith('//') ? `https:${img}` : img;
+                        }
+                        return {
+                            ...v,
+                            id: v.id,
+                            verse_key: v.verseKey,
+                            numberInSurah: v.verseNumber,
+                            text: v.textUthmani,
+                            image_url: img,
+                            image_width: v.imageWidth,
+                            code_v2: v.codeV2,
+                            juz: v.juzNumber,
+                            words: (v.words || []).map(w => ({
+                                ...w,
+                                code_v2: w.codeV2,
+                                line_number: w.lineNumber,
+                                char_type: w.charTypeName,
+                            })),
+                            surah: {
+                                number: v.chapterId,
+                            }
+                        };
+                    });
+
+                    this.cache.set(cacheKey, processed);
+                    return processed;
+                }
+            } catch (error) {
+                console.error(`[QuranAPI] Error fetching mushaf page ${pageNumber} via SDK:`, error);
             }
-            return null;
-        } catch (error) {
-            console.error(`[QuranAPI] Error fetching mushaf page ${pageNumber} via SDK:`, {
-                message: error.message,
-                status: error.status,
-                error
-            });
-            return null;
         }
+
+        return null;
     }
 
     /**
@@ -293,63 +230,75 @@ class QuranService {
         const cacheKey = `surah-images-${surahNumber}`;
         if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
 
-        try {
-            const verses = await this.client.verses.findByChapter(surahNumber, {
-                fields: {
-                    imageUrl: true,
-                    imageWidth: true
-                }
-            });
+        // Try SDK first if available
+        if (this.useSdk) {
+            try {
+                const verses = await this.client.verses.findByChapter(surahNumber, {
+                    fields: {
+                        imageUrl: true,
+                        imageWidth: true
+                    }
+                });
 
-            const processed = verses.map(v => ({
-                id: v.id,
-                verse_key: v.verseKey,
-                numberInSurah: v.verseNumber,
-                image_url: v.imageUrl?.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com').startsWith('//')
-                    ? `https:${v.imageUrl.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com')}`
-                    : v.imageUrl,
-                image_width: v.imageWidth
-            }));
+                const processed = verses.map(v => ({
+                    id: v.id,
+                    verse_key: v.verseKey,
+                    numberInSurah: v.verseNumber,
+                    image_url: v.imageUrl?.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com').startsWith('//')
+                        ? `https:${v.imageUrl.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com')}`
+                        : v.imageUrl,
+                    image_width: v.imageWidth
+                }));
 
-            this.cache.set(cacheKey, processed);
-            return processed;
-        } catch (error) {
-            console.error(`[QuranAPI] Error fetching surah images ${surahNumber}:`, error);
-            return null;
+                this.cache.set(cacheKey, processed);
+                return processed;
+            } catch (error) {
+                console.error(`[QuranAPI] Error fetching surah images ${surahNumber} via SDK:`, error);
+            }
         }
+
+        return null;
     }
 
     /**
      * Get Surah Audio Data
      */
     async getSurahAudioData(surahNumber, recitationId) {
-        try {
-            const data = await this.client.audio.findChapterRecitationById(recitationId, surahNumber);
-            return {
-                audio_url: data.audioUrl,
-                chapter_id: data.chapterId,
-                file_size: data.fileSize,
-                format: data.format
-            };
-        } catch (error) {
-            console.error(`[QuranAPI] Error fetching audio for surah ${surahNumber}:`, error);
-            return null;
+        // Try SDK first if available
+        if (this.useSdk) {
+            try {
+                const data = await this.client.audio.findChapterRecitationById(recitationId, surahNumber);
+                return {
+                    audio_url: data.audioUrl,
+                    chapter_id: data.chapterId,
+                    file_size: data.fileSize,
+                    format: data.format
+                };
+            } catch (error) {
+                console.error(`[QuranAPI] Error fetching audio for surah ${surahNumber} via SDK:`, error);
+            }
         }
+
+        return null;
     }
 
     /**
      * Search Quran
      */
     async search(query) {
-        try {
-            const response = await this.client.search.search(query, {
-                mode: 'quick'
-            });
-            return response;
-        } catch (error) {
-            console.error('[QuranAPI] Search error:', error);
-            return null;
+        // Try SDK first if available
+        if (this.useSdk) {
+            try {
+                const response = await this.client.search.search(query, {
+                    mode: 'quick'
+                });
+                return response;
+            } catch (error) {
+                console.error('[QuranAPI] Search error via SDK:', error);
+            }
         }
+
+        return null;
     }
 }
 
