@@ -33,9 +33,9 @@ export const MiniPlayer = ({ onOpen }) => {
                         </div>
                         <div className="ml-3 truncate">
                             <h4 className="text-sm font-arabic font-bold text-[var(--color-text-primary)] truncate">
-                                {activeSurah.name} - {currentReciter.name}
+                                {activeSurah.name} - {currentReciter.name || currentReciter.englishName}
                             </h4>
-                            <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold">
+                            <p className="text-[9px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold">
                                 {isWaitingForInitialBuffer
                                     ? `Optimisation du flux (${Math.round(bufferedProgress)}%)`
                                     : 'En cours de lecture'}

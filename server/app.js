@@ -32,6 +32,53 @@ const getClient = () => {
 
 const client = getClient();
 
+const MP3QURAN_API_BASE = 'https://mp3quran.net/api/v3';
+const RECITER_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+let recitersCache = { data: null, ts: 0, byId: new Map() };
+
+const normalizeServerUrl = (server) => {
+    if (!server) return '';
+    return server.endsWith('/') ? server : `${server}/`;
+};
+
+const fetchMp3QuranReciters = async () => {
+    const response = await fetch(`${MP3QURAN_API_BASE}/reciters?language=ar`);
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`MP3Quran reciters error: ${response.status} ${errorText.slice(0, 200)}`);
+    }
+    const data = await response.json();
+    const reciters = Array.isArray(data?.reciters) ? data.reciters : [];
+
+    const mapped = reciters.map((r) => {
+        const moshafRaw = Array.isArray(r.moshaf) ? r.moshaf : [];
+        const moshaf = moshafRaw.map((m) => ({
+            id: m.id ? String(m.id) : null,
+            name: m.name || '',
+            server: normalizeServerUrl(m.server || m.Server || ''),
+            surah_list: m.surah_list || '',
+            surah_total: m.surah_total || null,
+            rewaya: m.rewaya || null,
+        }));
+
+        const defaultMoshaf = moshaf.find((m) => m.server) || moshaf[0] || null;
+
+        return {
+            identifier: String(r.id),
+            name: r.name || '',
+            englishName: r.name || '',
+            source: 'mp3quran',
+            moshaf,
+            defaultMoshafId: defaultMoshaf?.id || null,
+            server: defaultMoshaf?.server || null,
+        };
+    });
+
+    const byId = new Map(mapped.map((reciter) => [reciter.identifier, reciter]));
+
+    return { mapped, byId };
+};
+
 // --- Endpoints ---
 
 // 1. Get All Chapters (Surahs)
@@ -106,8 +153,27 @@ router.get('/chapter/:id/images', async (req, res) => {
 router.get('/audio/:recitationId/:chapterId', async (req, res) => {
     try {
         const { recitationId, chapterId } = req.params;
-        const data = await client.audio.findChapterRecitationById(Number(recitationId), Number(chapterId));
-        res.json(data);
+        const reciterId = String(recitationId);
+
+        if (!recitersCache.data || Date.now() - recitersCache.ts >= RECITER_CACHE_TTL) {
+            const { mapped, byId } = await fetchMp3QuranReciters();
+            recitersCache = { data: mapped, ts: Date.now(), byId };
+        }
+
+        const reciter = recitersCache.byId.get(reciterId);
+        if (!reciter?.server) {
+            throw new Error('Reciter server not found');
+        }
+
+        const padded = String(chapterId).padStart(3, '0');
+        const audioUrl = `${reciter.server}${padded}.mp3`;
+
+        res.json({
+            audioUrl,
+            chapterId: Number(chapterId) || null,
+            fileSize: null,
+            format: 'mp3'
+        });
     } catch (error) {
         console.error(`Error fetching audio:`, error);
         res.status(500).json({ error: error.message });
@@ -117,8 +183,14 @@ router.get('/audio/:recitationId/:chapterId', async (req, res) => {
 // 6. Get Reciters (Recitations)
 router.get('/reciters', async (req, res) => {
     try {
-        const reciters = await client.resources.findAllChapterReciters();
-        res.json(reciters);
+        if (recitersCache.data && Date.now() - recitersCache.ts < RECITER_CACHE_TTL) {
+            return res.json(recitersCache.data);
+        }
+
+        const { mapped, byId } = await fetchMp3QuranReciters();
+
+        recitersCache = { data: mapped, ts: Date.now(), byId };
+        res.json(mapped);
     } catch (error) {
         console.error('Error fetching reciters:', error);
         res.status(500).json({ error: error.message });
@@ -135,15 +207,24 @@ router.get('/verse/random', async (req, res) => {
             },
         });
 
-        const chapterId = verse?.chapterId ? String(verse.chapterId) : null;
-        const chapter = chapterId ? await client.chapters.findById(chapterId) : null;
+        const rawVerseKey = verse?.verseKey || verse?.verse_key || '';
+        const keyParts = rawVerseKey.includes(':') ? rawVerseKey.split(':') : [];
+        const keySurah = keyParts[0] ? parseInt(keyParts[0], 10) : null;
+        const keyAyah = keyParts[1] ? parseInt(keyParts[1], 10) : null;
+
+        const chapterId = keySurah || (verse?.chapterId ? Number(verse.chapterId) : null);
+        const chapter = chapterId ? await client.chapters.findById(String(chapterId)) : null;
+
+        const numberInSurah = Number.isFinite(keyAyah)
+            ? keyAyah
+            : (verse?.verseNumberInChapter || verse?.verseNumber || null);
 
         res.json({
             text: verse?.textUthmani || verse?.textUthmaniSimple || '',
             surah: chapter?.nameArabic || '',
-            number: verse?.verseNumber || null,
-            surahNumber: chapter?.id || null,
-            verseKey: verse?.verseKey || null,
+            number: Number.isFinite(numberInSurah) ? numberInSurah : null,
+            surahNumber: chapter?.id || keySurah || null,
+            verseKey: rawVerseKey || null,
         });
     } catch (error) {
         console.error('Error fetching random verse:', error);

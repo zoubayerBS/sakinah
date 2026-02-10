@@ -56,8 +56,7 @@ export function ReadingPage({ surah, onBack }) {
             try {
                 let reciter = currentReciter;
                 const reciterId = reciter?.identifier;
-                const reciterIdNum = Number(reciterId);
-                if (!reciterId || !Number.isFinite(reciterIdNum) || reciterIdNum <= 0) {
+                if (!reciterId) {
                     const reciters = await quranAPI.getReciters();
                     if (!isCancelled && reciters && reciters.length > 0) {
                         reciter = reciters[0];

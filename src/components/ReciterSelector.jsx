@@ -99,9 +99,6 @@ export const ReciterSelector = ({ isOpen, onClose, selectedReciter, onSelect }) 
                                         <p className="font-bold text-[var(--color-text-primary)]">
                                             {reciter.name}
                                         </p>
-                                        <p className="text-xs text-[var(--color-text-tertiary)]">
-                                            {reciter.englishName}
-                                        </p>
                                     </div>
                                 </div>
                                 {selectedReciter === reciter.identifier && (

@@ -26,9 +26,11 @@ export const DailyAyah = () => {
                 const cached = localStorage.getItem(storageKey);
                 if (cached) {
                     const parsed = JSON.parse(cached);
-                    if (parsed?.date === today && parsed?.ayah?.text) {
+                    const cachedAyah = parsed?.ayah;
+                    const hasVerseKey = Boolean(cachedAyah?.verseKey);
+                    if (parsed?.date === today && cachedAyah?.text && hasVerseKey) {
                         if (!isCancelled) {
-                            setAyah(parsed.ayah);
+                            setAyah(cachedAyah);
                             setIsLoading(false);
                         }
                         return;
@@ -41,10 +43,16 @@ export const DailyAyah = () => {
             try {
                 const data = await quranAPI.getRandomVerse();
                 if (!isCancelled && data?.text) {
+                    const verseKey = data.verseKey || data.verse_key || '';
+                    const parsedAyahNumber = verseKey.includes(':')
+                        ? parseInt(verseKey.split(':')[1], 10)
+                        : null;
                     const normalized = {
                         text: data.text,
                         surah: data.surah || fallbackAyah.surah,
-                        number: data.number || fallbackAyah.number
+                        number: Number.isFinite(parsedAyahNumber) ? parsedAyahNumber : (data.number || fallbackAyah.number),
+                        surahNumber: data.surahNumber || null,
+                        verseKey: verseKey || null
                     };
                     setAyah(normalized);
                     localStorage.setItem(storageKey, JSON.stringify({ date: today, ayah: normalized }));
@@ -61,20 +69,26 @@ export const DailyAyah = () => {
     }, []);
 
     return (
-        <div className="text-center mb-10 p-6 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)]">
-            <h4 className="font-arabic text-xs text-[var(--color-text-tertiary)] mb-3">
+        <div className="relative overflow-hidden p-6 bg-[var(--color-bg-secondary)]/85 border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)]" dir="rtl">
+            <div className="absolute -bottom-8 -right-8 w-28 h-28 rounded-full bg-[var(--color-accent)]/10 blur-2xl" />
+            <h4 className="font-ui text-[10px] tracking-[0.35em] uppercase text-[var(--color-text-tertiary)] mb-3 text-right">
                 آية اليوم
             </h4>
             {isLoading ? (
-                <p className="font-arabic text-base text-[var(--color-text-tertiary)]">...</p>
+                <p className="font-arabic text-base text-[var(--color-text-tertiary)] text-right">...</p>
             ) : (
                 <>
-                    <p className="font-arabic text-2xl text-[var(--color-text-primary)] leading-relaxed mb-4">
+                    <p className="font-arabic text-2xl text-[var(--color-text-primary)] leading-relaxed mb-4 text-right">
                         {ayah.text}
                     </p>
-                    <p className="font-arabic text-sm text-[var(--color-text-secondary)]">
+                    <p className="font-arabic text-sm text-[var(--color-text-secondary)] text-right">
                         سورة {ayah.surah} • آية {ayah.number}
                     </p>
+                    {ayah.verseKey && (
+                        <p className="font-ui text-[10px] text-[var(--color-text-tertiary)] text-right mt-1">
+                            {ayah.verseKey}
+                        </p>
+                    )}
                 </>
             )}
         </div>

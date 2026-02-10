@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Calculator, Calendar, BookOpen, Hash, Star } from 'lucide-react';
+import { ArrowLeft, Calculator, Calendar, BookOpen, Hash, Star, Clock } from 'lucide-react';
 
 export const KhitmaPage = ({ onBack }) => {
     const [days, setDays] = useState(30);
+    const [planType, setPlanType] = useState('days'); // 'days' or 'date'
+    const [targetDate, setTargetDate] = useState('');
     const [mode, setMode] = useState('pages'); // 'pages' or 'verses'
     const [isStarted, setIsStarted] = useState(false);
     const [progress, setProgress] = useState(0); // number of portions finished
+    const [progressLog, setProgressLog] = useState({});
     const [results, setResults] = useState({ daily: 0, perPrayer: 0, totalPortions: 0 });
+    const [reminderEnabled, setReminderEnabled] = useState(false);
+    const [reminderTime, setReminderTime] = useState('20:30');
+    const [reminderPermission, setReminderPermission] = useState(
+        typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+    );
 
     const TOTAL_PAGES = 604;
     const TOTAL_VERSES = 6236;
@@ -17,17 +25,32 @@ export const KhitmaPage = ({ onBack }) => {
         if (saved) {
             const parsed = JSON.parse(saved);
             setDays(parsed.days);
+            setPlanType(parsed.planType || 'days');
+            setTargetDate(parsed.targetDate || '');
             setMode(parsed.mode);
             setIsStarted(parsed.isStarted);
             setProgress(parsed.progress);
+            setProgressLog(parsed.progressLog || {});
+            setReminderEnabled(Boolean(parsed.reminderEnabled));
+            setReminderTime(parsed.reminderTime || '20:30');
         }
     }, []);
 
     // Sync state to localStorage
     useEffect(() => {
-        const state = { days, mode, isStarted, progress };
+        const state = {
+            days,
+            planType,
+            targetDate,
+            mode,
+            isStarted,
+            progress,
+            progressLog,
+            reminderEnabled,
+            reminderTime
+        };
         localStorage.setItem('khitma_state', JSON.stringify(state));
-    }, [days, mode, isStarted, progress]);
+    }, [days, planType, targetDate, mode, isStarted, progress, progressLog, reminderEnabled, reminderTime]);
 
     useEffect(() => {
         const total = mode === 'pages' ? TOTAL_PAGES : TOTAL_VERSES;
@@ -37,37 +60,138 @@ export const KhitmaPage = ({ onBack }) => {
         setResults({ daily, perPrayer, totalPortions });
     }, [days, mode]);
 
+    useEffect(() => {
+        if (planType !== 'date' || !targetDate) return;
+        const target = new Date(targetDate);
+        if (Number.isNaN(target.getTime())) return;
+        const today = new Date();
+        const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const end = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+        const diffDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+        if (diffDays !== days) setDays(diffDays);
+    }, [planType, targetDate, days]);
+
+    useEffect(() => {
+        if (!reminderEnabled || reminderPermission !== 'granted') return;
+        let timeoutId;
+
+        const scheduleNext = () => {
+            const now = new Date();
+            const [hh, mm] = reminderTime.split(':').map(Number);
+            const next = new Date();
+            next.setHours(hh, mm, 0, 0);
+            if (next <= now) next.setDate(next.getDate() + 1);
+            timeoutId = setTimeout(() => {
+                new Notification('تذكير الختمة', {
+                    body: 'حان وقت وردك اليومي',
+                });
+                scheduleNext();
+            }, next.getTime() - now.getTime());
+        };
+
+        scheduleNext();
+        return () => clearTimeout(timeoutId);
+    }, [reminderEnabled, reminderTime, reminderPermission]);
+
     const handleDaysChange = (e) => {
         const val = parseInt(e.target.value);
         if (val > 0) setDays(val);
     };
 
     const handleStart = () => {
+        if (planType === 'date' && !targetDate) {
+            window.alert('يرجى اختيار تاريخ الختمة أولاً.');
+            return;
+        }
         setIsStarted(true);
         setProgress(0);
+        setProgressLog({});
     };
 
     const handleReset = () => {
         if (window.confirm('هل أنت متأكد من رغبتك في إعادة ضبط الختمة؟')) {
             setIsStarted(false);
             setProgress(0);
+            setProgressLog({});
         }
     };
 
     const handleFinishPortion = () => {
         if (progress < results.totalPortions) {
+            const todayKey = new Date().toISOString().split('T')[0];
             setProgress(prev => prev + 1);
+            setProgressLog(prev => ({
+                ...prev,
+                [todayKey]: (prev[todayKey] || 0) + 1
+            }));
         }
     };
 
     const getCompletionDate = () => {
+        if (planType === 'date' && targetDate) {
+            const date = new Date(targetDate);
+            if (!Number.isNaN(date.getTime())) {
+                return date.toLocaleDateString('ar-TN', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+        }
         const date = new Date();
         date.setDate(date.getDate() + (days - Math.floor(progress / 5)));
         return date.toLocaleDateString('ar-TN', { day: 'numeric', month: 'long', year: 'numeric' });
     };
 
+    const dailyPortionsGoal = 5;
+    const todayKey = new Date().toISOString().split('T')[0];
+    const todayPortions = progressLog[todayKey] || 0;
+    const remainingToday = Math.max(0, dailyPortionsGoal - todayPortions);
+
+    const computeStreak = () => {
+        let streak = 0;
+        const date = new Date();
+        const todayCount = progressLog[date.toISOString().split('T')[0]] || 0;
+        if (todayCount < dailyPortionsGoal) {
+            date.setDate(date.getDate() - 1);
+        }
+        while (true) {
+            const key = date.toISOString().split('T')[0];
+            if ((progressLog[key] || 0) >= dailyPortionsGoal) {
+                streak += 1;
+                date.setDate(date.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+        return streak;
+    };
+
+    const computeBestStreak = () => {
+        const keys = Object.keys(progressLog).sort();
+        let best = 0;
+        let current = 0;
+        let prevDate = null;
+        keys.forEach((key) => {
+            if ((progressLog[key] || 0) < dailyPortionsGoal) {
+                current = 0;
+                prevDate = null;
+                return;
+            }
+            if (!prevDate) {
+                current = 1;
+            } else {
+                const prev = new Date(prevDate);
+                const curr = new Date(key);
+                const diff = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+                current = diff === 1 ? current + 1 : 1;
+            }
+            if (current > best) best = current;
+            prevDate = key;
+        });
+        return best;
+    };
+
     const progressPercentage = Math.min(100, Math.round((progress / results.totalPortions) * 100));
     const remainingDays = Math.max(0, days - Math.floor(progress / 5));
+    const currentStreak = computeStreak();
+    const bestStreak = computeBestStreak();
 
     return (
         <div className="min-h-screen bg-[var(--color-bg-primary)] pb-24 animate-fade-in">
@@ -127,6 +251,9 @@ export const KhitmaPage = ({ onBack }) => {
                                 <span>المتبقي: {remainingDays} يوم</span>
                                 <span>الختم</span>
                             </div>
+                            <p className="font-arabic text-[0.7rem] text-[var(--color-text-tertiary)] text-right mt-2">
+                                تاريخ الختم المتوقع: {getCompletionDate()}
+                            </p>
                         </div>
 
                         {/* Current Task Card */}
@@ -152,6 +279,19 @@ export const KhitmaPage = ({ onBack }) => {
                                 <p className="text-2xl font-ui font-black text-[var(--color-text-primary)]">{progress} / {results.totalPortions}</p>
                                 <p className="font-arabic text-[0.65rem] text-[var(--color-text-tertiary)]">جزء من المجموع</p>
                             </div>
+                            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 text-center shadow-sm">
+                                <p className="font-arabic text-xs text-[var(--color-text-tertiary)] mb-2">إنجاز اليوم</p>
+                                <p className="text-2xl font-ui font-black text-[var(--color-text-primary)]">{todayPortions} / {dailyPortionsGoal}</p>
+                                <p className="font-arabic text-[0.65rem] text-[var(--color-text-tertiary)]">المتبقي اليوم: {remainingToday}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 text-center shadow-sm">
+                                <p className="font-arabic text-xs text-[var(--color-text-tertiary)] mb-2">السلسلة الحالية</p>
+                                <p className="text-2xl font-ui font-black text-[var(--color-text-primary)]">{currentStreak} يوم</p>
+                                <p className="font-arabic text-[0.65rem] text-[var(--color-text-tertiary)]">أيام متتالية</p>
+                            </div>
                             <button
                                 onClick={handleReset}
                                 className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 text-center shadow-sm hover:border-[var(--color-error)]/30 transition-all group"
@@ -160,10 +300,31 @@ export const KhitmaPage = ({ onBack }) => {
                                 <p className="font-arabic font-bold text-[var(--color-error)] group-hover:scale-110 transition-transform">بدء من جديد</p>
                             </button>
                         </div>
+
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 text-center shadow-sm">
+                            <p className="font-arabic text-xs text-[var(--color-text-tertiary)] mb-2">أفضل سلسلة</p>
+                            <p className="text-2xl font-ui font-black text-[var(--color-text-primary)]">{bestStreak} يوم</p>
+                        </div>
                     </div>
                 ) : (
                     /* Configuration View */
                     <div className="space-y-8 animate-fade-in">
+                        {/* Plan Type Toggle */}
+                        <div className="flex bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl p-1.5 shadow-inner">
+                            <button
+                                onClick={() => setPlanType('days')}
+                                className={`flex-1 py-3 rounded-xl font-arabic font-bold text-sm transition-all ${planType === 'days' ? 'bg-[var(--color-accent)] text-white shadow-md' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'}`}
+                            >
+                                بعدد الأيام
+                            </button>
+                            <button
+                                onClick={() => setPlanType('date')}
+                                className={`flex-1 py-3 rounded-xl font-arabic font-bold text-sm transition-all ${planType === 'date' ? 'bg-[var(--color-accent)] text-white shadow-md' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'}`}
+                            >
+                                بتاريخ الختم
+                            </button>
+                        </div>
+
                         {/* Mode Toggle */}
                         <div className="flex bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-2xl p-1.5 shadow-inner">
                             <button
@@ -184,7 +345,8 @@ export const KhitmaPage = ({ onBack }) => {
 
                         {/* Inputs */}
                         <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 space-y-6">
-                            <div className="space-y-3">
+                            {planType === 'days' ? (
+                                <div className="space-y-3">
                                 <label className="font-arabic font-bold text-[var(--color-text-secondary)] flex items-center gap-2">
                                     <Calendar size={18} className="text-[var(--color-accent)]" />
                                     مدة الختمة (بالأيام)
@@ -209,7 +371,24 @@ export const KhitmaPage = ({ onBack }) => {
                                         </button>
                                     ))}
                                 </div>
-                            </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <label className="font-arabic font-bold text-[var(--color-text-secondary)] flex items-center gap-2">
+                                        <Calendar size={18} className="text-[var(--color-accent)]" />
+                                        تاريخ الختم
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={targetDate}
+                                        onChange={(e) => setTargetDate(e.target.value)}
+                                        className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-2xl py-4 px-6 text-right font-ui font-bold text-[var(--color-accent)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+                                    />
+                                    <div className="text-right text-xs text-[var(--color-text-tertiary)] font-arabic">
+                                        المدة المحسوبة: {days} يوم
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Calculator Results (Preview) */}
@@ -234,6 +413,57 @@ export const KhitmaPage = ({ onBack }) => {
                         </div>
                     </div>
                 )}
+
+                {/* Daily Reminder */}
+                <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div className="text-right">
+                            <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">تذكير يومي</h3>
+                            <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">
+                                يعمل عند فتح التطبيق فقط
+                            </p>
+                        </div>
+                        <label className="inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only"
+                                checked={reminderEnabled}
+                                onChange={(e) => setReminderEnabled(e.target.checked)}
+                            />
+                            <span className={`w-11 h-6 rounded-full transition-colors ${reminderEnabled ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'}`}>
+                                <span className={`block w-5 h-5 bg-white rounded-full mt-0.5 transition-transform ${reminderEnabled ? 'translate-x-5' : 'translate-x-1'}`}></span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <Clock size={18} className="text-[var(--color-text-tertiary)]" />
+                        <input
+                            type="time"
+                            value={reminderTime}
+                            onChange={(e) => setReminderTime(e.target.value)}
+                            className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl px-3 py-2 font-ui text-sm text-[var(--color-text-primary)]"
+                        />
+                    </div>
+
+                    {typeof Notification !== 'undefined' && reminderPermission !== 'granted' && (
+                        <button
+                            onClick={async () => {
+                                const permission = await Notification.requestPermission();
+                                setReminderPermission(permission);
+                                if (permission !== 'granted') setReminderEnabled(false);
+                            }}
+                            className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-xl py-2 text-sm font-arabic text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] transition-colors"
+                        >
+                            السماح بالإشعارات
+                        </button>
+                    )}
+                    {typeof Notification === 'undefined' && (
+                        <p className="text-xs text-[var(--color-text-tertiary)] font-arabic text-right">
+                            الإشعارات غير مدعومة على هذا الجهاز.
+                        </p>
+                    )}
+                </div>
 
                 {/* Virtue Quote */}
                 <div className="text-center pt-8 border-t border-[var(--color-border)]">

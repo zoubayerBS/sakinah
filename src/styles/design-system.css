@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 /* MINIMALIST QURAN DESIGN SYSTEM */
-@import url('https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=Amiri+Quran&family=Cairo:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
-
-@font-face {
-  font-family: "KFGQPC";
-  src: url("https://qul.tarteel.ai/resources/font/457") format("woff2");
-  font-display: swap;
-}
+@import url('https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=Reem+Kufi+Fun:wght@400;600;700&family=Amiri+Quran&family=Cairo:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @font-face {
   font-family: "SurahNamesV1";
   src: url("https://static-cdn.tarteel.ai/qul/fonts/surah-names/v1/surah-name-v1.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "surah-name-v4-icon";
+  src: url("https://static-cdn.tarteel.ai/qul/fonts/surah-names/v4/surah-name-v4.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -130,18 +130,18 @@
   }
 
   .font-kfgqpc {
-    font-family: "KFGQPC", "Amiri Quran", serif;
+    font-family: "Amiri Quran", "Amiri", serif;
     direction: rtl;
   }
 
   .font-surah-name {
-    font-family: "surahnames", "SurahNamesV1", "Amiri Quran", serif;
+    font-family: "surah-name-v4-icon", "surahnames", "SurahNamesV1", "Amiri Quran", serif;
     direction: rtl;
     letter-spacing: 0;
   }
 
   .surahnames-hero {
-    font-family: "surahnames", "SurahNamesV1", "Amiri Quran", serif;
+    font-family: "surah-name-v4-icon", "surahnames", "SurahNamesV1", "Amiri Quran", serif;
     font-size: 64px;
     color: rgb(0, 0, 0);
     display: inline;

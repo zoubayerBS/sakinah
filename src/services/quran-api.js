@@ -185,10 +185,10 @@ class QuranService {
             
             const data = await response.json();
             return {
-                audio_url: data.audioUrl,
-                chapter_id: data.chapterId,
-                file_size: data.fileSize,
-                format: data.format
+                audio_url: data.audioUrl || data.audio_url || null,
+                chapter_id: data.chapterId || data.chapter_id || null,
+                file_size: data.fileSize || data.file_size || null,
+                format: data.format || null
             };
         } catch (error) {
             console.error(`[QuranAPI] Error fetching audio for surah ${surahNumber} via Proxy:`, error);
@@ -221,11 +221,29 @@ class QuranService {
             if (!response.ok) throw new Error('Proxy error');
 
             const reciters = await response.json();
-            const mapped = reciters.map(r => ({
-                identifier: String(r.id),
-                name: r.arabicName || resolveReciterName({ reciterName: r.name }),
-                englishName: r.name || resolveReciterEnglishName({ translatedName: { name: r.name } })
-            }));
+            const mapped = reciters
+                .map(r => {
+                    const identifier = String(r.identifier ?? r.id ?? '');
+                    if (!identifier) return null;
+                    const englishRaw = r.englishName || r.name || r.reciter_name || '';
+                    const nameCandidate = r.arabicName || r.arabic_name || r.name || r.reciter_name || r.englishName || '';
+                    const arabicAlias =
+                        getArabicReciterName(nameCandidate) ||
+                        getArabicReciterName(englishRaw) ||
+                        getArabicReciterName(identifier);
+                    const arabicName = arabicAlias || (ARABIC_CHAR_REGEX.test(nameCandidate) ? nameCandidate : '');
+                    return {
+                        identifier,
+                        name: arabicName || resolveReciterName({ reciterName: englishRaw, translatedName: { name: englishRaw }, id: identifier }),
+                        englishName: englishRaw || resolveReciterEnglishName({ translatedName: { name: englishRaw }, id: identifier }),
+                        source: r.source || (r.id ? 'qf' : 'cdn'),
+                        bitrate: r.bitrate || null,
+                        moshaf: Array.isArray(r.moshaf) ? r.moshaf : [],
+                        server: r.server || null,
+                        defaultMoshafId: r.defaultMoshafId || null,
+                    };
+                })
+                .filter(Boolean);
 
             this.cache.set('reciters', mapped);
             return mapped;
