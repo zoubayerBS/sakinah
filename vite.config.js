@@ -112,28 +112,9 @@ export default defineConfig({
     },
     server: {
         proxy: {
-            '/oauth2-proxy': {
-                target: 'https://oauth2.quran.foundation',
+            '/api': {
+                target: 'http://localhost:3001',
                 changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/oauth2-proxy/, ''),
-                secure: false,
-            },
-            '/prelive-oauth2-proxy': {
-                target: 'https://prelive-oauth2.quran.foundation',
-                changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/prelive-oauth2-proxy/, ''),
-                secure: false,
-            },
-            '/api-proxy': {
-                target: 'https://apis.quran.foundation',
-                changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/api-proxy/, ''),
-                secure: false,
-            },
-            '/prelive-api-proxy': {
-                target: 'https://prelive-apis.quran.foundation',
-                changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/prelive-api-proxy/, ''),
                 secure: false,
             }
         }

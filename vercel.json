@@ -1,20 +1,8 @@
 {
     "rewrites": [
         {
-            "source": "/oauth2-proxy/:path*",
-            "destination": "https://oauth2.quran.foundation/:path*"
-        },
-        {
-            "source": "/prelive-oauth2-proxy/:path*",
-            "destination": "https://prelive-oauth2.quran.foundation/:path*"
-        },
-        {
-            "source": "/api-proxy/:path*",
-            "destination": "https://apis.quran.foundation/:path*"
-        },
-        {
-            "source": "/prelive-api-proxy/:path*",
-            "destination": "https://prelive-apis.quran.foundation/:path*"
+            "source": "/api/(.*)",
+            "destination": "/api/index.js"
         }
     ]
 }
