@@ -103,7 +103,7 @@ const MushafPage = ({ onBack }) => {
     const mode = READING_MODES[readingMode] || READING_MODES.light;
     const isDarkMode = readingMode === 'dark' || readingMode === 'midnight';
     const progressPercent = ((pageNumber / 604) * 100).toFixed(1);
-    
+
     // Find current juz
     const currentJuz = JUZ_PAGES.reduce((acc, j) => pageNumber >= j.page ? j.juz : acc, 1);
 
@@ -299,7 +299,7 @@ const MushafPage = ({ onBack }) => {
     // Fetch page data
     useEffect(() => {
         let isCancelled = false;
-        
+
         const fetchMushafPage = async () => {
             // Check preloaded cache first to avoid loading state
             if (preloadedPages[pageNumber]) {
@@ -324,7 +324,7 @@ const MushafPage = ({ onBack }) => {
         fetchMushafPage();
         return () => { isCancelled = true; };
     }, [pageNumber]); // preloadedPages is stable or read from closure, but adding it might loop if not careful. 
-                      // Ideally we'd use a ref for cache, but here we trust the preload effect ran before.
+    // Ideally we'd use a ref for cache, but here we trust the preload effect ran before.
 
     // Preload adjacent pages
     useEffect(() => {
@@ -771,8 +771,7 @@ const MushafPage = ({ onBack }) => {
                                                         const surahName = surahStart ? surahStart[1].name : null;
                                                         const surahNumber = surahStart ? surahStart[1].number : null;
                                                         const surahLigature = surahNumber ? `surah${String(surahNumber).padStart(3, '0')}` : '';
-                                                        const sortedWords = [...words].sort((a, b) => (a.position || 0) - (b.position || 0));
-                                                        const lineGlyphs = sortedWords
+                                                        const lineGlyphs = words
                                                             .map((word) => word.code_v2 || word.codeV2 || '')
                                                             .join('');
 
