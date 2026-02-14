@@ -7,9 +7,7 @@ export const ReadingHeader = ({
     reciterName,
     onChangeReciter,
     isBookmarked,
-    onToggleBookmark,
-    viewMode,
-    onViewModeChange
+    onToggleBookmark
 }) => {
     return (
         <header className="sticky top-0 z-[var(--z-fixed)] w-full bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] px-6 py-4 shadow-[var(--shadow-sm)] transition-colors">
@@ -35,32 +33,14 @@ export const ReadingHeader = ({
                     </div>
                 </div>
 
-                {/* Center: Controls */}
+                {/* Center: Reciter Info */}
                 <div className="hidden md:flex items-center gap-4">
-                    {/* View Toggle */}
-                    <div className="flex bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-full p-1 shadow-inner">
-                        <button
-                            onClick={() => onViewModeChange('list')}
-                            className={`px-4 py-1.5 rounded-full flex items-center gap-2 text-sm transition-all ${viewMode === 'list' ? 'bg-[var(--color-accent)] text-white shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
-                        >
-                            <LayoutList size={16} />
-                            <span className="font-arabic">قائمة</span>
-                        </button>
-                        <button
-                            onClick={() => onViewModeChange('continuous')}
-                            className={`px-4 py-1.5 rounded-full flex items-center gap-2 text-sm transition-all ${viewMode === 'continuous' ? 'bg-[var(--color-accent)] text-white shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
-                        >
-                            <AlignJustify size={16} />
-                            <span className="font-arabic">مصحف</span>
-                        </button>
-                    </div>
-
                     <button
                         onClick={onChangeReciter}
-                        className="flex items-center gap-3 px-4 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] transition-all group"
+                        className="flex items-center gap-3 px-6 py-2 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] transition-all group"
                     >
-                        <Headphones className="w-4 h-4 text-[var(--color-accent)]" />
-                        <span className="text-sm font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]">
+                        <Headphones className="w-5 h-5 text-[var(--color-accent)]" />
+                        <span className="text-base font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] leading-none">
                             {reciterName || 'اختر القارئ'}
                         </span>
                     </button>
@@ -68,14 +48,6 @@ export const ReadingHeader = ({
 
                 {/* Left: Actions */}
                 <div className="flex items-center gap-3">
-                    {/* Mobile View Toggle Icon */}
-                    <button
-                        onClick={() => onViewModeChange(viewMode === 'list' ? 'continuous' : 'list')}
-                        className="md:hidden w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
-                    >
-                        {viewMode === 'list' ? <AlignJustify size={18} /> : <LayoutList size={18} />}
-                    </button>
-
                     <button
                         onClick={onChangeReciter}
                         className="md:hidden w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] hover:border-[var(--color-accent)]"
