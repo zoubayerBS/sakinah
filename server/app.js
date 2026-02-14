@@ -17,7 +17,7 @@ const clientId = process.env.QURAN_CLIENT_ID || process.env.VITE_QURAN_CLIENT_ID
 const clientSecret = process.env.QURAN_CLIENT_SECRET || process.env.VITE_QURAN_CLIENT_SECRET;
 
 if (!clientId || !clientSecret) {
-  console.warn('⚠️  WARNING: QURAN_CLIENT_ID or QURAN_CLIENT_SECRET is missing.');
+    console.warn('⚠️  WARNING: QURAN_CLIENT_ID or QURAN_CLIENT_SECRET is missing.');
 }
 
 // Helper to get client (re-initialized if needed or just singleton)
@@ -325,13 +325,121 @@ router.get('/search', async (req, res) => {
     try {
         const { q } = req.query;
         if (!q) return res.status(400).json({ error: 'Query parameter "q" is required' });
-        
+
         const response = await client.search.search(String(q), {
             mode: 'quick'
         });
         res.json(response);
     } catch (error) {
         console.error('Error searching:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Cache for custom tafsirs
+let tahrir_wa_tanwir_cache = null;
+
+// 9. Get Tafsir
+router.get('/tafsir/:tafsirId/:verseKey', async (req, res) => {
+    try {
+        const { tafsirId, verseKey } = req.params;
+
+        // Handle custom Tahrir wa Tanwir (ID 999)
+        if (tafsirId === '999') {
+            // Parse verseKey (e.g., "1:1" or "2:255")
+            const [surah, ayah] = verseKey.split(':').map(Number);
+
+            if (!surah || !ayah) {
+                throw new Error('Invalid verse key format');
+            }
+
+            // Fetch from GitHub if not cached
+            if (!tahrir_wa_tanwir_cache) {
+                console.log('Fetching Tahrir wa Tanwir from GitHub...');
+                const response = await fetch('https://raw.githubusercontent.com/SAFI174/tafsir-json/main/json/ar.tanweer.json');
+                if (!response.ok) throw new Error('Failed to fetch Tahrir wa Tanwir');
+                tahrir_wa_tanwir_cache = await response.json();
+            }
+
+            // Access nested array: tafsir[surah-1][ayah-1]
+            const tafsirText = tahrir_wa_tanwir_cache?.tafsir?.[surah - 1]?.[ayah - 1];
+
+            if (!tafsirText) {
+                throw new Error('Tafsir not found for this verse');
+            }
+
+            // Return in Quran.com API compatible format
+            return res.json({
+                text: tafsirText,
+                resource_name: 'التحرير والتنوير',
+                resource_id: 999
+            });
+        }
+
+        // Default: Using Quran.com V4 API for other Tafsirs
+        const response = await fetch(`https://api.quran.com/api/v4/tafsirs/${tafsirId}/by_ayah/${verseKey}`);
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => '');
+            throw new Error(`Tafsir API error: ${response.status} ${errorText.slice(0, 100)}`);
+        }
+
+        const data = await response.json();
+        // Return just the relevant inner object if it exists (Quran.com V4 wraps in 'tafsir')
+        res.json(data.tafsir || data);
+    } catch (error) {
+        console.error(`Error fetching tafsir ${req.params.tafsirId} for ${req.params.verseKey}:`, error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 10. Get Available Tafsirs
+router.get('/tafsirs', async (req, res) => {
+    try {
+        const response = await fetch('https://api.quran.com/api/v4/resources/tafsirs');
+        if (!response.ok) throw new Error('Failed to fetch tafsirs');
+        const data = await response.json();
+
+        // Manual mapping of Arabic tafsir names (API doesn't provide them without language filter)
+        const arabicNames = {
+            16: 'التفسير الميسر',
+            14: 'تفسير ابن كثير',
+            15: 'تفسير الطبري',
+            90: 'تفسير القرطبي',
+            91: 'تفسير السعدي',
+            93: 'التفسير الوسيط',
+            94: 'تفسير البغوي',
+            92: 'تفسير تنوير المقباس'
+        };
+
+        // Transform tafsir names to use Arabic when available
+        const transformedTafsirs = (data.tafsirs || []).map(t => {
+            // Use Arabic name if available, otherwise keep original
+            const displayName = arabicNames[t.id] || t.name;
+
+            return {
+                id: t.id,
+                name: displayName,
+                author_name: t.author_name,
+                language_name: t.language_name,
+                slug: t.slug,
+                translated_name: t.translated_name
+            };
+        });
+
+        // Add custom Tahrir wa Tanwir at the beginning
+        transformedTafsirs.unshift({
+            id: 999,
+            name: 'التحرير والتنوير',
+            author_name: 'ابن عاشور',
+            language_name: 'arabic',
+            slug: 'ar-tahrir-wa-tanwir',
+            translated_name: { name: 'التحرير والتنوير', language_name: 'arabic' }
+        });
+
+        res.json(transformedTafsirs);
+    } catch (error) {
+        console.error('Error fetching tafsirs resource:', error);
         res.status(500).json({ error: error.message });
     }
 });

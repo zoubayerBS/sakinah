@@ -129,6 +129,12 @@
     line-height: 2.2;
   }
 
+  .font-tafsir {
+    font-family: 'Scheherazade New', serif;
+    direction: rtl;
+    line-height: 2.5;
+  }
+
   .font-kfgqpc {
     font-family: "Amiri Quran", "Amiri", serif;
     direction: rtl;

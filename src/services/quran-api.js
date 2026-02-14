@@ -8,7 +8,7 @@
 class QuranService {
     constructor() {
         this.cache = new Map();
-        
+
         // Public API endpoints for fallback (if needed, though we rely on our proxy now)
         this.legacyBase = 'https://api.alquran.cloud/v1';
     }
@@ -37,14 +37,14 @@ class QuranService {
             // Call our backend proxy
             const response = await fetch('/api/chapters');
             if (!response.ok) throw new Error('Proxy error');
-            
+
             const chapters = await response.json();
             const surahs = chapters.map(c => this._mapChapterToSurah(c));
             this.cache.set('allSurahs', surahs);
             return surahs;
         } catch (error) {
             console.error('[QuranAPI] Error fetching all surahs via Proxy:', error);
-            
+
             // Fallback to legacy API if proxy fails
             return this._fallbackGetAllSurahs();
         }
@@ -80,7 +80,7 @@ class QuranService {
         try {
             const response = await fetch(`/api/chapter/${surahNumber}/verses`);
             if (!response.ok) throw new Error('Proxy error');
-            
+
             const verses = await response.json();
             this.cache.set(cacheKey, verses);
             return verses;
@@ -100,7 +100,7 @@ class QuranService {
         try {
             const response = await fetch(`/api/page/${pageNumber}`);
             if (!response.ok) throw new Error('Proxy error');
-            
+
             const verses = await response.json();
 
             if (verses && verses.length > 0) {
@@ -153,7 +153,7 @@ class QuranService {
         try {
             const response = await fetch(`/api/chapter/${surahNumber}/images`);
             if (!response.ok) throw new Error('Proxy error');
-            
+
             const verses = await response.json();
 
             const processed = verses.map(v => ({
@@ -185,7 +185,7 @@ class QuranService {
             const query = params.toString();
             const response = await fetch(`/api/audio/${recitationId}/${surahNumber}${query ? `?${query}` : ''}`);
             if (!response.ok) throw new Error('Proxy error');
-            
+
             const data = await response.json();
             return {
                 audio_url: data.audioUrl || data.audio_url || null,
@@ -268,6 +268,84 @@ class QuranService {
             console.error('[QuranAPI] Search error via Proxy:', error);
         }
         return null;
+    }
+
+    /**
+     * Get Tafsir for a specific verse
+     */
+    async getTafsir(verseKey, tafsirId = 169) { // 169 is Al-Muyassar by default
+        const cacheKey = `tafsir-${verseKey}-${tafsirId}`;
+        if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
+
+        try {
+            const response = await fetch(`/api/tafsir/${tafsirId}/${verseKey}`);
+            if (!response.ok) throw new Error('Proxy error');
+            const data = await response.json();
+            this.cache.set(cacheKey, data);
+            return data;
+        } catch (error) {
+            console.error(`[QuranAPI] Error fetching tafsir for ${verseKey}:`, error);
+        }
+        return null;
+    }
+
+    /**
+     * Get Verse Information (translations, etc.)
+     */
+    async getVerseInfo(verseKey) {
+        const cacheKey = `verse-info-${verseKey}`;
+        if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
+
+        try {
+            const response = await fetch(`/api/verse/${verseKey}`);
+            if (!response.ok) throw new Error('Proxy error');
+            const data = await response.json();
+            this.cache.set(cacheKey, data);
+            return data;
+        } catch (error) {
+            console.error(`[QuranAPI] Error fetching verse info for ${verseKey}:`, error);
+        }
+        return null;
+    }
+
+    /**
+     * Get Available Tafsirs
+     */
+    async getAvailableTafsirs() {
+        if (this.cache.has('available-tafsirs')) return this.cache.get('available-tafsirs');
+
+        try {
+            const response = await fetch('/api/tafsirs');
+            if (!response.ok) throw new Error('Proxy error');
+            const data = await response.json();
+
+            // Backend already transformed names to Arabic, just map to simpler structure
+            const allTafsirs = data
+                .map(t => ({
+                    id: t.id,
+                    name: t.name, // Already transformed by backend
+                    author: t.author_name,
+                    language: t.language_name,
+                    slug: t.slug
+                }))
+                .sort((a, b) => {
+                    // Arabic first
+                    if (a.language === 'arabic' && b.language !== 'arabic') return -1;
+                    if (a.language !== 'arabic' && b.language === 'arabic') return 1;
+
+                    // Then by language
+                    if (a.language !== b.language) return a.language.localeCompare(b.language);
+
+                    // Then by name
+                    return a.name.localeCompare(b.name);
+                });
+
+            this.cache.set('available-tafsirs', allTafsirs);
+            return allTafsirs;
+        } catch (error) {
+            console.error('[QuranAPI] Error fetching tafsirs:', error);
+            return [];
+        }
     }
 }
 

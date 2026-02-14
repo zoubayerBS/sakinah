@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, BookmarkCheck, Maximize2, Minimize2, Sun, Moon, Coffee, Layers, X, BookMarked, Hash, List, Type, Home, Minus, Plus } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, BookmarkCheck, Maximize2, Minimize2, Sun, Moon, Coffee, Layers, X, BookMarked, Hash, List, Type, Home, Minus, Plus, ChevronDown, Check } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 
@@ -86,6 +86,16 @@ const MushafPage = ({ onBack }) => {
     const [navTab, setNavTab] = useState('surah'); // 'surah', 'juz', 'page', 'bookmarks'
     const [searchQuery, setSearchQuery] = useState('');
     const [isFocusMode, setIsFocusMode] = useState(false);
+
+    // Ayah Selection & Tafsir state
+    const [selectedVerseKey, setSelectedVerseKey] = useState(null);
+    const [showVerseDetail, setShowVerseDetail] = useState(false);
+    const [verseDetailLoading, setVerseDetailLoading] = useState(false);
+    const [verseDetailData, setVerseDetailData] = useState(null);
+    const [tafsirData, setTafsirData] = useState(null);
+    const [tafsirList, setTafsirList] = useState([]);
+    const [selectedTafsir, setSelectedTafsir] = useState(16); // Default: Al-Muyassar (Arabic ID)
+    const [showTafsirSelect, setShowTafsirSelect] = useState(false);
 
     // Refs
     const containerRef = useRef(null);
@@ -449,6 +459,70 @@ const MushafPage = ({ onBack }) => {
 
     const isCurrentPageBookmarked = bookmarkedPages.includes(pageNumber);
 
+    const handleVerseClick = useCallback(async (verseKey) => {
+        if (!verseKey) return;
+
+        setSelectedVerseKey(verseKey);
+        setShowVerseDetail(true);
+        setVerseDetailLoading(true);
+        setVerseDetailData(null);
+        setTafsirData(null);
+
+        try {
+            // Load available tafsirs if empty
+            if (tafsirList.length === 0) {
+                quranAPI.getAvailableTafsirs().then(list => {
+                    if (list && list.length > 0) {
+                        setTafsirList(list);
+                    } else {
+                        // Fallback if API fails or returns empty
+                        setTafsirList([
+                            { id: 999, name: 'التحرير والتنوير' },
+                            { id: 16, name: 'التفسير الميسّر' },
+                            { id: 14, name: 'تفسير ابن كثير' },
+                            { id: 90, name: 'تفسير القرطبي' },
+                            { id: 91, name: 'تفسير السعدي' },
+                            { id: 94, name: 'تفسير البغوي' },
+                            { id: 15, name: 'تفسير الطبري' },
+                            { id: 93, name: 'التفسير الوسيط' }
+                        ]);
+                    }
+                }).catch(() => {
+                    // Fallback on error
+                    setTafsirList([
+                        { id: 999, name: 'التحرير والتنوير' },
+                        { id: 16, name: 'التفسير الميسّر' },
+                        { id: 14, name: 'تفسير ابن كثير' },
+                        { id: 91, name: 'تفسير السعدي' },
+                        { id: 15, name: 'تفسير الطبري' }
+                    ]);
+                });
+            }
+
+            const [info, tafsir] = await Promise.all([
+                quranAPI.getVerseInfo(verseKey),
+                quranAPI.getTafsir(verseKey, selectedTafsir)
+            ]);
+            setVerseDetailData(info);
+            setTafsirData(tafsir);
+        } catch (err) {
+            console.error('Error fetching verse detail:', err);
+        } finally {
+            setVerseDetailLoading(false);
+        }
+    }, [selectedTafsir, tafsirList.length]);
+
+    // Refetch Tafsir when selection changes
+    useEffect(() => {
+        if (showVerseDetail && selectedVerseKey) {
+            setVerseDetailLoading(true);
+            quranAPI.getTafsir(selectedVerseKey, selectedTafsir)
+                .then(setTafsirData)
+                .catch(console.error)
+                .finally(() => setVerseDetailLoading(false));
+        }
+    }, [selectedTafsir]);
+
     return (
         <div
             ref={containerRef}
@@ -456,12 +530,17 @@ const MushafPage = ({ onBack }) => {
             style={{
                 backgroundColor: mode.bg,
                 color: mode.text,
-                touchAction: viewMode === 'authentic' && !showNavPanel ? 'pan-x' : 'auto',
+                touchAction: viewMode === 'authentic' && !showNavPanel && !showVerseDetail ? 'pan-x' : 'auto',
                 '--mushaf-scale': String(fontScale)
             }}
             dir="rtl"
             onClick={() => {
-                setShowControls(prev => !prev);
+                if (showVerseDetail) {
+                    setShowVerseDetail(false);
+                    setSelectedVerseKey(null);
+                } else {
+                    setShowControls(prev => !prev);
+                }
             }}
         >
             {/* ═══════════════════════════════════════════════════════════════ */}
@@ -476,10 +555,10 @@ const MushafPage = ({ onBack }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="flex items-center justify-between gap-4 pl-2 pr-4 py-2 rounded-full shadow-2xl backdrop-blur-md border border-white/10"
+                    className="flex items-center justify-between gap-4 pl-2 pr-4 py-2 rounded-full shadow-2xl border border-white/5"
                     style={{
-                        backgroundColor: isDarkMode ? 'rgba(20,20,30,0.85)' : 'rgba(255,255,255,0.9)',
-                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.1)',
+                        backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF',
+                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.05)',
                     }}
                 >
                     {/* Home / Back */}
@@ -617,7 +696,12 @@ const MushafPage = ({ onBack }) => {
                                                     verse.words.forEach(word => {
                                                         const lineNum = word.line_number || word.lineNumber || 1;
                                                         if (!lineMap.has(lineNum)) lineMap.set(lineNum, []);
-                                                        lineMap.get(lineNum).push(word);
+                                                        // Ensure word has verse_key for selection to work
+                                                        const wordWithKey = {
+                                                            ...word,
+                                                            verse_key: word.verse_key || word.verseKey || verse.verse_key || verse.verseKey
+                                                        };
+                                                        lineMap.get(lineNum).push(wordWithKey);
                                                         if (isFirstVerse) {
                                                             firstVerseLines.add(lineNum);
                                                             // Update the first line number for this surah
@@ -684,16 +768,24 @@ const MushafPage = ({ onBack }) => {
                                                                             width: 'auto',
                                                                         }}
                                                                     >
-                                                                        {words.map((word, wIdx) => (
-                                                                            <span
-                                                                                key={`${lineNum}-${wIdx}`}
-                                                                                dangerouslySetInnerHTML={{ __html: word.code_v2 || word.codeV2 || '' }}
-                                                                                className="inline-block text-center select-none mushaf-word"
-                                                                                style={{
-                                                                                    marginLeft: word.char_type === 'end' ? '0.5rem' : '0',
-                                                                                }}
-                                                                            />
-                                                                        ))}
+                                                                        {words.map((word, wIdx) => {
+                                                                            const vKey = word.verse_key || word.verseKey;
+                                                                            const isSelected = selectedVerseKey === vKey;
+                                                                            return (
+                                                                                <span
+                                                                                    key={`${lineNum}-${wIdx}`}
+                                                                                    dangerouslySetInnerHTML={{ __html: word.code_v2 || word.codeV2 || '' }}
+                                                                                    className={`inline-block text-center select-none mushaf-word mushaf-word-selectable transition-all duration-300 ${isSelected ? 'selected-ayah' : ''}`}
+                                                                                    style={{
+                                                                                        marginLeft: word.char_type === 'end' ? '0.5rem' : '0',
+                                                                                    }}
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleVerseClick(vKey);
+                                                                                    }}
+                                                                                />
+                                                                            );
+                                                                        })}
                                                                     </div>
                                                                 </div>
                                                             </React.Fragment>
@@ -735,7 +827,12 @@ const MushafPage = ({ onBack }) => {
                                                     verse.words.forEach(word => {
                                                         const lineNum = word.line_number || word.lineNumber || 1;
                                                         if (!lineMap.has(lineNum)) lineMap.set(lineNum, []);
-                                                        lineMap.get(lineNum).push(word);
+                                                        // Ensure word has verse_key for selection to work
+                                                        const wordWithKey = {
+                                                            ...word,
+                                                            verse_key: word.verse_key || word.verseKey || verse.verse_key || verse.verseKey
+                                                        };
+                                                        lineMap.get(lineNum).push(wordWithKey);
                                                         if (isFirstVerse) {
                                                             firstVerseLines.add(lineNum);
                                                             // Update the first line number for this surah
@@ -794,10 +891,23 @@ const MushafPage = ({ onBack }) => {
                                                                     className={`mushaf-line-auth ${isFirstSurahLine ? 'mushaf-line-auth--center' : ''}`}
                                                                     style={{ color: mode.text }}
                                                                 >
-                                                                    <span
-                                                                        className="mushaf-line-glyphs"
-                                                                        dangerouslySetInnerHTML={{ __html: lineGlyphs }}
-                                                                    />
+                                                                    <div className="mushaf-line-glyphs-container">
+                                                                        {words.map((word, wIdx) => {
+                                                                            const vKey = word.verse_key || word.verseKey;
+                                                                            const isSelected = selectedVerseKey === vKey;
+                                                                            return (
+                                                                                <span
+                                                                                    key={`${lineNum}-${wIdx}`}
+                                                                                    dangerouslySetInnerHTML={{ __html: word.code_v2 || word.codeV2 || '' }}
+                                                                                    className={`mushaf-word-selectable transition-all duration-300 ${isSelected ? 'selected-ayah' : ''}`}
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleVerseClick(vKey);
+                                                                                    }}
+                                                                                />
+                                                                            );
+                                                                        })}
+                                                                    </div>
                                                                 </div>
                                                             </React.Fragment>
                                                         );
@@ -840,10 +950,10 @@ const MushafPage = ({ onBack }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="flex items-center gap-3 px-2 py-2 rounded-full shadow-2xl backdrop-blur-md border border-white/10"
+                    className="flex items-center gap-3 px-2 py-2 rounded-full shadow-2xl border border-white/5"
                     style={{
-                        backgroundColor: isDarkMode ? 'rgba(20,20,30,0.85)' : 'rgba(255,255,255,0.9)',
-                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.1)',
+                        backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF',
+                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.05)',
                     }}
                 >
                     {/* Prev Page Button (RTL) */}
@@ -904,13 +1014,189 @@ const MushafPage = ({ onBack }) => {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* NAVIGATION PANEL (Full-screen slide-up) */}
             {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* AYAH DETAIL PANEL */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {showVerseDetail && (
+                <div
+                    className="fixed inset-0 z-[10000] flex items-end justify-center"
+                    onClick={() => {
+                        setShowVerseDetail(false);
+                        setSelectedVerseKey(null);
+                    }}
+                >
+                    {/* Modified: Overlay removed as per user request */}
+                    {/* <div className="absolute inset-0 bg-black/5 pointer-events-auto" /> */}
+                    <div
+                        className={`relative flex flex-col w-full max-w-[600px] max-h-[70vh] rounded-t-[2.5rem] overflow-hidden shadow-2xl animate-slide-up ${isDarkMode ? 'bg-[#1A1A1A] text-white' : 'bg-[#FDFCFA] text-[#2C2C2C]'}`}
+                        onClick={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
+                        style={{ borderTop: `2px solid ${mode.accent}30` }}
+                    >
+                        {/* Drag Handle */}
+                        <div className="flex justify-center pt-3 pb-1">
+                            <div className="w-12 h-1.5 rounded-full bg-current opacity-10" />
+                        </div>
+
+                        {/* Panel Header */}
+                        <div className="flex items-center justify-between px-6 pb-4 pt-2">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">معلومات الآية</span>
+                                <h3 className="font-arabic font-bold text-xl" style={{ color: mode.accent }}>
+                                    {selectedVerseKey}
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowVerseDetail(false);
+                                    setSelectedVerseKey(null);
+                                }}
+                                className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 hover:bg-black/10 transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Content Scroll Area */}
+                        <div
+                            className="flex-1 min-h-0 overflow-y-auto px-6 pb-12 nav-panel-scroll"
+                            style={{ touchAction: 'pan-y', overscrollBehaviorY: 'contain' }}
+                        >
+                            {verseDetailLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                    <Loader2 className="animate-spin opacity-40" size={32} />
+                                    <span className="font-arabic opacity-40">جاري تحميل التفسير...</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-8 animate-fade-in">
+                                    {/* Verse Text Display */}
+                                    {verseDetailData && (
+                                        <div className="text-right p-4 rounded-2xl bg-black/5 border border-white/5">
+                                            <p className="font-arabic text-2xl leading-relaxed mb-2" dir="rtl">
+                                                {verseDetailData.textUthmani || verseDetailData.text}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Tafsir Content */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: mode.accent }} />
+                                                <h4 className="font-arabic font-bold text-lg">
+                                                    {tafsirList.find(t => t.id === selectedTafsir)?.name || 'التفسير'}
+                                                </h4>
+                                            </div>
+
+                                            {/* Tafsir Selector */}
+                                            {tafsirList.length > 0 && (
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowTafsirSelect(!showTafsirSelect);
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all active:scale-95"
+                                                        style={{
+                                                            borderColor: mode.accent + '40',
+                                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                                            color: mode.text
+                                                        }}
+                                                    >
+                                                        <span className="text-xs font-bold font-arabic opacity-80">
+                                                            {tafsirList.find(t => t.id === selectedTafsir)?.name || 'اختر التفسير'}
+                                                        </span>
+                                                        <ChevronDown size={14} className={`opacity-50 transition-transform ${showTafsirSelect ? 'rotate-180' : ''}`} />
+                                                    </button>
+
+                                                    {/* Dropdown Menu */}
+                                                    {showTafsirSelect && (
+                                                        <>
+                                                            <div
+                                                                className="fixed inset-0 z-10"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowTafsirSelect(false);
+                                                                }}
+                                                            />
+                                                            <div
+                                                                className="absolute top-full left-0 mt-2 w-56 max-h-[300px] overflow-y-auto rounded-xl shadow-xl z-20 border py-1 animate-fade-in nav-panel-scroll"
+                                                                style={{
+                                                                    backgroundColor: isDarkMode ? '#252525' : '#FFFFFF',
+                                                                    borderColor: mode.accent + '20',
+                                                                    touchAction: 'pan-y',
+                                                                    overscrollBehaviorY: 'contain'
+                                                                }}
+                                                                onTouchStart={(e) => e.stopPropagation()}
+                                                                onTouchMove={(e) => e.stopPropagation()}
+                                                                onTouchEnd={(e) => e.stopPropagation()}
+                                                            >
+                                                                {tafsirList.map(t => (
+                                                                    <button
+                                                                        key={t.id}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setSelectedTafsir(t.id);
+                                                                            setShowTafsirSelect(false);
+                                                                        }}
+                                                                        className={`w-full text-right px-4 py-2.5 text-xs font-arabic transition-colors flex items-center justify-between gap-2 border-b border-dashed border-white/5 last:border-0 hover:bg-black/5 ${selectedTafsir === t.id ? 'font-bold' : 'opacity-70'}`}
+                                                                        style={{
+                                                                            color: selectedTafsir === t.id ? mode.accent : mode.text
+                                                                        }}
+                                                                    >
+                                                                        <span>
+                                                                            {t.name}
+                                                                            {t.language && t.language !== 'arabic' && (
+                                                                                <span className="text-[10px] opacity-60 mr-1">({t.language})</span>
+                                                                            )}
+                                                                        </span>
+                                                                        {selectedTafsir === t.id && <Check size={12} />}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div
+                                            className="font-tafsir text-xl leading-loose text-justify opacity-90"
+                                            dir="rtl"
+                                            dangerouslySetInnerHTML={{ __html: tafsirData?.text || 'لا يتوفر تفسير حالياً.' }}
+                                        />
+                                    </div>
+
+                                    {/* Translation if available */}
+                                    {verseDetailData?.translations && verseDetailData.translations.length > 0 && (
+                                        <div className="space-y-4 pt-4 border-t border-white/5">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-1.5 h-6 rounded-full opacity-30" style={{ backgroundColor: mode.accent }} />
+                                                <h4 className="font-arabic font-bold text-lg">الترجمة الإنجليزية</h4>
+                                            </div>
+                                            <p className="text-sm opacity-60 leading-relaxed text-left" dir="ltr">
+                                                {verseDetailData.translations[0].text.replace(/<[^>]*>/g, '')}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* NAVIGATION PANEL (Full-screen slide-up) */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
             {showNavPanel && (
                 <div
                     className="fixed inset-0 z-[9999] flex items-end justify-center"
                     onClick={() => setShowNavPanel(false)}
                     style={{ touchAction: 'pan-y', overscrollBehaviorY: 'contain' }}
                 >
-                    <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} />
+                    {/* Modified: Overlay removed as per user request */}
+                    {/* <div className="absolute inset-0 bg-black/5" /> */}
                     <div
                         className={`relative flex flex-col w-full max-w-[500px] h-[85vh] rounded-t-[2.5rem] overflow-hidden shadow-none animate-slide-up ${isDarkMode ? 'bg-[#121212] text-white' : 'bg-[#FDFCFA] text-[#2C2C2C]'}`}
                         style={isDarkMode ? {} : { backgroundColor: mode.bg }}
@@ -1153,6 +1439,7 @@ const MushafPage = ({ onBack }) => {
                                                 : isDarkMode ? 'hover:bg-[#1A1A1A]' : 'hover:bg-[#F5F5F5]'
                                                 }`}
                                                 style={p === pageNumber ? { boxShadow: '0 4px 16px rgba(166, 124, 82, 0.3)' } : {}}>
+
                                                 <button
                                                     onClick={() => navigateTo(p, p > pageNumber ? 'left' : 'right')}
                                                     className="flex-1 flex items-center gap-3"
@@ -1166,14 +1453,14 @@ const MushafPage = ({ onBack }) => {
                                                         </span>
                                                         {surahPageMapping && (
                                                             <span className={`text-[10px] ${p === pageNumber ? 'text-white/60' : isDarkMode ? 'text-gray-500' : 'text-[var(--color-text-tertiary)]'}`}>
-                                                                سورة {Object.entries(surahPageMapping).find(([key, val]) => val.start <= p && val.end >= p)?.[1]?.name || ''}
+                                                                سورة {Object.entries(surahPageMapping).find(entry => entry[1].start <= p && entry[1].end >= p)?.[1]?.name || ""}
                                                             </span>
                                                         )}
                                                     </div>
                                                 </button>
                                                 <button
                                                     onClick={() => setBookmarkedPages(prev => prev.filter(bp => bp !== p))}
-                                                    className={`p-2 rounded-lg transition-all active:scale-90 ${p === pageNumber ? 'hover:bg-white/20 text-white/70' : isDarkMode ? 'hover:bg-white/10 text-gray-500' : 'hover:bg-red-100 text-red-500'}`}
+                                                    className={`p-2 rounded-lg transition-all active:scale-90 ${p === pageNumber ? 'hover:bg-white/20 text-white/70' : isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-red-100 text-red-500'}`}
                                                 >
                                                     <X size={16} />
                                                 </button>
@@ -1302,10 +1589,26 @@ const MushafPage = ({ onBack }) => {
                 .mushaf-line-auth--center {
                     justify-content: center;
                 }
-                .mushaf-line-glyphs {
-                    display: inline-block;
+                .mushaf-line-glyphs-container {
+                    display: flex;
+                    align-items: baseline;
+                    justify-content: center;
+                    flex-wrap: nowrap;
                     font-size: clamp(calc(1.35rem * var(--mushaf-scale, 1)), calc((3.6vw + 0.4rem) * var(--mushaf-scale, 1)), calc(2.6rem * var(--mushaf-scale, 1)));
-                    letter-spacing: 0;
+                }
+                .mushaf-word-selectable {
+                    cursor: pointer;
+                    display: inline-block;
+                    line-height: inherit;
+                }
+                .mushaf-word-selectable:hover {
+                    opacity: 0.7;
+                }
+                .selected-ayah {
+                    background-color: rgba(166, 124, 82, 0.35) !important;
+                    border-radius: 4px;
+                    box-shadow: 0 0 8px rgba(166, 124, 82, 0.2);
+                    display: inline-block;
                 }
 
                 /* Page container for Mushaf layout */
@@ -1316,7 +1619,7 @@ const MushafPage = ({ onBack }) => {
                     letter-spacing: 0;
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
 
