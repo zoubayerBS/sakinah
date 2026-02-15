@@ -23,10 +23,10 @@ const MushafBottomNav = ({
             onClick={(e) => e.stopPropagation()}
         >
             <div
-                className="flex items-center gap-3 px-2 py-2 rounded-full shadow-2xl border border-white/5"
+                className="flex items-center gap-3 px-2 py-2 rounded-full shadow-2xl border border-[var(--color-border)] transition-all duration-300 backdrop-blur-md"
                 style={{
-                    backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF',
-                    boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.05)',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    boxShadow: 'var(--shadow-lg)',
                 }}
             >
                 {/* Prev Page Button (RTL) */}

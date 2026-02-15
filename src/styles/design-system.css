@@ -185,6 +185,61 @@
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
+/* Damas Paper (Sophisticated Teal & Gold) */
+[data-theme="damas"] {
+  --color-bg-primary: #F8FAF9;
+  --color-bg-secondary: #EFF4F2;
+  --color-bg-tertiary: #E5EDE9;
+
+  --color-text-primary: #1A3A34;
+  --color-text-secondary: #2F524C;
+  --color-text-tertiary: #5C7A75;
+
+  --color-border: #D1DFDA;
+  --color-divider: #E0EAE5;
+
+  --color-accent: #2C5E54;
+  --color-highlight: #B8860B;
+}
+
+/* Old Manuscript (Parchment & Ink) */
+[data-theme="manuscript"] {
+  --color-bg-primary: #F4ECD8;
+  --color-bg-secondary: #EFDFBA;
+  --color-bg-tertiary: #E8D2A0;
+
+  --color-text-primary: #2B1B17;
+  --color-text-secondary: #5D4037;
+  --color-text-tertiary: #8D6E63;
+
+  --color-border: #D7C49E;
+  --color-divider: #E4D5B7;
+
+  --color-accent: #8B0000;
+  --color-highlight: #CFB53B;
+}
+
+/* Royal Night (Indigo & Gold) */
+[data-theme="royal"] {
+  --color-bg-primary: #0F172A;
+  --color-bg-secondary: #1E293B;
+  --color-bg-tertiary: #334155;
+
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #CBD5E1;
+  --color-text-tertiary: #94A3B8;
+
+  --color-border: #334155;
+  --color-divider: #1E293B;
+
+  --color-accent: #C9A961;
+  --color-highlight: #FFD700;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
 /* Simple Pattern Background */
 .pattern-subtle {
   background-image:
@@ -194,6 +249,86 @@
     linear-gradient(150deg, rgba(201, 169, 97, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(201, 169, 97, 0.03) 87.5%);
   background-size: 80px 140px;
   background-position: 0 0, 0 0, 40px 70px, 40px 70px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PHYSICAL MUSHAF AESTHETICS (Phase 17)                           */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Base Parchment Texture (Grain & Shading) */
+.mushaf-parchment-texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  /* Just above the background color */
+  opacity: 0.6;
+}
+
+[data-theme="manuscript"] .mushaf-parchment-texture {
+  background-image:
+    radial-gradient(circle at 10% 10%, rgba(0, 0, 0, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, rgba(0, 0, 0, 0.03) 0%, transparent 40%),
+    url("https://www.transparenttextures.com/patterns/natural-paper.png");
+  mix-blend-mode: multiply;
+}
+
+/* Stacked Pages Rendering (Physical Book Edges) */
+.mushaf-physical-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  /* Above all content and headers */
+}
+
+/* Top Edge: Depth of stacked pages */
+[data-theme="manuscript"] .mushaf-physical-frame::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background-color: #FDFCFA;
+  /* Bright edge of pages */
+  background-image: repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0.12) 0px,
+      rgba(0, 0, 0, 0.12) 1px,
+      transparent 1px,
+      transparent 3px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Left Edge: Depth of stacked pages */
+[data-theme="manuscript"] .mushaf-physical-frame::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 18px;
+  background-color: #FDFCFA;
+  background-image: repeating-linear-gradient(to right,
+      rgba(0, 0, 0, 0.15) 0px,
+      rgba(0, 0, 0, 0.15) 1px,
+      transparent 1px,
+      transparent 4px);
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Deep Corner Shading for the Open Book Crease Effect */
+[data-theme="manuscript"] .mushaf-corner-shade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 15%;
+  height: 15%;
+  z-index: 61;
+  pointer-events: none;
+  background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.15) 0%, transparent 80%);
 }
 
 /* Utility Classes */

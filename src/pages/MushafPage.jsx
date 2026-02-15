@@ -45,15 +45,14 @@ const SURAH_NAMES = [
 ];
 
 const READING_MODES = {
-    light: { bg: '#FDFCFA', text: '#2C2C2C', accent: '#8B7355', label: 'فاتح', icon: Sun },
-    sepia: { bg: '#F4ECD8', text: '#433422', accent: '#A67C52', label: 'ورقي', icon: Coffee },
-    dark: { bg: '#121212', text: '#E0E0E0', accent: '#C9A227', label: 'داكن', icon: Moon },
-    midnight: { bg: '#0A0E17', text: '#D1D5DB', accent: '#60A5FA', label: 'ليلي', icon: Layers },
+    light: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'باهت', icon: Sun },
+    dark: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'داكن', icon: Moon },
+    manuscript: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'ورقي', icon: Coffee },
+    damas: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'دمشقي', icon: List },
+    royal: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'ملكي', icon: Layers },
 };
 
-
-
-const MushafPage = ({ onBack }) => {
+const MushafPage = ({ onBack, theme, setTheme }) => {
     // Core state
     const [pageNumber, setPageNumber] = useState(() => {
         const saved = localStorage.getItem('mushaf-last-page');
@@ -67,7 +66,6 @@ const MushafPage = ({ onBack }) => {
     // UI state
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showControls, setShowControls] = useState(true);
-    const [readingMode, setReadingMode] = useState(() => localStorage.getItem('mushaf-reading-mode') || 'light');
     const [fontScale, setFontScale] = useState(() => {
         const saved = parseFloat(localStorage.getItem('mushaf-font-scale') || '1');
         return Number.isFinite(saved) ? saved : 1;
@@ -124,8 +122,8 @@ const MushafPage = ({ onBack }) => {
     const showControlsRef = useRef(showControls);
 
     // Derived state
-    const mode = READING_MODES[readingMode] || READING_MODES.light;
-    const isDarkMode = readingMode === 'dark' || readingMode === 'midnight';
+    const mode = READING_MODES[theme] || READING_MODES.light;
+    const isDarkMode = theme === 'dark' || theme === 'royal';
     const progressPercent = ((pageNumber / 604) * 100).toFixed(1);
 
     // Find current juz
@@ -151,10 +149,6 @@ const MushafPage = ({ onBack }) => {
         }
     }, [pageNumber, pageInfo]);
 
-    // Save reading mode
-    useEffect(() => {
-        localStorage.setItem('mushaf-reading-mode', readingMode);
-    }, [readingMode]);
 
     // Save font scale
     useEffect(() => {
@@ -565,6 +559,7 @@ const MushafPage = ({ onBack }) => {
                 }
             }}
         >
+
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* MINIMAL FLOATING HEADER BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
@@ -579,8 +574,8 @@ const MushafPage = ({ onBack }) => {
                 wirdProgress={wirdProgress}
                 toggleBookmark={toggleBookmark}
                 isCurrentPageBookmarked={isCurrentPageBookmarked}
-                readingMode={readingMode}
-                setReadingMode={setReadingMode}
+                readingMode={theme}
+                setReadingMode={setTheme}
                 READING_MODES={READING_MODES}
             />
 

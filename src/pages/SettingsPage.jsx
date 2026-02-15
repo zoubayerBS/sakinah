@@ -17,7 +17,7 @@ import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { useAudio } from '../context/AudioContext.jsx';
 import { usePWAInstall } from '../hooks/usePWAInstall.js';
 
-export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
+export const SettingsPage = ({ theme, toggleTheme, setTheme, onBack }) => {
     const { sleepTimer, setSleepTimer, sleepTimerRemaining } = useAudio();
     const { isInstallable, promptInstall } = usePWAInstall();
 
@@ -49,26 +49,38 @@ export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
                 {/* Appearance Section */}
                 <section className="space-y-4">
                     <h2 className="font-arabic text-lg font-bold text-[var(--color-text-secondary)] text-right px-2">
-                        المظهر
+                        المظهر (Thèmes)
                     </h2>
 
-                    <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] overflow-hidden">
-                        <div className="p-4 flex items-center justify-between hover:bg-[var(--color-bg-tertiary)] transition-colors cursor-pointer" onClick={toggleTheme}>
-                            <div className="flex items-center gap-4">
-                                <ThemeToggle
-                                    theme={theme}
-                                    onToggle={toggleTheme}
-                                    className="!static !w-10 !h-10 !border-transparent !bg-transparent !shadow-none pointer-events-none"
-                                />
-                            </div>
-                            <div className="text-right">
-                                <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">
-                                    {theme === 'dark' ? 'الوضع الليلي' : 'الوضع النهاري'}
-                                </h3>
-                                <p className="font-arabic text-xs text-[var(--color-text-tertiary)] mt-1">
-                                    تبديل مظهر التطبيق
-                                </p>
-                            </div>
+                    <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-6">
+                        <div className="grid grid-cols-3 gap-4" dir="rtl">
+                            {[
+                                { id: 'light', name: 'نهاري', sub: 'Beige', bg: '#F5F1E8', text: '#2C2416' },
+                                { id: 'dark', name: 'ليلي', sub: 'Sombre', bg: '#1A1612', text: '#F5F1E8' },
+                                { id: 'manuscript', name: 'منشور', sub: 'Parchmin', bg: '#F4ECD8', text: '#2B1B17' },
+                                { id: 'damas', name: 'دمشقي', sub: 'Damas', bg: '#F8FAF9', text: '#1A3A34' },
+                                { id: 'royal', name: 'ملكي', sub: 'Royal', bg: '#0F172A', text: '#F1F5F9' },
+                            ].map((t) => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setTheme(t.id)}
+                                    className={`flex flex-col items-center gap-3 p-3 rounded-[var(--radius-md)] transition-all border-2 ${theme === t.id
+                                        ? 'border-[var(--color-accent)] bg-[var(--color-bg-tertiary)] shadow-lg scale-105'
+                                        : 'border-transparent hover:bg-[var(--color-bg-tertiary)]/50'
+                                        }`}
+                                >
+                                    <div
+                                        className="w-12 h-12 rounded-full border border-[var(--color-border)] shadow-inner flex items-center justify-center overflow-hidden"
+                                        style={{ backgroundColor: t.bg }}
+                                    >
+                                        <div className="w-6 h-1 bg-[currentColor]" style={{ color: t.text }}></div>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <span className="font-arabic text-sm font-bold text-[var(--color-text-primary)]">{t.name}</span>
+                                        <span className="text-[10px] text-[var(--color-text-tertiary)] font-bold tracking-wider uppercase">{t.sub}</span>
+                                    </div>
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </section>

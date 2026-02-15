@@ -38,7 +38,14 @@ const AppContent = () => {
     };
 
     const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+        const themes = ['light', 'dark', 'damas', 'manuscript', 'royal'];
+        const currentIndex = themes.indexOf(theme);
+        const nextIndex = (currentIndex + 1) % themes.length;
+        setTheme(themes[nextIndex]);
+    };
+
+    const handleSetTheme = (newTheme) => {
+        setTheme(newTheme);
     };
 
     return (
@@ -70,6 +77,7 @@ const AppContent = () => {
                     <SettingsPage
                         theme={theme}
                         toggleTheme={toggleTheme}
+                        setTheme={handleSetTheme}
                         onBack={() => handleNavigate('home')}
                     />
                 )}
@@ -87,7 +95,11 @@ const AppContent = () => {
                 )}
 
                 {currentPage === 'mushaf' && (
-                    <MushafPage onBack={() => handleNavigate('home')} />
+                    <MushafPage
+                        onBack={() => handleNavigate('home')}
+                        theme={theme}
+                        setTheme={handleSetTheme}
+                    />
                 )}
             </main>
 

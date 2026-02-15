@@ -24,26 +24,24 @@ const MushafNavPanel = ({
 
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-end justify-center"
+            className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/40 backdrop-blur-sm"
             onClick={() => setShowNavPanel(false)}
             style={{ touchAction: 'pan-y', overscrollBehaviorY: 'contain' }}
         >
             <div
-                className={`relative flex flex-col w-full max-w-[500px] h-[85vh] rounded-t-[2.5rem] overflow-hidden shadow-none animate-slide-up ${isDarkMode ? 'bg-[#121212] text-white' : 'bg-[#FDFCFA] text-[#2C2C2C]'}`}
-                style={isDarkMode ? {} : { backgroundColor: mode.bg }}
+                className="relative flex flex-col w-full max-w-[500px] h-[85vh] rounded-t-[2.5rem] overflow-hidden shadow-2xl animate-slide-up bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Panel Header */}
                 <div
-                    className={`flex items-center justify-between px-6 py-5 border-b sticky top-0 z-10 ${isDarkMode ? 'bg-[#121212] border-white/5' : 'bg-[#FDFCFA] border-black/5'}`}
-                    style={isDarkMode ? {} : { backgroundColor: mode.bg }}
+                    className="flex items-center justify-between px-6 py-5 border-b border-[var(--color-border)] sticky top-0 z-10 bg-[var(--color-bg-primary)]"
                 >
-                    <h2 className={`font-arabic font-bold text-lg ${isDarkMode ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
+                    <h2 className="font-arabic font-bold text-lg text-[var(--color-text-primary)]">
                         فهرس المصحف
                     </h2>
                     <button
                         onClick={() => setShowNavPanel(false)}
-                        className={`p-2 rounded-full transition-all active:scale-90 ${isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-black/5 text-[var(--color-text-tertiary)]'}`}
+                        className="p-2 rounded-full transition-all active:scale-90 hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]"
                     >
                         <X size={20} />
                     </button>
@@ -60,15 +58,10 @@ const MushafNavPanel = ({
                         <button
                             key={tab.id}
                             onClick={() => setNavTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-bold font-arabic transition-all active:scale-95 ${navTab === tab.id
-                                ? 'shadow-md'
-                                : 'opacity-50 hover:opacity-100'
+                            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-bold font-arabic transition-all active:scale-95 border ${navTab === tab.id
+                                ? 'bg-[var(--color-accent)] text-white border-transparent shadow-lg'
+                                : 'bg-[var(--color-bg-tertiary)] border-[var(--color-border)] opacity-60 hover:opacity-100'
                                 }`}
-                            style={{
-                                backgroundColor: navTab === tab.id ? mode.accent : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
-                                color: navTab === tab.id ? '#fff' : (isDarkMode ? '#fff' : 'var(--color-text-primary)'),
-                                boxShadow: navTab === tab.id ? `0 4px 12px ${mode.accent}40` : 'none',
-                            }}
                         >
                             <tab.icon size={14} />
                             {tab.label}
@@ -79,18 +72,18 @@ const MushafNavPanel = ({
                 {/* Search Bar - Elegant Input */}
                 {navTab === 'surah' && (
                     <div className="px-6 pb-3">
-                        <div className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-all ${isDarkMode ? 'bg-[#1A1A1A] border-white/8 focus-within:border-white/15' : 'bg-white border-black/6 focus-within:border-black/10'}`}>
-                            <Search size={18} className={`${isDarkMode ? 'text-gray-500' : 'text-[var(--color-text-tertiary)]'}`} />
+                        <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] focus-within:border-[var(--color-accent)] transition-all">
+                            <Search size={18} className="text-[var(--color-text-tertiary)]" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="ابحث عن سورة..."
-                                className={`flex-1 bg-transparent text-sm font-arabic focus:outline-none ${isDarkMode ? 'placeholder:text-gray-600 text-white' : 'placeholder:opacity-30'}`}
+                                className="flex-1 bg-transparent text-sm font-arabic focus:outline-none placeholder:opacity-30"
                                 autoFocus
                             />
                             {searchQuery && (
-                                <button onClick={() => setSearchQuery('')} className={`p-1 rounded-lg transition-all ${isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-black/5 text-gray-500'}`}>
+                                <button onClick={() => setSearchQuery('')} className="p-1 rounded-lg transition-all hover:bg-black/5 text-gray-500">
                                     <X size={14} />
                                 </button>
                             )}
@@ -99,8 +92,7 @@ const MushafNavPanel = ({
                 )}
 
                 {/* Panel Content */}
-                <div className={`flex-1 overflow-y-auto nav-panel-scroll px-1 pb-10 ${isDarkMode ? '' : ''}`}
-                    style={isDarkMode ? {} : { backgroundColor: mode.bg }}>
+                <div className="flex-1 overflow-y-auto nav-panel-scroll px-1 pb-10 bg-[var(--color-bg-primary)]">
 
                     {/* ── SURAH TAB ── */}
                     {navTab === 'surah' && (
@@ -112,25 +104,22 @@ const MushafNavPanel = ({
                                     <button
                                         key={number}
                                         onClick={() => navigateTo(pages.start, pages.start > pageNumber ? 'left' : 'right')}
-                                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] ${isCurrentSurah
-                                            ? 'bg-[#A67C52] text-white shadow-md'
-                                            : isDarkMode
-                                                ? 'hover:bg-[#1A1A1A] border border-transparent'
-                                                : 'hover:bg-[#F5F5F5] border border-transparent'
+                                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] border ${isCurrentSurah
+                                            ? 'bg-[var(--color-accent)] text-white border-transparent shadow-md'
+                                            : 'hover:bg-[var(--color-bg-tertiary)] border-transparent'
                                             }`}
-                                        style={isCurrentSurah ? { boxShadow: '0 2px 8px rgba(166, 124, 82, 0.3)' } : {}}
                                     >
                                         {/* Number Badge */}
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${isCurrentSurah
                                             ? 'bg-white/20 text-white'
-                                            : isDarkMode ? 'bg-[#252525] text-gray-300' : 'bg-[#E8E8E8] text-gray-600'
+                                            : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]'
                                             }`}>
                                             {number}
                                         </div>
 
                                         {/* Surah Name */}
                                         <div className="flex-1 text-right">
-                                            <span className={`font-arabic font-bold text-sm block ${isCurrentSurah ? 'text-white' : isDarkMode ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
+                                            <span className={`font-arabic font-bold text-sm block ${isCurrentSurah ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
                                                 {name}
                                             </span>
                                         </div>
@@ -138,11 +127,11 @@ const MushafNavPanel = ({
                                         {/* Page Range */}
                                         <div className={`text-center px-2 py-1 rounded-lg ${isCurrentSurah
                                             ? 'bg-white/10'
-                                            : isDarkMode ? 'bg-[#252525]' : 'bg-[#F0F0F0]'
+                                            : 'bg-[var(--color-bg-tertiary)]'
                                             }`}>
                                             <span className={`text-[10px] font-bold tabular-nums block ${isCurrentSurah
                                                 ? 'text-white'
-                                                : isDarkMode ? 'text-gray-400' : 'text-[var(--color-text-tertiary)]'
+                                                : 'text-[var(--color-text-tertiary)]'
                                                 }`}>
                                                 {pages.start}
                                             </span>
@@ -162,18 +151,15 @@ const MushafNavPanel = ({
                                     <button
                                         key={juz}
                                         onClick={() => navigateTo(page, page > pageNumber ? 'left' : 'right')}
-                                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl transition-all active:scale-90 ${isCurrentJuzItem
-                                            ? 'bg-[#A67C52] text-white shadow-md'
-                                            : isDarkMode
-                                                ? 'bg-[#1A1A1A] text-gray-300 hover:bg-[#252525]'
-                                                : 'bg-[#F5F5F5] text-gray-700 hover:bg-[#EAEAEA]'
+                                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl transition-all active:scale-90 border ${isCurrentJuzItem
+                                            ? 'bg-[var(--color-accent)] text-white border-transparent shadow-md'
+                                            : 'bg-[var(--color-bg-tertiary)] border-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]'
                                             }`}
-                                        style={isCurrentJuzItem ? { boxShadow: '0 2px 8px rgba(166, 124, 82, 0.3)' } : {}}
                                     >
-                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isCurrentJuzItem ? 'bg-white/20' : isDarkMode ? 'bg-[#252525]' : 'bg-[#E8E8E8]'}`}>
+                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isCurrentJuzItem ? 'bg-white/20' : 'bg-[var(--color-bg-secondary)]'}`}>
                                             <span className="font-arabic font-bold text-xs">{juz}</span>
                                         </div>
-                                        <span className={`text-[9px] font-bold ${isCurrentJuzItem ? 'text-white/70' : isDarkMode ? 'text-gray-500' : 'text-[var(--color-text-tertiary)]'}`}>
+                                        <span className={`text-[9px] font-bold ${isCurrentJuzItem ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}`}>
                                             {page}
                                         </span>
                                     </button>
@@ -187,13 +173,13 @@ const MushafNavPanel = ({
                         <div className="p-5 space-y-5 px-5">
                             {/* Current Page Display */}
                             <div className="text-center space-y-2 py-3">
-                                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full ${isDarkMode ? 'bg-[#1A1A1A]' : 'bg-[#F5F5F5]'}`}>
-                                    <span className={`text-4xl font-bold tabular-nums ${isDarkMode ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
+                                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[var(--color-bg-tertiary)]">
+                                    <span className="text-4xl font-bold tabular-nums text-[var(--color-text-primary)]">
                                         {pageNumber}
                                     </span>
                                 </div>
-                                <p className={`text-xs font-arabic ${isDarkMode ? 'text-gray-400' : 'text-[var(--color-text-tertiary)]'} mt-1`}>
-                                    من 604 صفحة
+                                <p className="text-xs font-arabic text-[var(--color-text-tertiary)] mt-1">
+                                    من 604 صفحة (P. {pageNumber}/604)
                                 </p>
                             </div>
 
@@ -209,19 +195,15 @@ const MushafNavPanel = ({
                                 <input
                                     name="pageInput"
                                     type="number"
-                                    placeholder="أدخل رقم الصفحة"
+                                    placeholder="رقم الصفحة..."
                                     min="1"
                                     max="604"
-                                    className={`flex-1 text-center rounded-xl px-4 py-2.5 text-base font-bold border focus:outline-none transition-all font-arabic ${isDarkMode
-                                        ? 'bg-[#1A1A1A] border-white/10 text-white placeholder-gray-500 focus:border-[var(--color-accent)]'
-                                        : 'bg-white border-black/8 text-[var(--color-text-primary)] placeholder:opacity-30 focus:border-[var(--color-accent)]'
-                                        }`}
+                                    className="flex-1 text-center rounded-xl px-4 py-2.5 text-base font-bold bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:opacity-30 focus:border-[var(--color-accent)] focus:outline-none transition-all font-arabic"
                                     autoFocus
                                 />
                                 <button
                                     type="submit"
-                                    className="px-5 py-2.5 rounded-xl text-white font-arabic font-bold active:scale-95 transition-all shadow-md"
-                                    style={{ backgroundColor: mode.accent, boxShadow: `0 2px 8px ${mode.accent}50` }}
+                                    className="px-5 py-2.5 rounded-xl text-white font-arabic font-bold active:scale-95 transition-all shadow-md bg-[var(--color-accent)]"
                                 >
                                     انتقل
                                 </button>
@@ -234,12 +216,9 @@ const MushafNavPanel = ({
                                         key={p}
                                         onClick={() => navigateTo(p, p > pageNumber ? 'left' : 'right')}
                                         className={`py-2 rounded-lg text-xs font-bold transition-all active:scale-95 ${p === pageNumber
-                                            ? 'text-white shadow-md'
-                                            : isDarkMode
-                                                ? 'bg-[#1A1A1A] text-gray-300 hover:bg-[#252525]'
-                                                : 'bg-[#F5F5F5] text-gray-700 hover:bg-[#EAEAEA]'
+                                            ? 'bg-[var(--color-accent)] text-white shadow-md'
+                                            : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]'
                                             }`}
-                                        style={p === pageNumber ? { backgroundColor: mode.accent, boxShadow: `0 2px 8px ${mode.accent}50` } : {}}
                                     >
                                         {p}
                                     </button>
@@ -253,45 +232,36 @@ const MushafNavPanel = ({
                         <div className="p-3 space-y-2 px-4">
                             {bookmarkedPages.length === 0 ? (
                                 <div className="text-center py-16">
-                                    <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${isDarkMode ? 'bg-[#1A1A1A]' : 'bg-[#F5F5F5]'}`}>
-                                        <BookMarked size={36} className={`${isDarkMode ? 'text-gray-600' : 'text-[var(--color-text-tertiary)]'}`} />
+                                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 bg-[var(--color-bg-tertiary)]">
+                                        <BookMarked size={36} className="text-[var(--color-text-tertiary)]" />
                                     </div>
-                                    <p className={`font-arabic text-sm ${isDarkMode ? 'text-gray-400' : 'text-[var(--color-text-tertiary)]'}`}>
+                                    <p className="font-arabic text-sm text-[var(--color-text-tertiary)]">
                                         لا توجد علامات مرجعية
-                                    </p>
-                                    <p className={`text-xs font-arabic mt-1 ${isDarkMode ? 'text-gray-600' : 'text-[var(--color-text-tertiary)]'} opacity-60`}>
-                                        اضغط على الإشارة لحفظ الصفحة
                                     </p>
                                 </div>
                             ) : (
                                 bookmarkedPages.map(p => (
-                                    <div key={p} className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all ${p === pageNumber
-                                        ? 'bg-[#A67C52] text-white shadow-lg'
-                                        : isDarkMode ? 'hover:bg-[#1A1A1A]' : 'hover:bg-[#F5F5F5]'
-                                        }`}
-                                        style={p === pageNumber ? { boxShadow: '0 4px 16px rgba(166, 124, 82, 0.3)' } : {}}>
+                                    <div key={p} className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all border ${p === pageNumber
+                                        ? 'bg-[var(--color-accent)] text-white border-transparent shadow-lg'
+                                        : 'bg-[var(--color-bg-tertiary)] border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)]'
+                                        }`}>
 
                                         <button
                                             onClick={() => navigateTo(p, p > pageNumber ? 'left' : 'right')}
                                             className="flex-1 flex items-center gap-3"
                                         >
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${p === pageNumber ? 'bg-white/20' : isDarkMode ? 'bg-[#252525]' : 'bg-[#E8E8E8]'}`}>
-                                                <Check size={18} className={p === pageNumber ? 'text-white' : 'text-[#A67C52]'} />
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${p === pageNumber ? 'bg-white/20' : 'bg-[var(--color-bg-secondary)]'}`}>
+                                                <Check size={18} className={p === pageNumber ? 'text-white' : 'text-[var(--color-accent)]'} />
                                             </div>
                                             <div className="text-right">
-                                                <span className={`font-arabic font-bold text-sm block ${p === pageNumber ? 'text-white' : isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                                <span className={`font-arabic font-bold text-sm block ${p === pageNumber ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
                                                     صفحة {p}
                                                 </span>
-                                                {surahPageMapping && (
-                                                    <span className={`text-[10px] ${p === pageNumber ? 'text-white/60' : isDarkMode ? 'text-gray-500' : 'text-[var(--color-text-tertiary)]'}`}>
-                                                        سورة {Object.entries(surahPageMapping).find(entry => entry[1].start <= p && entry[1].end >= p)?.[1]?.name || ""}
-                                                    </span>
-                                                )}
                                             </div>
                                         </button>
                                         <button
                                             onClick={() => setBookmarkedPages(prev => prev.filter(bp => bp !== p))}
-                                            className={`p-2 rounded-lg transition-all active:scale-90 ${p === pageNumber ? 'hover:bg-white/20 text-white/70' : isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-red-100 text-red-500'}`}
+                                            className={`p-2 rounded-lg transition-all active:scale-90 ${p === pageNumber ? 'hover:bg-white/20 text-white/70' : 'hover:bg-red-100 text-red-500'}`}
                                         >
                                             <X size={16} />
                                         </button>
