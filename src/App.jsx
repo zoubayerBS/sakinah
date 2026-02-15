@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HomePage } from './pages/HomePage.jsx';
-import { ReadingPage } from './pages/ReadingPage.jsx';
+import { PlayerPage } from './pages/PlayerPage.jsx';
 import { SettingsPage } from './pages/SettingsPage.jsx';
 import { PrayerTimesPage } from './pages/PrayerTimesPage.jsx';
 import { KhitmaPage } from './pages/KhitmaPage.jsx';
@@ -53,7 +53,7 @@ const AppContent = () => {
                 {/* Other pages would go here */}
 
                 {currentPage === 'reading' && selectedSurah && (
-                    <ReadingPage
+                    <PlayerPage
                         surah={selectedSurah}
                         onBack={() => handleNavigate('home')}
                     />

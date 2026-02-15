@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ReadingHeader } from '../components/ReadingHeader.jsx';
+import { PlayerHeader } from '../components/PlayerHeader.jsx';
 import { SurahAudioPlayer } from '../components/SurahAudioPlayer.jsx';
 import { ReciterSelector } from '../components/ReciterSelector.jsx';
 import { useAudio } from '../context/AudioContext.jsx';
 import { quranAPI } from '../services/quran-api.js';
 import { saveLastRead, isBookmarked, toggleBookmark } from '../utils/storage-utils.js';
 
-export function ReadingPage({ surah, onBack }) {
+export function PlayerPage({ surah, onBack }) {
     // 1. Context & State
     const {
         currentReciter, setCurrentReciter, playSurah,
@@ -133,7 +133,7 @@ export function ReadingPage({ surah, onBack }) {
 
     return (
         <div className="relative h-screen overflow-hidden bg-[var(--color-bg-primary)] flex flex-col">
-            <ReadingHeader
+            <PlayerHeader
                 surah={surah}
                 onBack={onBack}
                 reciterName={currentReciter.name}

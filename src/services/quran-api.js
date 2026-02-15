@@ -144,7 +144,7 @@ class QuranService {
     }
 
     /**
-     * Get Surah Verse Images (for ReadingPage)
+     * Get Surah Verse Images (for PlayerPage)
      */
     async getSurahVerseImages(surahNumber) {
         const cacheKey = `surah-images-${surahNumber}`;

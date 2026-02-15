@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Bookmark, Share2, Headphones, LayoutList, AlignJustify } from 'lucide-react';
 
-export const ReadingHeader = ({
+export const PlayerHeader = ({
     surah,
     onBack,
     reciterName,
