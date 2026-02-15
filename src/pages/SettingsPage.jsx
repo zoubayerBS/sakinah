@@ -18,7 +18,7 @@ import { useAudio } from '../context/AudioContext.jsx';
 import { usePWAInstall } from '../hooks/usePWAInstall.js';
 
 export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
-    const { sleepTimer, setSleepTimer } = useAudio();
+    const { sleepTimer, setSleepTimer, sleepTimerRemaining } = useAudio();
     const { isInstallable, promptInstall } = usePWAInstall();
 
     const handleSleepTimer = (minutes) => {
@@ -86,7 +86,9 @@ export const SettingsPage = ({ theme, toggleTheme, onBack }) => {
                                 <div className="text-right">
                                     <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">مؤقت النوم</h3>
                                     <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">
-                                        {sleepTimer ? `يتوقف بعد ${sleepTimer} دقيقة` : 'متوقف'}
+                                        {sleepTimerRemaining !== null
+                                            ? `يتبقى ${Math.floor(sleepTimerRemaining / 60)}:${(sleepTimerRemaining % 60).toString().padStart(2, '0')}`
+                                            : 'متوقف'}
                                     </p>
                                 </div>
                             </div>

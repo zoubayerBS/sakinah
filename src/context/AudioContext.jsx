@@ -7,6 +7,7 @@ export const useAudio = () => useContext(AudioContext);
 
 export const AudioProvider = ({ children }) => {
     const [activeSurah, setActiveSurah] = useState(null);
+    const [surahs, setSurahs] = useState([]);
     const [audioData, setAudioData] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -16,6 +17,10 @@ export const AudioProvider = ({ children }) => {
     const [isBuffering, setIsBuffering] = useState(false);
     const [bufferedProgress, setBufferedProgress] = useState(0);
     const [isWaitingForInitialBuffer, setIsWaitingForInitialBuffer] = useState(false);
+
+    // Playback Modes
+    const [isShuffle, setIsShuffle] = useState(false);
+    const [repeatMode, setRepeatMode] = useState('all'); // 'none', 'one', 'all'
 
     // Verse Tracking
     const [currentAyahNumber, setCurrentAyahNumber] = useState(null); // The ayah numberInSurah being played
@@ -55,6 +60,16 @@ export const AudioProvider = ({ children }) => {
     const audioUrlsRef = useRef([]);
     const currentUrlIndexRef = useRef(0);
 
+    // Fetch All Surahs for Playlist
+    useEffect(() => {
+        const fetchSurahs = async () => {
+            const { quranAPI } = await import('../services/quran-api.js');
+            const data = await quranAPI.getAllSurahs();
+            setSurahs(data);
+        };
+        fetchSurahs();
+    }, []);
+
     useEffect(() => {
         const audio = player.current;
 
@@ -85,6 +100,20 @@ export const AudioProvider = ({ children }) => {
         const handleEnded = () => {
             setIsPlaying(false);
             setCurrentAyahNumber(null);
+
+            // Handle Repeat Mode
+            if (repeatMode === 'one') {
+                audio.currentTime = 0;
+                audio.play().then(() => setIsPlaying(true)).catch(console.error);
+                return;
+            }
+
+            // Auto-advance to next surah (default or 'all')
+            if (activeSurah && surahs.length > 0) {
+                if (repeatMode === 'all' || (repeatMode === 'none' && activeSurah.number < surahs.length)) {
+                    playNextSurah();
+                }
+            }
         };
 
         // Handle audio load errors - try fallback URLs
@@ -128,28 +157,53 @@ export const AudioProvider = ({ children }) => {
     }, [volume]);
 
     // Sleep Timer Logic
+    const [sleepTimerRemaining, setSleepTimerRemaining] = useState(null); // seconds
+    const initialVolumeRef = useRef(volume);
+
     useEffect(() => {
         if (sleepTimer) {
-            console.log(`[AudioContext] Sleep timer set for ${sleepTimer} minutes`);
-            const id = setTimeout(() => {
-                console.log("[AudioContext] Sleep timer expired. Stopping audio.");
-                if (isPlaying) {
-                    player.current.pause();
-                    setIsPlaying(false);
-                }
-                setSleepTimer(null); // Reset timer
-            }, sleepTimer * 60 * 1000);
-
-            setSleepTimerId(id);
-
-            return () => clearTimeout(id);
+            setSleepTimerRemaining(sleepTimer * 60);
         } else {
-            if (sleepTimerId) {
-                clearTimeout(sleepTimerId);
-                setSleepTimerId(null);
-            }
+            setSleepTimerRemaining(null);
         }
     }, [sleepTimer]);
+
+    useEffect(() => {
+        let intervalId = null;
+        if (sleepTimerRemaining !== null && sleepTimerRemaining > 0) {
+            intervalId = setInterval(() => {
+                setSleepTimerRemaining(prev => {
+                    const next = prev - 1;
+
+                    // Fade-out logic in last 10 seconds
+                    if (next <= 10 && next > 0) {
+                        const fadeRatio = next / 10;
+                        player.current.volume = volume * fadeRatio;
+                    }
+
+                    if (next <= 0) {
+                        clearInterval(intervalId);
+                        if (isPlaying) {
+                            player.current.pause();
+                            setIsPlaying(false);
+                        }
+                        // Restore volume
+                        player.current.volume = volume;
+                        setSleepTimer(null);
+                        return null;
+                    }
+                    return next;
+                });
+            }, 1000);
+        } else if (sleepTimerRemaining === null) {
+            // Restore volume if timer cancelled
+            player.current.volume = volume;
+        }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [sleepTimerRemaining, isPlaying, volume]);
 
 
     /**
@@ -185,8 +239,10 @@ export const AudioProvider = ({ children }) => {
      * with automatic fallback to alternative CDNs.
      */
     const playFullSurah = useCallback((surah, data, reciterObj) => {
-        const reciterId = typeof reciterObj === 'string' ? reciterObj : reciterObj.identifier;
-        if (typeof reciterObj === 'object' && reciterObj.identifier) {
+        const reciterId = typeof reciterObj === 'string' ? reciterObj : (reciterObj?.identifier || currentReciter.identifier);
+
+        // Update reciter if object provided
+        if (typeof reciterObj === 'object' && reciterObj?.identifier) {
             setCurrentReciter(reciterObj);
         }
 
@@ -194,12 +250,11 @@ export const AudioProvider = ({ children }) => {
         setAudioData(data);
         setCurrentAyahNumber(null);
 
-        // Get full surah audio URLs (with fallbacks)
+        // Get full surah audio URLs
         const urls = [];
         const apiUrl = data?.audio_url || data?.audioUrl;
-        if (apiUrl) {
-            urls.push(apiUrl);
-        }
+        if (apiUrl) urls.push(apiUrl);
+
         const shouldAddFallbacks = !apiUrl || !String(apiUrl).includes('mp3quran.net');
         if (shouldAddFallbacks) {
             const fallbackUrls = getAudioUrls(reciterId, surah.number);
@@ -211,9 +266,6 @@ export const AudioProvider = ({ children }) => {
         currentUrlIndexRef.current = 0;
 
         if (urls.length > 0) {
-            console.log(`[AudioContext] Playing full surah ${surah.number} (${surah.name}) with reciter ${reciterId}`);
-            console.log(`[AudioContext] Audio URL: ${urls[0]}`);
-
             const audio = player.current;
             audio.src = urls[0];
             audio.load();
@@ -221,7 +273,6 @@ export const AudioProvider = ({ children }) => {
                 .then(() => setIsPlaying(true))
                 .catch(err => {
                     console.error("[AudioContext] Playback failed:", err);
-                    // Try next URL on play failure
                     if (urls.length > 1) {
                         currentUrlIndexRef.current = 1;
                         audio.src = urls[1];
@@ -229,10 +280,49 @@ export const AudioProvider = ({ children }) => {
                         audio.play().then(() => setIsPlaying(true)).catch(console.error);
                     }
                 });
-        } else {
-            console.error("[AudioContext] No audio URLs available for this surah/reciter combination.");
         }
-    }, []);
+    }, [currentReciter]);
+
+    const playNextSurah = useCallback(async () => {
+        if (!activeSurah || surahs.length === 0) return;
+
+        let nextIndex;
+        if (isShuffle) {
+            nextIndex = Math.floor(Math.random() * surahs.length);
+            // Ensure we don't pick the same one if multiple are available
+            if (nextIndex === surahs.findIndex(s => Number(s.number) === Number(activeSurah.number)) && surahs.length > 1) {
+                nextIndex = (nextIndex + 1) % surahs.length;
+            }
+        } else {
+            const currentIndex = surahs.findIndex(s => Number(s.number) === Number(activeSurah.number));
+            nextIndex = (currentIndex + 1) % surahs.length;
+        }
+
+        const nextSurah = surahs[nextIndex];
+
+        const { quranAPI } = await import('../services/quran-api.js');
+        const data = await quranAPI.getSurahAudioData(
+            nextSurah.number,
+            currentReciter.identifier,
+            currentReciter.selectedMoshafId || currentReciter.defaultMoshafId
+        );
+        if (data) playFullSurah(nextSurah, data, currentReciter);
+    }, [activeSurah, surahs, currentReciter, playFullSurah, isShuffle]);
+
+    const playPrevSurah = useCallback(async () => {
+        if (!activeSurah || surahs.length === 0) return;
+        const currentIndex = surahs.findIndex(s => Number(s.number) === Number(activeSurah.number));
+        const prevIndex = (currentIndex - 1 + surahs.length) % surahs.length;
+        const prevSurah = surahs[prevIndex];
+
+        const { quranAPI } = await import('../services/quran-api.js');
+        const data = await quranAPI.getSurahAudioData(
+            prevSurah.number,
+            currentReciter.identifier,
+            currentReciter.selectedMoshafId || currentReciter.defaultMoshafId
+        );
+        if (data) playFullSurah(prevSurah, data, currentReciter);
+    }, [activeSurah, surahs, currentReciter, playFullSurah]);
 
     const togglePlay = () => {
         const audio = player.current;
@@ -273,7 +363,7 @@ export const AudioProvider = ({ children }) => {
         bufferedProgress,
         isWaitingForInitialBuffer,
         currentAyahNumber,
-        playSurah: playFullSurah,
+        playFullSurah,
         playAyah,
         togglePlay,
         seek,
@@ -282,12 +372,22 @@ export const AudioProvider = ({ children }) => {
         currentReciter,
         setCurrentReciter,
         sleepTimer,
-        setSleepTimer
+        setSleepTimer,
+        sleepTimerRemaining,
+        surahs,
+        playNextSurah,
+        playPrevSurah,
+        isShuffle,
+        setIsShuffle,
+        repeatMode,
+        setRepeatMode
     }), [
         activeSurah, audioData, isPlaying, currentTime, duration, progress,
         volume, isBuffering, bufferedProgress, isWaitingForInitialBuffer,
         currentAyahNumber, playFullSurah, playAyah, togglePlay, seek, skip,
-        currentReciter, sleepTimer
+        currentReciter, sleepTimer, sleepTimerRemaining, surahs,
+        playNextSurah, playPrevSurah,
+        isShuffle, repeatMode
     ]);
 
     useEffect(() => {

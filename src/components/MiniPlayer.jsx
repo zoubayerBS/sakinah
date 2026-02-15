@@ -1,12 +1,12 @@
 import React from 'react';
-import { Play, Pause, X } from 'lucide-react';
+import { Play, Pause, X, Clock } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 
 export const MiniPlayer = ({ onOpen }) => {
     const {
         activeSurah, isPlaying, togglePlay, progress,
         setActiveSurah, isWaitingForInitialBuffer, bufferedProgress,
-        currentReciter
+        currentReciter, sleepTimerRemaining
     } = useAudio();
 
     if (!activeSurah) return null;
@@ -40,10 +40,23 @@ export const MiniPlayer = ({ onOpen }) => {
                                     {currentReciter.selectedMoshafLabel}
                                 </p>
                             )}
-                            <p className="text-[9px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold">
-                                {isWaitingForInitialBuffer
-                                    ? `Optimisation du flux (${Math.round(bufferedProgress)}%)`
-                                    : 'En cours de lecture'}
+                            <p className="text-[9px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold flex items-center gap-1.5">
+                                {isWaitingForInitialBuffer ? (
+                                    `Optimisation du flux (${Math.round(bufferedProgress)}%)`
+                                ) : (
+                                    <>
+                                        <span>En cours de lecture</span>
+                                        {sleepTimerRemaining !== null && (
+                                            <>
+                                                <span className="w-1 h-1 rounded-full bg-[var(--color-text-tertiary)] opacity-30"></span>
+                                                <span className="text-[var(--color-accent)] animate-pulse flex items-center gap-1">
+                                                    <Clock size={10} />
+                                                    {Math.floor(sleepTimerRemaining / 60)}:{(sleepTimerRemaining % 60).toString().padStart(2, '0')}
+                                                </span>
+                                            </>
+                                        )}
+                                    </>
+                                )}
                             </p>
                         </div>
                     </div>

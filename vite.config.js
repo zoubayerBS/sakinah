@@ -50,7 +50,7 @@ export default defineConfig({
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
-                navigateFallbackDenylist: [/^\/oauth2-proxy/, /^\/api-proxy/],
+                navigateFallbackDenylist: [/^\/oauth2-proxy/, /^\/api-proxy/, /^\/api/],
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -85,6 +85,20 @@ export default defineConfig({
                         handler: 'NetworkOnly'
                     },
                     {
+                        urlPattern: /^\/api\/.*/i,
+                        handler: 'NetworkFirst',
+                        options: {
+                            cacheName: 'api-data-cache',
+                            expiration: {
+                                maxEntries: 50,
+                                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200]
+                            }
+                        }
+                    },
+                    {
                         urlPattern: /^https:\/\/api\.alquran\.cloud\/.*/i,
                         handler: 'NetworkFirst',
                         options: {
@@ -92,6 +106,35 @@ export default defineConfig({
                             expiration: {
                                 maxEntries: 100,
                                 maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                            }
+                        }
+                    },
+                    {
+                        urlPattern: /^https:\/\/.*\.mp3quran\.net\/.*/i,
+                        handler: 'StaleWhileRevalidate',
+                        options: {
+                            cacheName: 'audio-cache',
+                            expiration: {
+                                maxEntries: 20,
+                                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200]
+                            },
+                            rangeRequests: true
+                        }
+                    },
+                    {
+                        urlPattern: /^https:\/\/static-cdn\.tarteel\.ai\/qul\/fonts\/quran_fonts\/v2\/woff2\/.*/i,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'quran-fonts-v2-cache',
+                            expiration: {
+                                maxEntries: 604,
+                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200]
                             }
                         }
                     }

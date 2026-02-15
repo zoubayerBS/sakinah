@@ -7,7 +7,8 @@ export const PlayerHeader = ({
     reciterName,
     onChangeReciter,
     isBookmarked,
-    onToggleBookmark
+    onToggleBookmark,
+    onTogglePlaylist
 }) => {
     return (
         <header className="sticky top-0 z-[var(--z-fixed)] w-full bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] px-6 py-4 shadow-[var(--shadow-sm)] transition-colors">
@@ -53,6 +54,13 @@ export const PlayerHeader = ({
                         className="md:hidden w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] hover:border-[var(--color-accent)]"
                     >
                         <Headphones size={18} className="text-[var(--color-accent)]" />
+                    </button>
+                    <button
+                        onClick={onTogglePlaylist}
+                        className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors group"
+                        title="قائمة السور"
+                    >
+                        <LayoutList size={18} className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)] transition-colors" />
                     </button>
                     <button
                         onClick={onToggleBookmark}

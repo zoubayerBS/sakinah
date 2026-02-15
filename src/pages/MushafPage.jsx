@@ -3,6 +3,13 @@ import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, Bookmar
 import { quranAPI } from '../services/quran-api.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import { getKhitmaState, saveLastRead } from '../utils/storage-utils.js';
+import { toArabicIndicDigits, formatSurahTitle, calculateWirdProgress, findJuzForPage } from '../utils/quran-utils.js';
+
+// Import modular components
+import MushafHeader from '../components/mushaf/MushafHeader.jsx';
+import MushafBottomNav from '../components/mushaf/MushafBottomNav.jsx';
+import MushafNavPanel from '../components/mushaf/MushafNavPanel.jsx';
+import AyahDetailPanel from '../components/mushaf/AyahDetailPanel.jsx';
 
 // Juz data for quick navigation
 const JUZ_PAGES = [
@@ -44,16 +51,7 @@ const READING_MODES = {
     midnight: { bg: '#0A0E17', text: '#D1D5DB', accent: '#60A5FA', label: 'ليلي', icon: Layers },
 };
 
-const toArabicIndicDigits = (value) => {
-    const digits = String(value).split('');
-    const map = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    return digits.map((d) => (/\d/.test(d) ? map[Number(d)] : d)).join('');
-};
 
-const formatSurahTitle = (name) => {
-    if (!name) return '';
-    return name.startsWith('سورة') ? name : `سورة ${name}`;
-};
 
 const MushafPage = ({ onBack }) => {
     // Core state
@@ -111,12 +109,7 @@ const MushafPage = ({ onBack }) => {
         load();
     }, []);
 
-    const wirdProgress = useMemo(() => {
-        if (!khitma || !khitma.progressLog) return 0;
-        const todayKey = new Date().toISOString().split('T')[0];
-        const todayPortions = khitma.progressLog[todayKey] || 0;
-        return (todayPortions / 5) * 100;
-    }, [khitma]);
+    const wirdProgress = useMemo(() => calculateWirdProgress(khitma), [khitma]);
 
     // Refs
     const containerRef = useRef(null);
@@ -136,7 +129,7 @@ const MushafPage = ({ onBack }) => {
     const progressPercent = ((pageNumber / 604) * 100).toFixed(1);
 
     // Find current juz
-    const currentJuz = JUZ_PAGES.reduce((acc, j) => pageNumber >= j.page ? j.juz : acc, 1);
+    const currentJuz = useMemo(() => findJuzForPage(pageNumber, JUZ_PAGES), [pageNumber]);
 
     // Filter surahs by search
     const filteredSurahs = SURAH_NAMES.map((name, idx) => ({ name, number: idx + 1 }))
@@ -575,92 +568,21 @@ const MushafPage = ({ onBack }) => {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* MINIMAL FLOATING HEADER BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            <header
-                className={`fixed top-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-24 opacity-0 pointer-events-none'}`}
-                style={{
-                    transition: 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)',
-                    willChange: 'transform, opacity',
-                }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div
-                    className="flex items-center justify-between gap-4 pl-2 pr-4 py-2 rounded-full shadow-2xl border border-white/5"
-                    style={{
-                        backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF',
-                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.05)',
-                    }}
-                >
-                    {/* Home / Back */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onBack) onBack();
-                        }}
-                        className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90"
-                        style={{ color: mode.text }}
-                    >
-                        <Home size={20} />
-                    </button>
-
-                    {/* Title Info */}
-                    <div className="flex flex-col items-center min-w-[120px]">
-                        <h1 className="font-arabic font-bold text-base leading-tight" style={{ color: mode.text }}>
-                            {pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف'}
-                        </h1>
-
-                        {khitma?.isStarted ? (
-                            <div className="flex flex-col items-center w-full mt-1.5 px-2">
-                                <div className="w-full h-1 bg-black/5 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-[var(--color-accent)] shadow-[0_0_5px_var(--color-accent)] transition-all duration-1000"
-                                        style={{ width: `${wirdProgress}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between w-full mt-1">
-                                    <span className="text-[7px] font-bold opacity-30 uppercase" style={{ color: mode.text }}>
-                                        الجزء {pageInfo?.juz}
-                                    </span>
-                                    <span className="text-[7px] font-bold opacity-40 uppercase tracking-tighter" style={{ color: mode.text }}>
-                                        ورد اليوم {Math.round(wirdProgress)}%
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            pageInfo && (
-                                <span className="text-[9px] font-bold opacity-50" style={{ color: mode.text }}>
-                                    الجزء {pageInfo.juz} • {pageInfo.surahEnglish}
-                                </span>
-                            )
-                        )}
-                    </div>
-
-                    {/* Actions Group */}
-                    <div className="flex items-center gap-1">
-                        {/* Bookmark */}
-                        <button
-                            onClick={toggleBookmark}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 ${isCurrentPageBookmarked ? '' : 'hover:bg-black/5'}`}
-                            style={{ color: isCurrentPageBookmarked ? mode.accent : mode.text, opacity: isCurrentPageBookmarked ? 1 : 0.6 }}
-                        >
-                            {isCurrentPageBookmarked ? <BookmarkCheck size={18} fill="currentColor" /> : <Bookmark size={18} />}
-                        </button>
-
-
-                        {/* Theme Toggle */}
-                        <button
-                            onClick={() => {
-                                const modes = Object.keys(READING_MODES);
-                                const idx = modes.indexOf(readingMode);
-                                setReadingMode(modes[(idx + 1) % modes.length]);
-                            }}
-                            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 opacity-60 hover:opacity-100"
-                            style={{ color: mode.text }}
-                        >
-                            {React.createElement(mode.icon, { size: 18 })}
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <MushafHeader
+                showControls={showControls}
+                onBack={onBack}
+                mode={mode}
+                isDarkMode={isDarkMode}
+                pageInfo={pageInfo}
+                formatSurahTitle={formatSurahTitle}
+                khitma={khitma}
+                wirdProgress={wirdProgress}
+                toggleBookmark={toggleBookmark}
+                isCurrentPageBookmarked={isCurrentPageBookmarked}
+                readingMode={readingMode}
+                setReadingMode={setReadingMode}
+                READING_MODES={READING_MODES}
+            />
 
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* MAIN MUSHAF CONTENT */}
@@ -700,13 +622,15 @@ const MushafPage = ({ onBack }) => {
                     {/* Page Content - Full page reader style */}
                     <div className={`relative z-10 w-full flex-1 flex flex-col justify-start items-center ${isFullscreen ? 'p-2 md:p-4 h-full' : 'py-2 min-h-[100dvh]'}`}>
                         {isLoading || isFontLoading ? (
-                            <div className="flex flex-col items-center justify-center py-40 space-y-8 animate-pulse">
+                            <div className="flex flex-col items-center justify-center py-40 space-y-8">
                                 <div className="relative">
-                                    <div className="w-20 h-20 rounded-full border-[3px] border-current opacity-20" />
+                                    <div className="w-24 h-24 rounded-full border-[3px] border-current opacity-10 skeleton" />
                                     <div className="absolute inset-0 border-[3px] border-t-transparent animate-spin rounded-full" style={{ borderColor: mode.accent }} />
-                                    <BookOpen className="absolute inset-0 m-auto w-8 h-8 opacity-40" />
+                                    <div className="absolute inset-0 m-auto w-12 h-12 flex items-center justify-center">
+                                        <BookOpen className="w-8 h-8 opacity-40 animate-float" />
+                                    </div>
                                 </div>
-                                <p className="font-arabic text-lg tracking-wide opacity-50">جاري التحميل...</p>
+                                <p className="font-arabic text-xl tracking-wide opacity-50 animate-pulse">جاري التحميل...</p>
                             </div>
                         ) : (
                             <div className={`w-full flex-1 flex flex-col items-center justify-center transition-all duration-500 ${slideDirection === 'left' ? 'animate-slide-in-left' : slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-fade-in'}`}>
@@ -990,75 +914,18 @@ const MushafPage = ({ onBack }) => {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* MINIMAL FLOATING BOTTOM NAV BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            <nav
-                className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'}`}
-                style={{
-                    transition: 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)',
-                    willChange: 'transform, opacity',
-                }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div
-                    className="flex items-center gap-3 px-2 py-2 rounded-full shadow-2xl border border-white/5"
-                    style={{
-                        backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF',
-                        boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.05)',
-                    }}
-                >
-                    {/* Prev Page Button (RTL) */}
-                    <button
-                        onClick={handlePrev}
-                        disabled={pageNumber <= 1}
-                        className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
-                        style={{ color: mode.text }}
-                    >
-                        <ChevronRight size={22} />
-                    </button>
-
-                    {/* Page Info & Slider Container */}
-                    <div className="flex flex-col items-center w-32 sm:w-48 gap-1">
-                        <span className="text-[10px] font-bold opacity-60 font-arabic" style={{ color: mode.text }}>
-                            صفحة {pageNumber}
-                        </span>
-                        <input
-                            type="range"
-                            min="1"
-                            max="604"
-                            value={pageNumber}
-                            onChange={(e) => setPageNumber(parseInt(e.target.value))}
-                            className="w-full h-1 rounded-full appearance-none cursor-pointer bg-current opacity-20 hover:opacity-100 transition-opacity"
-                            style={{ color: mode.accent }}
-                        />
-                    </div>
-
-                    {/* Next Page Button (RTL) */}
-                    <button
-                        onClick={handleNext}
-                        disabled={pageNumber >= 604}
-                        className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
-                        style={{ color: mode.text }}
-                    >
-                        <ChevronLeft size={22} />
-                    </button>
-
-                    {/* Divider */}
-                    <div className="w-px h-6 bg-current opacity-10 mx-1" style={{ color: mode.text }} />
-
-                    {/* Menu Button */}
-                    <button
-                        onClick={() => { setShowNavPanel(true); setNavTab('surah'); }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 hover:bg-black/5"
-                        style={{
-                            backgroundColor: mode.accent,
-                            color: '#fff',
-                            boxShadow: `0 4px 12px ${mode.accent}40`
-                        }}
-                    >
-                        <List size={18} />
-                        <span className="text-xs font-bold hidden sm:inline font-arabic">الفهرس</span>
-                    </button>
-                </div>
-            </nav>
+            <MushafBottomNav
+                showControls={showControls}
+                isDarkMode={isDarkMode}
+                handlePrev={handlePrev}
+                handleNext={handleNext}
+                pageNumber={pageNumber}
+                setPageNumber={setPageNumber}
+                mode={mode}
+                setShowNavPanel={setShowNavPanel}
+                setNavTab={setNavTab}
+                toArabicIndicDigits={toArabicIndicDigits}
+            />
 
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* NAVIGATION PANEL (Full-screen slide-up) */}
@@ -1066,491 +933,47 @@ const MushafPage = ({ onBack }) => {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* AYAH DETAIL PANEL */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            {showVerseDetail && (
-                <div
-                    className="fixed inset-0 z-[10000] flex items-end justify-center"
-                    onClick={() => {
-                        setShowVerseDetail(false);
-                        setSelectedVerseKey(null);
-                    }}
-                >
-                    {/* Modified: Overlay removed as per user request */}
-                    {/* <div className="absolute inset-0 bg-black/5 pointer-events-auto" /> */}
-                    <div
-                        className={`relative flex flex-col w-full max-w-[600px] max-h-[70vh] rounded-t-[2.5rem] overflow-hidden shadow-2xl animate-slide-up ${isDarkMode ? 'bg-[#1A1A1A] text-white' : 'bg-[#FDFCFA] text-[#2C2C2C]'}`}
-                        onClick={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onTouchMove={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
-                        style={{ borderTop: `2px solid ${mode.accent}30` }}
-                    >
-                        {/* Drag Handle */}
-                        <div className="flex justify-center pt-3 pb-1">
-                            <div className="w-12 h-1.5 rounded-full bg-current opacity-10" />
-                        </div>
-
-                        {/* Panel Header */}
-                        <div className="flex items-center justify-between px-6 pb-4 pt-2">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">معلومات الآية</span>
-                                <h3 className="font-arabic font-bold text-xl" style={{ color: mode.accent }}>
-                                    {selectedVerseKey}
-                                </h3>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setShowVerseDetail(false);
-                                    setSelectedVerseKey(null);
-                                }}
-                                className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 hover:bg-black/10 transition-all"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {/* Content Scroll Area */}
-                        <div
-                            className="flex-1 min-h-0 overflow-y-auto px-6 pb-12 nav-panel-scroll"
-                            style={{ touchAction: 'pan-y', overscrollBehaviorY: 'contain' }}
-                        >
-                            {verseDetailLoading ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                    <Loader2 className="animate-spin opacity-40" size={32} />
-                                    <span className="font-arabic opacity-40">جاري تحميل التفسير...</span>
-                                </div>
-                            ) : (
-                                <div className="space-y-8 animate-fade-in">
-                                    {/* Verse Text Display */}
-                                    {verseDetailData && (
-                                        <div className="text-right p-4 rounded-2xl bg-black/5 border border-white/5">
-                                            <p className="font-arabic text-2xl leading-relaxed mb-2" dir="rtl">
-                                                {verseDetailData.textUthmani || verseDetailData.text}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Tafsir Content */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between gap-2 mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: mode.accent }} />
-                                                <h4 className="font-arabic font-bold text-lg">
-                                                    {tafsirList.find(t => t.id === selectedTafsir)?.name || 'التفسير'}
-                                                </h4>
-                                            </div>
-
-                                            {/* Tafsir Selector */}
-                                            {tafsirList.length > 0 && (
-                                                <div className="relative">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setShowTafsirSelect(!showTafsirSelect);
-                                                        }}
-                                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all active:scale-95"
-                                                        style={{
-                                                            borderColor: mode.accent + '40',
-                                                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                                                            color: mode.text
-                                                        }}
-                                                    >
-                                                        <span className="text-xs font-bold font-arabic opacity-80">
-                                                            {tafsirList.find(t => t.id === selectedTafsir)?.name || 'اختر التفسير'}
-                                                        </span>
-                                                        <ChevronDown size={14} className={`opacity-50 transition-transform ${showTafsirSelect ? 'rotate-180' : ''}`} />
-                                                    </button>
-
-                                                    {/* Dropdown Menu */}
-                                                    {showTafsirSelect && (
-                                                        <>
-                                                            <div
-                                                                className="fixed inset-0 z-10"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setShowTafsirSelect(false);
-                                                                }}
-                                                            />
-                                                            <div
-                                                                className="absolute top-full left-0 mt-2 w-56 max-h-[300px] overflow-y-auto rounded-xl shadow-xl z-20 border py-1 animate-fade-in nav-panel-scroll"
-                                                                style={{
-                                                                    backgroundColor: isDarkMode ? '#252525' : '#FFFFFF',
-                                                                    borderColor: mode.accent + '20',
-                                                                    touchAction: 'pan-y',
-                                                                    overscrollBehaviorY: 'contain'
-                                                                }}
-                                                                onTouchStart={(e) => e.stopPropagation()}
-                                                                onTouchMove={(e) => e.stopPropagation()}
-                                                                onTouchEnd={(e) => e.stopPropagation()}
-                                                            >
-                                                                {tafsirList.map(t => (
-                                                                    <button
-                                                                        key={t.id}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setSelectedTafsir(t.id);
-                                                                            setShowTafsirSelect(false);
-                                                                        }}
-                                                                        className={`w-full text-right px-4 py-2.5 text-xs font-arabic transition-colors flex items-center justify-between gap-2 border-b border-dashed border-white/5 last:border-0 hover:bg-black/5 ${selectedTafsir === t.id ? 'font-bold' : 'opacity-70'}`}
-                                                                        style={{
-                                                                            color: selectedTafsir === t.id ? mode.accent : mode.text
-                                                                        }}
-                                                                    >
-                                                                        <span>
-                                                                            {t.name}
-                                                                            {t.language && t.language !== 'arabic' && (
-                                                                                <span className="text-[10px] opacity-60 mr-1">({t.language})</span>
-                                                                            )}
-                                                                        </span>
-                                                                        {selectedTafsir === t.id && <Check size={12} />}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div
-                                            className="font-tafsir text-xl leading-loose text-justify opacity-90"
-                                            dir="rtl"
-                                            dangerouslySetInnerHTML={{ __html: tafsirData?.text || 'لا يتوفر تفسير حالياً.' }}
-                                        />
-                                    </div>
-
-                                    {/* Translation if available */}
-                                    {verseDetailData?.translations && verseDetailData.translations.length > 0 && (
-                                        <div className="space-y-4 pt-4 border-t border-white/5">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <div className="w-1.5 h-6 rounded-full opacity-30" style={{ backgroundColor: mode.accent }} />
-                                                <h4 className="font-arabic font-bold text-lg">الترجمة الإنجليزية</h4>
-                                            </div>
-                                            <p className="text-sm opacity-60 leading-relaxed text-left" dir="ltr">
-                                                {verseDetailData.translations[0].text.replace(/<[^>]*>/g, '')}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <AyahDetailPanel
+                showVerseDetail={showVerseDetail}
+                setShowVerseDetail={setShowVerseDetail}
+                setSelectedVerseKey={setSelectedVerseKey}
+                isDarkMode={isDarkMode}
+                mode={mode}
+                selectedVerseKey={selectedVerseKey}
+                verseDetailLoading={verseDetailLoading}
+                verseDetailData={verseDetailData}
+                tafsirList={tafsirList}
+                selectedTafsir={selectedTafsir}
+                setSelectedTafsir={setSelectedTafsir}
+                showTafsirSelect={showTafsirSelect}
+                setShowTafsirSelect={setShowTafsirSelect}
+                tafsirData={tafsirData}
+            />
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* NAVIGATION PANEL (Full-screen slide-up) */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            {showNavPanel && (
-                <div
-                    className="fixed inset-0 z-[9999] flex items-end justify-center"
-                    onClick={() => setShowNavPanel(false)}
-                    style={{ touchAction: 'pan-y', overscrollBehaviorY: 'contain' }}
-                >
-                    {/* Modified: Overlay removed as per user request */}
-                    {/* <div className="absolute inset-0 bg-black/5" /> */}
-                    <div
-                        className={`relative flex flex-col w-full max-w-[500px] h-[85vh] rounded-t-[2.5rem] overflow-hidden shadow-none animate-slide-up ${isDarkMode ? 'bg-[#121212] text-white' : 'bg-[#FDFCFA] text-[#2C2C2C]'}`}
-                        style={isDarkMode ? {} : { backgroundColor: mode.bg }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Panel Header */}
-                        <div
-                            className={`flex items-center justify-between px-6 py-5 border-b sticky top-0 z-10 ${isDarkMode ? 'bg-[#121212] border-white/5' : 'bg-[#FDFCFA] border-black/5'}`}
-                            style={isDarkMode ? {} : { backgroundColor: mode.bg }}
-                        >
-                            <h2 className={`font-arabic font-bold text-lg ${isDarkMode ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
-                                فهرس المصحف
-                            </h2>
-                            <button
-                                onClick={() => setShowNavPanel(false)}
-                                className={`p-2 rounded-full transition-all active:scale-90 ${isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-black/5 text-[var(--color-text-tertiary)]'}`}
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {/* Tab Buttons - Elegant Pills */}
-                        <div className="flex px-4 gap-1.5 pb-3">
-                            {[
-                                { id: 'surah', label: 'السور', icon: BookOpen },
-                                { id: 'juz', label: 'الأجزاء', icon: Layers },
-                                { id: 'page', label: 'صفحة', icon: Hash },
-                                ...(bookmarkedPages.length > 0 ? [{ id: 'bookmarks', label: 'العلامات', icon: BookMarked }] : []),
-                            ].map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setNavTab(tab.id)}
-                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-bold font-arabic transition-all active:scale-95 ${navTab === tab.id
-                                        ? 'shadow-md'
-                                        : 'opacity-50 hover:opacity-100'
-                                        }`}
-                                    style={{
-                                        backgroundColor: navTab === tab.id ? mode.accent : (isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
-                                        color: navTab === tab.id ? '#fff' : (isDarkMode ? '#fff' : 'var(--color-text-primary)'),
-                                        boxShadow: navTab === tab.id ? `0 4px 12px ${mode.accent}40` : 'none',
-                                    }}
-                                >
-                                    <tab.icon size={14} />
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Search Bar - Elegant Input */}
-                        {navTab === 'surah' && (
-                            <div className="px-6 pb-3">
-                                <div className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-all ${isDarkMode ? 'bg-[#1A1A1A] border-white/8 focus-within:border-white/15' : 'bg-white border-black/6 focus-within:border-black/10'}`}>
-                                    <Search size={18} className={`${isDarkMode ? 'text-gray-500' : 'text-[var(--color-text-tertiary)]'}`} />
-                                    <input
-                                        type="text"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="ابحث عن سورة..."
-                                        className={`flex-1 bg-transparent text-sm font-arabic focus:outline-none ${isDarkMode ? 'placeholder:text-gray-600 text-white' : 'placeholder:opacity-30'}`}
-                                        autoFocus
-                                    />
-                                    {searchQuery && (
-                                        <button onClick={() => setSearchQuery('')} className={`p-1 rounded-lg transition-all ${isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-black/5 text-gray-500'}`}>
-                                            <X size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Panel Content */}
-                        <div className={`flex-1 overflow-y-auto nav-panel-scroll px-1 pb-10 ${isDarkMode ? '' : ''}`}
-                            style={isDarkMode ? {} : { backgroundColor: mode.bg }}>
-
-                            {/* ── SURAH TAB ── */}
-                            {navTab === 'surah' && (
-                                <div className="p-2 space-y-1 px-3">
-                                    {filteredSurahs.map(({ name, number }) => {
-                                        const pages = surahPageMapping[number];
-                                        const isCurrentSurah = pageInfo && pageInfo.surahNumber === number;
-                                        return (
-                                            <button
-                                                key={number}
-                                                onClick={() => navigateTo(pages.start, pages.start > pageNumber ? 'left' : 'right')}
-                                                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] ${isCurrentSurah
-                                                    ? 'bg-[#A67C52] text-white shadow-md'
-                                                    : isDarkMode
-                                                        ? 'hover:bg-[#1A1A1A] border border-transparent'
-                                                        : 'hover:bg-[#F5F5F5] border border-transparent'
-                                                    }`}
-                                                style={isCurrentSurah ? { boxShadow: '0 2px 8px rgba(166, 124, 82, 0.3)' } : {}}
-                                            >
-                                                {/* Number Badge */}
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${isCurrentSurah
-                                                    ? 'bg-white/20 text-white'
-                                                    : isDarkMode ? 'bg-[#252525] text-gray-300' : 'bg-[#E8E8E8] text-gray-600'
-                                                    }`}>
-                                                    {number}
-                                                </div>
-
-                                                {/* Surah Name */}
-                                                <div className="flex-1 text-right">
-                                                    <span className={`font-arabic font-bold text-sm block ${isCurrentSurah ? 'text-white' : isDarkMode ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
-                                                        {name}
-                                                    </span>
-                                                </div>
-
-                                                {/* Page Range */}
-                                                <div className={`text-center px-2 py-1 rounded-lg ${isCurrentSurah
-                                                    ? 'bg-white/10'
-                                                    : isDarkMode ? 'bg-[#252525]' : 'bg-[#F0F0F0]'
-                                                    }`}>
-                                                    <span className={`text-[10px] font-bold tabular-nums block ${isCurrentSurah
-                                                        ? 'text-white'
-                                                        : isDarkMode ? 'text-gray-400' : 'text-[var(--color-text-tertiary)]'
-                                                        }`}>
-                                                        {pages.start}
-                                                    </span>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {/* ── JUZ TAB ── */}
-                            {navTab === 'juz' && (
-                                <div className="p-4 grid grid-cols-5 gap-1.5 px-4">
-                                    {JUZ_PAGES.map(({ juz, page }) => {
-                                        const isCurrentJuzItem = currentJuz === juz;
-                                        return (
-                                            <button
-                                                key={juz}
-                                                onClick={() => navigateTo(page, page > pageNumber ? 'left' : 'right')}
-                                                className={`flex flex-col items-center gap-1 p-2.5 rounded-xl transition-all active:scale-90 ${isCurrentJuzItem
-                                                    ? 'bg-[#A67C52] text-white shadow-md'
-                                                    : isDarkMode
-                                                        ? 'bg-[#1A1A1A] text-gray-300 hover:bg-[#252525]'
-                                                        : 'bg-[#F5F5F5] text-gray-700 hover:bg-[#EAEAEA]'
-                                                    }`}
-                                                style={isCurrentJuzItem ? { boxShadow: '0 2px 8px rgba(166, 124, 82, 0.3)' } : {}}
-                                            >
-                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isCurrentJuzItem ? 'bg-white/20' : isDarkMode ? 'bg-[#252525]' : 'bg-[#E8E8E8]'}`}>
-                                                    <span className="font-arabic font-bold text-xs">{juz}</span>
-                                                </div>
-                                                <span className={`text-[9px] font-bold ${isCurrentJuzItem ? 'text-white/70' : isDarkMode ? 'text-gray-500' : 'text-[var(--color-text-tertiary)]'}`}>
-                                                    {page}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {/* ── PAGE TAB ── */}
-                            {navTab === 'page' && (
-                                <div className="p-5 space-y-5 px-5">
-                                    {/* Current Page Display */}
-                                    <div className="text-center space-y-2 py-3">
-                                        <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full ${isDarkMode ? 'bg-[#1A1A1A]' : 'bg-[#F5F5F5]'}`}>
-                                            <span className={`text-4xl font-bold tabular-nums ${isDarkMode ? 'text-white' : 'text-[var(--color-text-primary)]'}`}>
-                                                {pageNumber}
-                                            </span>
-                                        </div>
-                                        <p className={`text-xs font-arabic ${isDarkMode ? 'text-gray-400' : 'text-[var(--color-text-tertiary)]'} mt-1`}>
-                                            من 604 صفحة
-                                        </p>
-                                    </div>
-
-                                    {/* Page Input */}
-                                    <form onSubmit={(e) => {
-                                        e.preventDefault();
-                                        const input = e.target.elements.pageInput.value;
-                                        const p = parseInt(input);
-                                        if (p >= 1 && p <= 604) {
-                                            navigateTo(p, p > pageNumber ? 'left' : 'right');
-                                        }
-                                    }} className="flex gap-2">
-                                        <input
-                                            name="pageInput"
-                                            type="number"
-                                            placeholder="أدخل رقم الصفحة"
-                                            min="1"
-                                            max="604"
-                                            className={`flex-1 text-center rounded-xl px-4 py-2.5 text-base font-bold border focus:outline-none transition-all font-arabic ${isDarkMode
-                                                ? 'bg-[#1A1A1A] border-white/10 text-white placeholder-gray-500 focus:border-[var(--color-accent)]'
-                                                : 'bg-white border-black/8 text-[var(--color-text-primary)] placeholder:opacity-30 focus:border-[var(--color-accent)]'
-                                                }`}
-                                            autoFocus
-                                        />
-                                        <button
-                                            type="submit"
-                                            className="px-5 py-2.5 rounded-xl text-white font-arabic font-bold active:scale-95 transition-all shadow-md"
-                                            style={{ backgroundColor: mode.accent, boxShadow: `0 2px 8px ${mode.accent}50` }}
-                                        >
-                                            انتقل
-                                        </button>
-                                    </form>
-
-                                    {/* Quick Page Jumps */}
-                                    <div className="grid grid-cols-4 gap-1.5">
-                                        {[1, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 604].map(p => (
-                                            <button
-                                                key={p}
-                                                onClick={() => navigateTo(p, p > pageNumber ? 'left' : 'right')}
-                                                className={`py-2 rounded-lg text-xs font-bold transition-all active:scale-95 ${p === pageNumber
-                                                    ? 'text-white shadow-md'
-                                                    : isDarkMode
-                                                        ? 'bg-[#1A1A1A] text-gray-300 hover:bg-[#252525]'
-                                                        : 'bg-[#F5F5F5] text-gray-700 hover:bg-[#EAEAEA]'
-                                                    }`}
-                                                style={p === pageNumber ? { backgroundColor: mode.accent, boxShadow: `0 2px 8px ${mode.accent}50` } : {}}
-                                            >
-                                                {p}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ── BOOKMARKS TAB ── */}
-                            {navTab === 'bookmarks' && (
-                                <div className="p-3 space-y-2 px-4">
-                                    {bookmarkedPages.length === 0 ? (
-                                        <div className="text-center py-16">
-                                            <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${isDarkMode ? 'bg-[#1A1A1A]' : 'bg-[#F5F5F5]'}`}>
-                                                <Bookmark size={36} className={`${isDarkMode ? 'text-gray-600' : 'text-[var(--color-text-tertiary)]'}`} />
-                                            </div>
-                                            <p className={`font-arabic text-sm ${isDarkMode ? 'text-gray-400' : 'text-[var(--color-text-tertiary)]'}`}>
-                                                لا توجد علامات مرجعية
-                                            </p>
-                                            <p className={`text-xs font-arabic mt-1 ${isDarkMode ? 'text-gray-600' : 'text-[var(--color-text-tertiary)]'} opacity-60`}>
-                                                اضغط على الإشارة لحفظ الصفحة
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        bookmarkedPages.map(p => (
-                                            <div key={p} className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all ${p === pageNumber
-                                                ? 'bg-[#A67C52] text-white shadow-lg'
-                                                : isDarkMode ? 'hover:bg-[#1A1A1A]' : 'hover:bg-[#F5F5F5]'
-                                                }`}
-                                                style={p === pageNumber ? { boxShadow: '0 4px 16px rgba(166, 124, 82, 0.3)' } : {}}>
-
-                                                <button
-                                                    onClick={() => navigateTo(p, p > pageNumber ? 'left' : 'right')}
-                                                    className="flex-1 flex items-center gap-3"
-                                                >
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${p === pageNumber ? 'bg-white/20' : isDarkMode ? 'bg-[#252525]' : 'bg-[#E8E8E8]'}`}>
-                                                        <BookmarkCheck size={18} className={p === pageNumber ? 'text-white' : 'text-[#A67C52]'} />
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className={`font-arabic font-bold text-sm block ${p === pageNumber ? 'text-white' : isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                                            صفحة {p}
-                                                        </span>
-                                                        {surahPageMapping && (
-                                                            <span className={`text-[10px] ${p === pageNumber ? 'text-white/60' : isDarkMode ? 'text-gray-500' : 'text-[var(--color-text-tertiary)]'}`}>
-                                                                سورة {Object.entries(surahPageMapping).find(entry => entry[1].start <= p && entry[1].end >= p)?.[1]?.name || ""}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </button>
-                                                <button
-                                                    onClick={() => setBookmarkedPages(prev => prev.filter(bp => bp !== p))}
-                                                    className={`p-2 rounded-lg transition-all active:scale-90 ${p === pageNumber ? 'hover:bg-white/20 text-white/70' : isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-red-100 text-red-500'}`}
-                                                >
-                                                    <X size={16} />
-                                                </button>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <MushafNavPanel
+                showNavPanel={showNavPanel}
+                setShowNavPanel={setShowNavPanel}
+                isDarkMode={isDarkMode}
+                mode={mode}
+                navTab={navTab}
+                setNavTab={setNavTab}
+                bookmarkedPages={bookmarkedPages}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filteredSurahs={filteredSurahs}
+                surahPageMapping={surahPageMapping}
+                pageInfo={pageInfo}
+                pageNumber={pageNumber}
+                navigateTo={navigateTo}
+                JUZ_PAGES={JUZ_PAGES}
+                currentJuz={currentJuz}
+                setBookmarkedPages={setBookmarkedPages}
+            />
 
             {/* Custom animations & styles */}
             <style>{`
-                @keyframes fade-in {
-                    from { opacity: 0.4; }
-                    to { opacity: 1; }
-                }
-                @keyframes slide-in-left {
-                    from { opacity: 0.6; transform: translateX(-20px); }
-                    to { opacity: 1; transform: translateX(0); }
-                }
-                @keyframes slide-in-right {
-                    from { opacity: 0.6; transform: translateX(20px); }
-                    to { opacity: 1; transform: translateX(0); }
-                }
-                @keyframes slide-up {
-                    from { transform: translateY(100%); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes pulse-subtle {
-                    0%, 100% { opacity: 0.1; }
-                    50% { opacity: 0.2; }
-                }
-                
-                .animate-fade-in { animation: fade-in 1s cubic-bezier(0.4, 0, 0.2, 1); }
-                .animate-slide-in-left { animation: slide-in-left 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-                .animate-slide-in-right { animation: slide-in-right 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-                .animate-slide-up { animation: slide-up 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-
                 /* Premium Mushaf slider styling */
                 .mushaf-slider {
                     -webkit-appearance: none;

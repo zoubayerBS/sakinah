@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './styles/design-system.css';
 import './styles/enhancements.css';
+import './styles/animations.css';
 
 // Initializing the Sacred Application
 ReactDOM.createRoot(document.getElementById('app')).render(

@@ -1,5 +1,8 @@
 import React from 'react';
-import { Play, Pause, Volume2, Music, ChevronRight, ChevronLeft } from 'lucide-react';
+import {
+    Play, Pause, Volume2, Music, ChevronRight, ChevronLeft,
+    Clock, SkipBack, SkipForward, Shuffle, Repeat, Bookmark, MoreHorizontal
+} from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 
 export const SurahAudioPlayer = ({
@@ -11,7 +14,10 @@ export const SurahAudioPlayer = ({
         isPlaying, togglePlay, progress,
         volume, setVolume, currentTime, duration,
         isBuffering, bufferedProgress, isWaitingForInitialBuffer,
-        skip, seek
+        skip, seek, sleepTimerRemaining,
+        playNextSurah, playPrevSurah,
+        isShuffle, setIsShuffle,
+        repeatMode, setRepeatMode
     } = useAudio();
 
     const handleSeek = (e) => {
@@ -27,107 +33,126 @@ export const SurahAudioPlayer = ({
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const cycleRepeatMode = () => {
+        if (repeatMode === 'all') setRepeatMode('one');
+        else if (repeatMode === 'one') setRepeatMode('none');
+        else setRepeatMode('all');
+    };
+
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="w-full h-full flex flex-col items-center justify-between py-10 px-6 relative overflow-hidden">
 
-            {/* MAIN VISUAL CENTER (Circular Visualization) - Stabilized */}
-            <div className="relative z-10 w-full flex flex-col items-center mb-16">
-                <div className={`relative w-full transition-opacity duration-1000 ${isAudioLoading ? 'opacity-50' : 'opacity-100'}`}>
-
-                    <div className="relative flex items-center justify-center">
-                        {/* THE CIRCULAR WAVE (Visualizer) - Removed scaling & ping waves */}
-                        <div className="relative w-72 h-72 md:w-96 md:h-96 flex items-center justify-center">
-
-                            {/* Static Rings */}
-                            <div className={`absolute inset-0 rounded-full border border-[var(--color-highlight)]/10`}></div>
-                            <div className={`absolute inset-8 rounded-full border border-[var(--color-highlight)]/5`}></div>
-
-                            {/* Rotating Orbit Ring - Very Slow & Constant */}
-                            <div className={`absolute inset-4 rounded-full border-t-2 border-r-2 border-[var(--color-highlight)]/20 transition-all duration-1000 ${isPlaying ? 'animate-spin-slow-static opacity-100' : 'opacity-20'}`}></div>
-
-                            {/* Inner Core - Stabilized (No scaling) */}
-                            <div className="relative w-56 h-56 md:w-64 md:h-64 rounded-full flex flex-col items-center justify-center group">
-                                <div className="absolute inset-0 bg-pattern-ornament opacity-[0.05] rounded-full"></div>
-
-                                <div className="relative z-10 text-center px-4">
-                                    <Music className={`w-12 h-12 text-[var(--color-highlight)] mx-auto mb-6 transition-all duration-1000 ${isPlaying ? 'opacity-100 drop-shadow-[0_0_15px_rgba(201,169,97,0.3)]' : 'opacity-40'}`} />
-                                    <h3 className="text-4xl font-arabic font-bold text-[var(--color-text-primary)] mb-1 leading-relaxed tracking-wider">{surah.name}</h3>
-                                    <p className="text-sm text-[var(--color-text-tertiary)] font-medium mb-4 opacity-80">{reciterName}</p>
-
-                                    {isWaitingForInitialBuffer ? (
-                                        <div className="flex flex-col items-center animate-pulse">
-                                            <span className="text-[10px] text-[var(--color-highlight)] uppercase tracking-[0.2em] font-bold mb-1">Optimizing Stream</span>
-                                            <span className="text-xl font-bold text-[var(--color-highlight)]">{Math.round(bufferedProgress)}%</span>
-                                        </div>
-                                    ) : (
-                                        <div className="h-0.5 w-16 bg-[var(--color-highlight)]/40 mx-auto rounded-full"></div>
-                                    )}
-                                </div>
-
-                                {(isBuffering || isWaitingForInitialBuffer) && (
-                                    <div className="absolute inset-0 flex items-center justify-center z-20">
-                                        <div className="flex gap-2">
-                                            <div className="w-1.5 h-7 bg-[var(--color-highlight)] rounded-full animate-loader-bar-1"></div>
-                                            <div className="w-1.5 h-7 bg-[var(--color-highlight)] rounded-full animate-loader-bar-2"></div>
-                                            <div className="w-1.5 h-7 bg-[var(--color-highlight)] rounded-full animate-loader-bar-3"></div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+            {/* 1. STANDALONE CALLIGRAPHY - PURE MINIMALISM */}
+            <div className={`relative z-20 w-full flex flex-col items-center justify-center mt-12 mb-8 transition-all duration-700 ${isAudioLoading ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}>
+                <div className="relative flex items-center justify-center min-h-[300px]">
+                    {/* Surah Name Calligraphy (Icon) - Deep Black Ligature */}
+                    <span
+                        className="font-surah-name select-none leading-none animate-fade-in"
+                        style={{
+                            fontSize: 'clamp(10rem, 30vw, 18rem)',
+                            color: '#111111',
+                            filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05))'
+                        }}
+                    >
+                        {`surah${String(surah.number).padStart(3, '0')}`}
+                    </span>
                 </div>
             </div>
 
-            {/* CONTROL HUB (Floating, no card background) */}
-            <div className={`w-full max-w-3xl z-50 transition-all duration-1000 ${isAudioLoading ? 'translate-y-10 opacity-0 scale-95' : 'translate-y-0 opacity-100 scale-100'}`}>
-                <div className="relative flex flex-col p-6 md:p-8 space-y-8">
-                    {/* Header Info */}
-                    <div className="flex flex-col items-center text-center space-y-1">
-                        <span className="text-[10px] font-black text-[var(--color-text-tertiary)] tracking-[0.4em] uppercase opacity-60">Recitation</span>
-                        <p className="text-sm font-bold text-[var(--color-highlight)] font-arabic tracking-widest">
-                            {formatTime(currentTime)} <span className="mx-2 opacity-30">/</span> {formatTime(duration)}
-                        </p>
-                    </div>
+            {/* 2. METADATA & PROGRESS SECTION - SPOTIFY STYLE */}
+            <div className={`w-full max-w-lg z-20 flex flex-col space-y-6 transition-all duration-700 ${isAudioLoading ? 'opacity-0 translate-y-6' : 'opacity-100 translate-y-0'}`}>
 
-                    {/* Progress Bar - Larger */}
-                    <div className="relative group/seeker px-4" dir="ltr">
+                {/* Metadata Row: Title (Left) + Bookmark (Right) */}
+                <div className="flex items-center justify-between w-full px-1">
+                    <div className="flex flex-col text-left overflow-hidden">
+                        <h2 className="text-3xl md:text-4xl font-black text-[var(--color-text-primary)] tracking-tighter truncate drop-shadow-sm">
+                            {surah.transliteration}
+                        </h2>
+                        <span className="text-sm font-bold text-[var(--color-text-secondary)] tracking-wider uppercase mt-1 truncate">{reciterName}</span>
+                    </div>
+                    <button className="p-3 text-[var(--color-text-tertiary)] hover:text-[var(--color-highlight)] transition-colors active:scale-90">
+                        <Bookmark className="w-7 h-7" />
+                    </button>
+                </div>
+
+                {/* Progress & Time */}
+                <div className="w-full space-y-2.5" dir="ltr">
+                    <div className="relative group/seeker">
                         <input
                             type="range" min="0" max="100" value={progress} onChange={handleSeek}
-                            className="w-full h-1.5 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer accent-[var(--color-highlight)] hover:h-2 transition-all"
+                            className="w-full h-1.5 bg-[var(--color-border)]/50 rounded-full appearance-none cursor-pointer accent-[var(--color-text-primary)] hover:accent-[var(--color-highlight)] transition-all"
+                        />
+                        {/* Buffered visualizer */}
+                        <div
+                            className="absolute top-1/2 -translate-y-1/2 left-0 h-1.5 bg-[var(--color-highlight)]/10 rounded-full pointer-events-none -z-10"
+                            style={{ width: `${bufferedProgress}%` }}
                         />
                     </div>
+                    <div className="flex justify-between text-[12px] font-black text-[var(--color-text-tertiary)] tracking-widest">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                    </div>
+                </div>
 
-                    {/* Control Buttons - Enlarged */}
-                    <div className="flex items-center justify-center gap-10 md:gap-16" dir="rtl">
-                        <button
-                            onClick={() => skip(15)}
-                            className="p-3 text-[var(--color-text-tertiary)] hover:text-[var(--color-highlight)] transition-all transform hover:scale-125"
-                        >
-                            <ChevronRight className="w-8 h-8" />
+                {/* Main Controls: Shuffle - Prev - Play - Next - Repeat */}
+                <div className="w-full flex items-center justify-between" dir="ltr">
+                    <button
+                        onClick={() => setIsShuffle(!isShuffle)}
+                        className={`p-2 transition-all ${isShuffle ? 'text-[var(--color-highlight)] scale-110' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                        title="Shuffle"
+                    >
+                        <Shuffle className="w-5 h-5" />
+                    </button>
+
+                    <button
+                        onClick={playPrevSurah}
+                        className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all active:scale-90"
+                        title="Previous"
+                    >
+                        <SkipBack className="w-9 h-9 fill-current" />
+                    </button>
+
+                    <button
+                        onClick={togglePlay}
+                        className="w-20 h-20 md:w-22 md:h-22 flex items-center justify-center text-[var(--color-bg-primary)] bg-[var(--color-text-primary)] rounded-full hover:scale-105 active:scale-95 transition-all shadow-2xl"
+                    >
+                        {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current translate-x-1" />}
+                    </button>
+
+                    <button
+                        onClick={playNextSurah}
+                        className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all active:scale-90"
+                        title="Next"
+                    >
+                        <SkipForward className="w-9 h-9 fill-current" />
+                    </button>
+
+                    <button
+                        onClick={cycleRepeatMode}
+                        className={`p-2 transition-all relative ${repeatMode !== 'none' ? 'text-[var(--color-highlight)] scale-110' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                        title="Repeat"
+                    >
+                        <Repeat className="w-5 h-5" />
+                        {repeatMode === 'one' && <span className="absolute top-0 right-0 text-[8px] font-bold bg-[var(--color-highlight)] text-[var(--color-bg-primary)] rounded-full w-3 h-3 flex items-center justify-center">1</span>}
+                    </button>
+                </div>
+
+                {/* Sub-controls: Skip-15 & Volume */}
+                <div className="w-full flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity px-2 pt-2" dir="ltr">
+                    <div className="flex items-center gap-6">
+                        <button onClick={() => skip(-15)} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors">
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
-
-                        <button
-                            onClick={togglePlay}
-                            className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center text-white rounded-full transition-all transform hover:scale-110 active:scale-95 shadow-[0_20px_60px_rgba(201,169,97,0.3)] bg-gradient-to-br from-[var(--color-highlight)] to-[#92400e]"
-                        >
-                            {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current translate-x-1" />}
-                        </button>
-
-                        <button
-                            onClick={() => skip(-15)}
-                            className="p-3 text-[var(--color-text-tertiary)] hover:text-[var(--color-highlight)] transition-all transform hover:scale-125"
-                        >
-                            <ChevronLeft className="w-8 h-8" />
+                        <button onClick={() => skip(15)} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors">
+                            <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
 
-                    {/* Volume - Floating */}
-                    <div className="flex items-center justify-center gap-4 group/vol max-w-xs mx-auto w-full opacity-60 hover:opacity-100 transition-opacity" dir="ltr">
-                        <Volume2 className="text-[var(--color-text-tertiary)] w-4 h-4" />
+                    <div className="flex items-center gap-3 w-32" dir="ltr">
+                        <Volume2 className="text-[var(--color-text-tertiary)] w-4 h-4 opacity-40" />
                         <input
                             type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))}
-                            className="w-full h-1 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer accent-[var(--color-text-tertiary)]"
+                            className="w-full h-1 bg-[var(--color-border)]/50 rounded-full appearance-none cursor-pointer accent-[var(--color-text-tertiary)]"
                         />
                     </div>
                 </div>
@@ -138,26 +163,25 @@ export const SurahAudioPlayer = ({
                 @keyframes spin-slow-static { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @keyframes loader-bar {
                     0%, 100% { height: 10px; opacity: 0.3; }
-                    50% { height: 24px; opacity: 1; }
+                    50% { height: 32px; opacity: 1; }
                 }
                 .animate-spin-slow-static { animation: spin-slow-static 20s linear infinite; }
-                .animate-loader-bar-1 { animation: loader-bar 1s ease-in-out infinite; }
-                .animate-loader-bar-2 { animation: loader-bar 1s ease-in-out infinite 0.2s; }
-                .animate-loader-bar-3 { animation: loader-bar 1s ease-in-out infinite 0.4s; }
-                .bg-pattern-ornament {
-                    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 0 L100 50 L50 100 L0 50 Z' fill='none' stroke='currentColor' stroke-width='0.5'/%3E%3C/svg%3E");
-                    background-size: 80px 80px;
-                }
+                .animate-loader-bar { animation: loader-bar 1s ease-in-out infinite; }
+                
                 input[type='range']::-webkit-slider-thumb {
                     -webkit-appearance: none;
                     appearance: none;
-                    width: 12px;
-                    height: 12px;
+                    width: 14px;
+                    height: 14px;
                     border-radius: 50%;
-                    background: white;
+                    background: var(--color-text-primary);
                     cursor: pointer;
-                    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-                    border: 2px solid [var(--color-highlight)];
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    opacity: 0;
+                    transition: opacity 0.2s;
+                }
+                .group\\/seeker:hover input[type='range']::-webkit-slider-thumb {
+                    opacity: 1;
                 }
             `}} />
         </div>

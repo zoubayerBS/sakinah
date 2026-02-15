@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-30ad1a2e'], (function (workbox) { 'use strict';
+define(['./workbox-6749d8bd'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,12 +82,12 @@ define(['./workbox-30ad1a2e'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.8gm3fl2l0mo"
+    "revision": "0.8vgoqde7ml8"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/],
-    denylist: [/^\/oauth2-proxy/, /^\/api-proxy/]
+    denylist: [/^\/oauth2-proxy/, /^\/api-proxy/, /^\/api/]
   }));
   workbox.registerRoute(/^https:\/\/fonts\.googleapis\.com\/.*/i, new workbox.CacheFirst({
     "cacheName": "google-fonts-cache",
@@ -108,11 +108,38 @@ define(['./workbox-30ad1a2e'], (function (workbox) { 'use strict';
     })]
   }), 'GET');
   workbox.registerRoute(/^\/(oauth2-proxy|api-proxy)/, new workbox.NetworkOnly(), 'GET');
+  workbox.registerRoute(/^\/api\/.*/i, new workbox.NetworkFirst({
+    "cacheName": "api-data-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 50,
+      maxAgeSeconds: 86400
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
+    })]
+  }), 'GET');
   workbox.registerRoute(/^https:\/\/api\.alquran\.cloud\/.*/i, new workbox.NetworkFirst({
     "cacheName": "alquran-api-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 100,
       maxAgeSeconds: 86400
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^https:\/\/.*\.mp3quran\.net\/.*/i, new workbox.StaleWhileRevalidate({
+    "cacheName": "audio-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 20,
+      maxAgeSeconds: 604800
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
+    }), new workbox.RangeRequestsPlugin()]
+  }), 'GET');
+  workbox.registerRoute(/^https:\/\/static-cdn\.tarteel\.ai\/qul\/fonts\/quran_fonts\/v2\/woff2\/.*/i, new workbox.CacheFirst({
+    "cacheName": "quran-fonts-v2-cache",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 604,
+      maxAgeSeconds: 31536000
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
     })]
   }), 'GET');
 

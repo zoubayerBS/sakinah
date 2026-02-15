@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PlayerHeader } from '../components/PlayerHeader.jsx';
 import { SurahAudioPlayer } from '../components/SurahAudioPlayer.jsx';
 import { ReciterSelector } from '../components/ReciterSelector.jsx';
+import SurahPlaylist from '../components/SurahPlaylist.jsx';
 import { useAudio } from '../context/AudioContext.jsx';
 import { quranAPI } from '../services/quran-api.js';
 import { saveLastRead, isBookmarked, toggleBookmark } from '../utils/storage-utils.js';
@@ -9,13 +10,17 @@ import { saveLastRead, isBookmarked, toggleBookmark } from '../utils/storage-uti
 export function PlayerPage({ surah, onBack }) {
     // 1. Context & State
     const {
-        currentReciter, setCurrentReciter, playSurah,
-        currentAyahNumber, playAyah, isPlaying
+        currentReciter, setCurrentReciter,
+        currentAyahNumber, playAyah, isPlaying,
+        surahs, activeSurah, playFullSurah
     } = useAudio();
+
+    const [currentSurah, setCurrentSurah] = useState(surah || activeSurah);
 
     const [error, setError] = useState(null);
     const [isAudioLoading, setIsAudioLoading] = useState(false);
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
 
     // Track reciter changes to force reload
     const [reciterChangeTrigger, setReciterChangeTrigger] = useState(0);
@@ -33,13 +38,36 @@ export function PlayerPage({ surah, onBack }) {
     }, [setCurrentReciter]);
 
     const handleToggleBookmark = useCallback(async () => {
-        await toggleBookmark(surah);
-        const bookmarkedStatus = await isBookmarked(surah.number);
+        await toggleBookmark(currentSurah);
+        const bookmarkedStatus = await isBookmarked(currentSurah.number);
         setBookmarked(bookmarkedStatus);
-    }, [surah]);
+    }, [currentSurah]);
+
+    const handleSurahSelect = useCallback(async (selectedSurah) => {
+        setIsPlaylistOpen(false);
+        setCurrentSurah(selectedSurah);
+        setReciterChangeTrigger(prev => prev + 1);
+    }, []);
 
     // 3. Effects
+    // Synchronize local currentSurah with context activeSurah
+    // This allows Next/Prev/Auto-play to update the UI
     useEffect(() => {
+        if (activeSurah && (!currentSurah || activeSurah.number !== currentSurah.number)) {
+            setCurrentSurah(activeSurah);
+        }
+    }, [activeSurah]);
+    useEffect(() => {
+        if (!currentSurah) return;
+
+        // Skip fetch if this surah is already the active one in the context 
+        // with existing audio data (internal playlist navigation handled it)
+        const isInternalSwitch = activeSurah && activeSurah.number === currentSurah.number && activeSurah.reciter === currentReciter?.identifier;
+        if (isInternalSwitch && !reciterChangeTrigger) {
+            setIsAudioLoading(false);
+            return;
+        }
+
         let isCancelled = false;
         async function fetchAudio() {
             setIsAudioLoading(true);
@@ -86,12 +114,12 @@ export function PlayerPage({ surah, onBack }) {
                 }
 
                 const data = await quranAPI.getSurahAudioData(
-                    surah.number,
+                    currentSurah.number,
                     reciterId,
                     reciter?.selectedMoshafId || reciter?.defaultMoshafId
                 );
                 if (!isCancelled && data) {
-                    playSurah(surah, data, reciter);
+                    playFullSurah(currentSurah, data, reciter);
                 } else if (!isCancelled && !data) {
                     setError("Failed to load audio recitation.");
                 }
@@ -99,13 +127,17 @@ export function PlayerPage({ surah, onBack }) {
                 console.error("Error fetching audio:", err);
                 if (!isCancelled) setError("An error occurred while loading the audio.");
             } finally {
-                if (!isCancelled) setIsAudioLoading(false);
+                setIsAudioLoading(false);
+                if (!isCancelled) {
+                    // Reset trigger if it was a force reload
+                    if (reciterChangeTrigger > 0) setReciterChangeTrigger(0);
+                }
             }
         }
 
         fetchAudio();
         return () => { isCancelled = true; };
-    }, [surah.number, currentReciter, reciterChangeTrigger, playSurah]);
+    }, [currentSurah.number, currentReciter, reciterChangeTrigger, playFullSurah, activeSurah]);
 
 
     // Save Last Read & Check Bookmark
@@ -113,17 +145,16 @@ export function PlayerPage({ surah, onBack }) {
         const updateState = async () => {
             // Save as last read
             await saveLastRead({
-                surahNumber: surah.number,
-                surahName: surah.name,
-                verseNumber: 1 // Default to 1 for now until we track verses
+                surahNumber: currentSurah.number,
+                surahName: currentSurah.name,
+                verseNumber: 1
             });
 
-            // Check bookmark status
-            const status = await isBookmarked(surah.number);
+            const status = await isBookmarked(currentSurah.number);
             setBookmarked(status);
         };
         updateState();
-    }, [surah]);
+    }, [currentSurah]);
 
     useEffect(() => {
         document.body.style.overflow = 'hidden';
@@ -138,16 +169,18 @@ export function PlayerPage({ surah, onBack }) {
 
     return (
         <div className="relative h-screen overflow-hidden bg-[var(--color-bg-primary)] flex flex-col">
+
             <PlayerHeader
-                surah={surah}
+                surah={currentSurah}
                 onBack={onBack}
                 reciterName={currentReciter.name}
                 onChangeReciter={() => setIsSelectorOpen(true)}
                 isBookmarked={bookmarked}
                 onToggleBookmark={handleToggleBookmark}
+                onTogglePlaylist={() => setIsPlaylistOpen(true)}
             />
 
-            <div className="flex-1 flex flex-col items-center justify-center overflow-hidden relative">
+            <div className="flex-1 flex flex-col items-center justify-center overflow-hidden relative z-10">
                 {error ? (
                     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
                         <p className="text-red-500 font-medium text-lg">{error}</p>
@@ -160,12 +193,20 @@ export function PlayerPage({ surah, onBack }) {
                     </div>
                 ) : (
                     <SurahAudioPlayer
-                        surah={surah}
+                        surah={currentSurah}
                         reciterName={currentReciter.name}
                         isAudioLoading={isAudioLoading}
                     />
                 )}
             </div>
+
+            <SurahPlaylist
+                isOpen={isPlaylistOpen}
+                onClose={() => setIsPlaylistOpen(false)}
+                surahs={surahs}
+                currentSurah={currentSurah}
+                onSurahSelect={handleSurahSelect}
+            />
 
             <ReciterSelector
                 isOpen={isSelectorOpen}
