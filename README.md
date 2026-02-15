@@ -1,154 +1,87 @@
-# القرآن الكريم - Quran PWA
+# القرآن الكريم - Sakinah Quran PWA
 
-A modern, elegant Progressive Web App for reading the Noble Quran with a spiritual and contemporary Islamic design.
+A modern, elegant Progressive Web App for reading and listening to the Noble Quran with a spiritual and contemporary Islamic design.
 
 ## ✨ Features
 
-- **Modern Islamic Design**: Contemporary aesthetics with deep emerald green, soft beige, and subtle gold accents
-- **Dark Mode by Default**: Calming dark theme with smooth light mode toggle
-- **Elegant Typography**: Optimized Arabic fonts for comfortable Quran reading
-- **Responsive Design**: Mobile-first approach with seamless tablet and desktop support
-- **Smooth Animations**: Subtle, non-intrusive transitions and micro-interactions
-- **PWA Support**: Install as an app, works offline
-- **Search Functionality**: Quickly find surahs by name or transliteration
-- **Clean Reading Experience**: Distraction-free verse display with generous spacing
-
-## 🎨 Design Philosophy
-
-- **Calm & Spiritual**: Creating an atmosphere conducive to reflection and serenity
-- **Respectful**: Dignified treatment of the sacred text
-- **Premium**: State-of-the-art design that feels timeless
-- **Accessible**: Easy one-handed navigation on mobile
+- **Immersive Audio Player**: Dedicated `PlayerPage` with circular visualizations, detailed track info, and playback controls.
+- **Mushaf View**: Authentic page-by-page rendering with ayah selection.
+- **Comprehensive Tafsir**: Access to multiple Tafsirs (commentaries) including *Tahrir wa Tanwir*, with Arabic script support.
+- **Smart Audio Support**: Reliable recitation streaming with automatic fallback mechanisms (resilient to API outages).
+- **Global Mini-Player**: Persistent audio controls that follow you across the app.
+- **Modern Islamic Design**: Contemporary aesthetics with deep emerald green, soft beige, and solid opaque themes.
+- **PWA Support**: Installable as an app on iOS, Android, and Desktop.
+- **Dark Mode**: Optimized for comfortable reading in all lighting conditions.
+- **Bookmarks & Last Read**: Easily track your progress.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm or yarn
+- **Node.js**: v18 or higher
+- **npm**: v9 or higher
 
 ### Installation
 
-1. Clone or download this repository
-2. Navigate to the project directory
-3. Install dependencies:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/zoubayerBS/sakinah.git
+   ```
+2. Install dependencies for both frontend and backend:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the root directory and add your Quran Foundation credentials:
+   ```env
+   QURAN_CLIENT_ID=your_id
+   QURAN_CLIENT_SECRET=your_secret
+   ```
+
+### Development
+
+Start both the Vite development server and the backend proxy:
 
 ```bash
-npm install
+npm run dev:all
 ```
 
-4. Start the development server:
-
-```bash
-npm run dev
-```
-
-5. Open your browser and navigate to `http://localhost:5173`
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-The production-ready files will be in the `dist/` directory.
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
-## 📱 Installing as PWA
-
-1. Open the app in your browser
-2. Look for the "Install" or "Add to Home Screen" option
-3. Follow the prompts to install
-4. Launch from your home screen like a native app
+- **Frontend**: `http://localhost:5173`
+- **Backend Proxy**: `http://localhost:3001`
 
 ## 🏗️ Project Structure
 
 ```
 quran/
-├── index.html              # Main HTML file
-├── vite.config.js          # Vite configuration
-├── package.json            # Dependencies and scripts
+├── server/
+│   ├── app.js              # Backend proxy, Tafsir mapping, and audio fallback logic
+│   └── index.js            # Server entry point
 ├── src/
-│   ├── main.js             # Application entry point
-│   ├── styles/
-│   │   ├── design-system.css   # Design tokens and variables
-│   │   ├── main.css           # Global styles
-│   │   └── enhancements.css   # Additional styles
+│   ├── context/
+│   │   └── AudioContext.jsx # Global playback state management
 │   ├── components/
-│   │   ├── SurahCard.js       # Surah card component
-│   │   ├── VerseView.js       # Verse display component
-│   │   ├── NavigationBar.js   # Bottom navigation
-│   │   ├── ThemeToggle.js     # Light/dark mode toggle
-│   │   └── ReadingHeader.js   # Reading page header
+│   │   ├── PlayerHeader.jsx # Dedicated player controls
+│   │   ├── PlayerHeader.jsx # Simplified player header
+│   │   ├── SurahAudioPlayer.jsx # Interactive circular visualizer
+│   │   └── MiniPlayer.jsx   # Persistent global controls
 │   ├── pages/
-│   │   ├── HomePage.js        # Surah list page
-│   │   └── ReadingPage.js     # Verse reading page
-│   ├── utils/
-│   │   └── animations.js      # Animation utilities
-│   └── data/
-│       └── quran-data.js      # Quran data and helper functions
-└── dist/                   # Production build (generated)
+│   │   ├── PlayerPage.jsx   # Renamed from ReadingPage, focus on audio
+│   │   ├── MushafPage.jsx   # Textual reading with Tafsir panel
+│   │   └── HomePage.jsx     # Surah index and search
+│   ├── services/
+│   │   └── quran-api.js     # Frontend API client
+│   └── styles/
+│       └── main.css         # Component-based design system
 ```
 
-## 🎨 Color Palette
+## 🛠️ Tech Stack
 
-### Dark Mode (Default)
-- Primary: Deep Emerald Green (#047857)
-- Secondary: Subtle Gold (#d4af37)
-- Background: Dark Navy (#0f1419)
-- Text: Ivory White (#f5f5f0)
-
-### Light Mode
-- Primary: Deep Emerald Green (#047857)
-- Secondary: Subtle Gold (#d4af37)
-- Background: Off White (#fafaf9)
-- Text: Dark Navy (#1a1f26)
-
-## 🔧 Customization
-
-### Adding More Surahs
-
-Edit `src/data/quran-data.js` to add complete surah data. The current implementation includes sample data for demonstration.
-
-### Changing Fonts
-
-Modify the `--font-arabic` variable in `src/styles/design-system.css` to use a different Arabic font.
-
-### Adjusting Colors
-
-All colors are defined as CSS custom properties in `src/styles/design-system.css`. Modify these to customize the theme.
-
-## 📝 Data Source
-
-The current implementation uses sample data for demonstration. For a complete Quran, consider integrating:
-- [Quran.com API](https://api.quran.com)
-- [AlQuran Cloud API](https://alquran.cloud/api)
-- Local JSON files with complete Quran data
-
-## 🌟 Future Enhancements
-
-- Audio recitation
-- Translations in multiple languages
-- Tafsir (commentary)
-- Bookmarks and favorites
-- Reading progress tracking
-- Advanced search
-- Verse sharing
+- **Frontend**: React, Vite, Tailwind CSS, Lucide icons.
+- **Backend**: Express.js (Node.js) used as a secure proxy to handle Quran Foundation API and MP3Quran requests.
+- **APIs**: Quran.com V4, MP3Quran, Tahrir wa Tanwir JSON (via GitHub).
 
 ## 📄 License
 
 This project is created for educational and spiritual purposes. The Quran text is in the public domain.
-
-## 🤲 Credits
-
-- Design inspired by Islamic geometric patterns and calligraphy
-- Fonts: Amiri Quran, Scheherazade New, Inter
-- Icons: Feather Icons style
 
 ---
 
