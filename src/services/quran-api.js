@@ -1,10 +1,8 @@
 /**
  * Quran API Service
- * 
- * Refactored to use a Backend Proxy (Solution 1) to avoid CORS/Auth issues.
- * The frontend now calls /api/* endpoints, which are proxied to a local 
- * Node/Express server (or Vercel function) that handles the actual SDK calls.
  */
+import { mushafCache, tafsirCache, verseCache } from './db.js';
+
 class QuranService {
     constructor() {
         this.cache = new Map();
@@ -94,9 +92,24 @@ class QuranService {
      * Get Mushaf page data (verses with King Fahad Complex V2 glyphs and full text)
      */
     async getMushafPage(pageNumber) {
+        // 1. Check Memory Cache
         const cacheKey = `mushaf-page-${pageNumber}`;
         if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
 
+        // 2. Check IndexedDB Cache
+        try {
+            const cached = await mushafCache.getPage(pageNumber);
+            if (cached) {
+                console.log(`%c 📦 Mushaf Page ${pageNumber} served from IndexedDB `, "color: #8B7355; font-weight: bold;");
+                window.dispatchEvent(new CustomEvent('db-cache-hit', { detail: { type: 'Page', id: pageNumber } }));
+                this.cache.set(cacheKey, cached.data);
+                return cached.data;
+            }
+        } catch (e) {
+            console.warn(`[QuranAPI] DB cache check failed for page ${pageNumber}:`, e);
+        }
+
+        // 3. Fetch from API
         try {
             const response = await fetch(`/api/page/${pageNumber}`);
             if (!response.ok) throw new Error('Proxy error');
@@ -133,7 +146,9 @@ class QuranService {
                     };
                 });
 
+                // 4. Save to IndexedDB & Memory
                 this.cache.set(cacheKey, processed);
+                mushafCache.setPage(pageNumber, processed).catch(console.error);
                 return processed;
             }
         } catch (error) {
@@ -277,11 +292,28 @@ class QuranService {
         const cacheKey = `tafsir-${verseKey}-${tafsirId}`;
         if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
 
+        // Check IndexedDB Cache
+        try {
+            const cached = await tafsirCache.getTafsir(verseKey, tafsirId);
+            if (cached) {
+                console.log(`%c 📜 Tafsir for ${verseKey} served from IndexedDB `, "color: #A67C52; font-weight: bold;");
+                window.dispatchEvent(new CustomEvent('db-cache-hit', { detail: { type: 'Tafsir', id: verseKey } }));
+                this.cache.set(cacheKey, cached.text);
+                return cached.text;
+            }
+        } catch (e) {
+            console.warn(`[QuranAPI] Tafsir cache check failed for ${verseKey}:`, e);
+        }
+
         try {
             const response = await fetch(`/api/tafsir/${tafsirId}/${verseKey}`);
             if (!response.ok) throw new Error('Proxy error');
             const data = await response.json();
+
+            // Save to IndexedDB & Memory
             this.cache.set(cacheKey, data);
+            tafsirCache.setTafsir(verseKey, tafsirId, data).catch(console.error);
+
             return data;
         } catch (error) {
             console.error(`[QuranAPI] Error fetching tafsir for ${verseKey}:`, error);
@@ -296,11 +328,28 @@ class QuranService {
         const cacheKey = `verse-info-${verseKey}`;
         if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
 
+        // Check IndexedDB Cache
+        try {
+            const cached = await verseCache.getVerse(verseKey);
+            if (cached) {
+                console.log(`%c 📖 Verse Info for ${verseKey} served from IndexedDB `, "color: #5D4037; font-weight: bold;");
+                window.dispatchEvent(new CustomEvent('db-cache-hit', { detail: { type: 'Verset', id: verseKey } }));
+                this.cache.set(cacheKey, cached.data);
+                return cached.data;
+            }
+        } catch (e) {
+            console.warn(`[QuranAPI] Verse cache check failed for ${verseKey}:`, e);
+        }
+
         try {
             const response = await fetch(`/api/verse/${verseKey}`);
             if (!response.ok) throw new Error('Proxy error');
             const data = await response.json();
+
+            // Save to IndexedDB & Memory
             this.cache.set(cacheKey, data);
+            verseCache.setVerse(verseKey, data).catch(console.error);
+
             return data;
         } catch (error) {
             console.error(`[QuranAPI] Error fetching verse info for ${verseKey}:`, error);

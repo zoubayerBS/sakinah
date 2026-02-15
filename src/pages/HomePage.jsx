@@ -4,7 +4,7 @@ import { quranAPI } from '../services/quran-api.js';
 import { SurahCard } from '../components/SurahCard.jsx';
 import { ContinueReading } from '../components/ContinueReading.jsx';
 import { DailyAyah } from '../components/DailyAyah.jsx';
-import { getLastRead } from '../utils/storage-utils.js';
+import { getLastRead, getKhitmaState } from '../utils/storage-utils.js';
 import { useAudio } from '../context/AudioContext.jsx';
 
 export const HomePage = ({ onSurahSelect, onNavigate }) => {
@@ -13,7 +13,6 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
 
-
     const [activeTab, setActiveTab] = useState('surah'); // 'surah' or 'juz'
     const [lastRead, setLastRead] = useState(null);
     const [khitma, setKhitma] = useState(null);
@@ -21,11 +20,13 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
 
     // Fetch Last Read and Khitma on Mount
     useEffect(() => {
-        setLastRead(getLastRead());
-        const savedKhitma = localStorage.getItem('khitma_state');
-        if (savedKhitma) {
-            setKhitma(JSON.parse(savedKhitma));
-        }
+        const fetchState = async () => {
+            const lr = await getLastRead();
+            const ks = await getKhitmaState();
+            setLastRead(lr);
+            setKhitma(ks);
+        };
+        fetchState();
     }, []);
 
     useEffect(() => {

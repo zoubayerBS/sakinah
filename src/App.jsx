@@ -9,11 +9,18 @@ import { NavigationBar } from './components/NavigationBar.jsx';
 import { ThemeToggle } from './components/ThemeToggle.jsx';
 import { AudioProvider } from './context/AudioContext.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
+import { migrateToIndexedDB } from './utils/storage-utils.js';
+import { DBStatusToast } from './components/DBStatusToast.jsx';
 
 const AppContent = () => {
     const [currentPage, setCurrentPage] = useState('home');
     const [selectedSurah, setSelectedSurah] = useState(null);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+    // Migrate from localStorage to IndexedDB on mount
+    useEffect(() => {
+        migrateToIndexedDB();
+    }, []);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -88,6 +95,8 @@ const AppContent = () => {
             {currentPage !== 'reading' && (
                 <MiniPlayer onOpen={() => setCurrentPage('reading')} />
             )}
+
+            <DBStatusToast />
 
             <div className="h-32"></div>
         </div>

@@ -32,9 +32,10 @@ export function PlayerPage({ surah, onBack }) {
         setReciterChangeTrigger(prev => prev + 1);
     }, [setCurrentReciter]);
 
-    const handleToggleBookmark = useCallback(() => {
-        toggleBookmark(surah);
-        setBookmarked(prev => !prev);
+    const handleToggleBookmark = useCallback(async () => {
+        await toggleBookmark(surah);
+        const bookmarkedStatus = await isBookmarked(surah.number);
+        setBookmarked(bookmarkedStatus);
     }, [surah]);
 
     // 3. Effects
@@ -109,15 +110,19 @@ export function PlayerPage({ surah, onBack }) {
 
     // Save Last Read & Check Bookmark
     useEffect(() => {
-        // Save as last read
-        saveLastRead({
-            surahNumber: surah.number,
-            surahName: surah.name,
-            verseNumber: 1 // Default to 1 for now until we track verses
-        });
+        const updateState = async () => {
+            // Save as last read
+            await saveLastRead({
+                surahNumber: surah.number,
+                surahName: surah.name,
+                verseNumber: 1 // Default to 1 for now until we track verses
+            });
 
-        // Check bookmark status
-        setBookmarked(isBookmarked(surah.number));
+            // Check bookmark status
+            const status = await isBookmarked(surah.number);
+            setBookmarked(status);
+        };
+        updateState();
     }, [surah]);
 
     useEffect(() => {

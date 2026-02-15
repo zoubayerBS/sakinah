@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, BookmarkCheck, Maximize2, Minimize2, Sun, Moon, Coffee, Layers, X, BookMarked, Hash, List, Type, Home, Minus, Plus, ChevronDown, Check } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
 import { surahPageMapping } from '../data/surah-pages.js';
+import { getKhitmaState, saveLastRead } from '../utils/storage-utils.js';
 
 // Juz data for quick navigation
 const JUZ_PAGES = [
@@ -97,6 +98,26 @@ const MushafPage = ({ onBack }) => {
     const [selectedTafsir, setSelectedTafsir] = useState(16); // Default: Al-Muyassar (Arabic ID)
     const [showTafsirSelect, setShowTafsirSelect] = useState(false);
 
+    // Khitma State Integration
+    const [khitma, setKhitma] = useState(null);
+
+    useEffect(() => {
+        const load = async () => {
+            const saved = await getKhitmaState();
+            if (saved) {
+                setKhitma(saved);
+            }
+        };
+        load();
+    }, []);
+
+    const wirdProgress = useMemo(() => {
+        if (!khitma || !khitma.progressLog) return 0;
+        const todayKey = new Date().toISOString().split('T')[0];
+        const todayPortions = khitma.progressLog[todayKey] || 0;
+        return (todayPortions / 5) * 100;
+    }, [khitma]);
+
     // Refs
     const containerRef = useRef(null);
     const touchStartX = useRef(0);
@@ -127,7 +148,15 @@ const MushafPage = ({ onBack }) => {
     // Save last read page
     useEffect(() => {
         localStorage.setItem('mushaf-last-page', pageNumber.toString());
-    }, [pageNumber]);
+        if (pageInfo) {
+            saveLastRead({
+                surahNumber: pageInfo.surahNumber,
+                surahName: pageInfo.surah,
+                verseNumber: 1,
+                pageNumber: pageNumber
+            });
+        }
+    }, [pageNumber, pageInfo]);
 
     // Save reading mode
     useEffect(() => {
@@ -574,14 +603,34 @@ const MushafPage = ({ onBack }) => {
                     </button>
 
                     {/* Title Info */}
-                    <div className="flex flex-col items-center min-w-[100px]">
+                    <div className="flex flex-col items-center min-w-[120px]">
                         <h1 className="font-arabic font-bold text-base leading-tight" style={{ color: mode.text }}>
                             {pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف'}
                         </h1>
-                        {pageInfo && (
-                            <span className="text-[9px] font-bold opacity-50" style={{ color: mode.text }}>
-                                الجزء {pageInfo.juz} • {pageInfo.surahEnglish}
-                            </span>
+
+                        {khitma?.isStarted ? (
+                            <div className="flex flex-col items-center w-full mt-1.5 px-2">
+                                <div className="w-full h-1 bg-black/5 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-[var(--color-accent)] shadow-[0_0_5px_var(--color-accent)] transition-all duration-1000"
+                                        style={{ width: `${wirdProgress}%` }}
+                                    />
+                                </div>
+                                <div className="flex justify-between w-full mt-1">
+                                    <span className="text-[7px] font-bold opacity-30 uppercase" style={{ color: mode.text }}>
+                                        الجزء {pageInfo?.juz}
+                                    </span>
+                                    <span className="text-[7px] font-bold opacity-40 uppercase tracking-tighter" style={{ color: mode.text }}>
+                                        ورد اليوم {Math.round(wirdProgress)}%
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            pageInfo && (
+                                <span className="text-[9px] font-bold opacity-50" style={{ color: mode.text }}>
+                                    الجزء {pageInfo.juz} • {pageInfo.surahEnglish}
+                                </span>
+                            )
                         )}
                     </div>
 
