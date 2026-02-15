@@ -37,51 +37,44 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
                 <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[var(--color-bg-secondary)]/60 to-transparent" />
             </div>
 
-            <div className="relative max-w-[1200px] mx-auto px-6 py-10">
-                {/* Portal Hero */}
-                <section className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
-                    <div className="relative animate-fade-in-up">
-                        <div className="absolute -top-12 -right-6 text-[120px] md:text-[150px] text-[var(--color-highlight)]/15 font-arabic pointer-events-none">
+            <div className="relative max-w-[1200px] mx-auto px-6 py-12 flex flex-col items-center">
+                {/* 1. CENTRAL PORTAL HERO */}
+                <section className="w-full flex flex-col items-center text-center space-y-8 mb-20">
+                    <div className="relative animate-fade-in-up flex flex-col items-center">
+                        <div className="absolute -top-16 -right-12 text-[140px] md:text-[180px] text-[var(--color-highlight)]/10 font-arabic pointer-events-none select-none">
                             ﷽
                         </div>
                         <img
                             src="/logo2.png"
                             alt="سكينة"
-                            className="h-28 md:h-36 w-auto mb-4"
+                            className="h-48 md:h-72 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-700"
                             loading="eager"
                         />
-                        <h1 className="font-reem-kufi-fun text-3xl md:text-5xl text-[var(--color-text-primary)] leading-tight">
-                            بوابة المصحف
-                        </h1>
-                        <p className="font-arabic text-[var(--color-text-secondary)] text-base md:text-lg leading-relaxed mt-3">
-                            شَهْرُ رَمَضَانَ الَّذِي أُنزِلَ فِيهِ الْقُرْآنُ هُدًى لِّلنَّاسِ
+                        <p className="font-arabic text-[var(--color-text-secondary)] text-lg md:text-xl leading-relaxed mt-8 max-w-2xl">
+                            « شَهْرُ رَمَضَانَ الَّذِي أُنزِلَ فِيهِ الْقُرْآنُ هُدًى لِّلنَّاسِ »
                         </p>
 
-                        <div className="flex flex-wrap gap-3 mt-6" dir="rtl">
+                        <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
                             <button
                                 onClick={() => onNavigate('mushaf')}
-                                className="px-6 py-3 rounded-full bg-[var(--color-accent)] text-white font-arabic shadow-[var(--shadow-md)] hover:scale-105 transition-all"
+                                className="px-10 py-4 rounded-full bg-[var(--color-accent)] text-white font-arabic font-bold text-lg shadow-[0_10px_30px_rgba(92,107,74,0.3)] hover:scale-105 active:scale-95 transition-all"
                             >
                                 اذهب للمصحف
                             </button>
                             <button
                                 onClick={() => onNavigate('khitma')}
-                                className="px-6 py-3 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-secondary)]/80 font-arabic text-[var(--color-text-primary)] hover:border-[var(--color-accent)] transition-all"
+                                className="px-10 py-4 rounded-full border-2 border-[var(--color-border)] bg-white/40 backdrop-blur-sm font-arabic text-[var(--color-text-primary)] font-bold text-lg hover:border-[var(--color-accent)] hover:bg-white/60 transition-all active:scale-95"
                             >
                                 خطّة الختمة
                             </button>
                         </div>
-
-                        <div className="mt-4 flex flex-wrap gap-2 font-ui text-[10px] tracking-[0.3em] uppercase text-[var(--color-text-tertiary)] opacity-60">
-                            <span className="px-3 py-1 rounded-full bg-[var(--color-bg-secondary)]/70 border border-[var(--color-border)]">604 صفحة</span>
-                            <span className="px-3 py-1 rounded-full bg-[var(--color-bg-secondary)]/70 border border-[var(--color-border)]">30 جزء</span>
-                            <span className="px-3 py-1 rounded-full bg-[var(--color-bg-secondary)]/70 border border-[var(--color-border)]">114 سورة</span>
-                        </div>
                     </div>
+                </section>
 
-                    <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                        <div className="absolute -inset-6 rounded-[32px] bg-[radial-gradient(circle_at_top,rgba(201,162,39,0.1),transparent_70%)]" />
-                        <div className="relative space-y-4">
+                {/* 2. STATUS & PROGRESS GRID */}
+                <section className="w-full max-w-5xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                    <div className="grid md:grid-cols-2 gap-6 items-stretch">
+                        <div className="space-y-6">
                             {lastRead && (
                                 <ContinueReading
                                     lastRead={lastRead}
@@ -92,46 +85,47 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
                                 />
                             )}
                             <DailyAyah />
+                        </div>
 
-                            <button
-                                onClick={() => onNavigate('khitma')}
-                                className="w-full bg-[var(--color-bg-secondary)]/90 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-5 flex flex-col gap-4 hover:border-[var(--color-accent)] transition-all group shadow-[var(--shadow-sm)] text-right relative overflow-hidden backdrop-blur"
-                                dir="rtl"
-                            >
-                                <div className="absolute -top-8 -left-8 w-28 h-28 rounded-full bg-[var(--color-highlight)]/10 blur-2xl"></div>
-                                <div className="w-full flex items-center justify-between relative">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] group-hover:scale-110 transition-transform">
-                                            <Book size={24} />
-                                        </div>
-                                        <div className="text-right">
-                                            <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">مخطط الختمة</h3>
-                                            <p className="font-arabic text-xs text-[var(--color-text-tertiary)] opacity-70">
-                                                {khitma?.isStarted ? 'تابع تقدمك في الختمة' : 'خطط لختمتك القادمة'}
-                                            </p>
-                                        </div>
+                        <button
+                            onClick={() => onNavigate('khitma')}
+                            className="h-full bg-[var(--color-bg-secondary)]/90 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-6 flex flex-col justify-between hover:border-[var(--color-accent)] transition-all group shadow-[var(--shadow-sm)] text-right relative overflow-hidden backdrop-blur"
+                            dir="rtl"
+                        >
+                            <div className="absolute -top-8 -left-8 w-28 h-28 rounded-full bg-[var(--color-highlight)]/10 blur-2xl"></div>
+
+                            <div className="flex flex-col gap-4">
+                                <div className="w-full flex items-center justify-between">
+                                    <div className="w-12 h-12 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] group-hover:scale-110 transition-transform">
+                                        <Book size={24} />
                                     </div>
                                     <div className="w-8 h-8 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-tertiary)] group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors">
                                         <Clock size={16} />
                                     </div>
                                 </div>
+                                <div className="text-right">
+                                    <h3 className="font-arabic font-bold text-xl text-[var(--color-text-primary)]">مخطط الختمة</h3>
+                                    <p className="font-arabic text-sm text-[var(--color-text-tertiary)] opacity-70">
+                                        {khitma?.isStarted ? 'تابع تقدمك في الختمة' : 'خطط لختمتك القادمة'}
+                                    </p>
+                                </div>
+                            </div>
 
-                                {khitma?.isStarted && (
-                                    <div className="w-full space-y-2 relative">
-                                        <div className="flex justify-between items-center text-[0.65rem] font-arabic text-[var(--color-text-tertiary)]">
-                                            <span>تقدمك: {Math.round(calculateWirdProgress(khitma))}%</span>
-                                            <span>المتبقي: {Math.max(0, khitma.days - Math.floor(khitma.progress / 5))} يوم</span>
-                                        </div>
-                                        <div className="w-full h-1.5 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-[var(--color-accent)] transition-all duration-500 shadow-[0_0_8px_rgba(201,162,39,0.2)]"
-                                                style={{ width: `${calculateWirdProgress(khitma)}%` }}
-                                            ></div>
-                                        </div>
+                            {khitma?.isStarted && (
+                                <div className="w-full space-y-3 mt-6">
+                                    <div className="flex justify-between items-center text-xs font-arabic text-[var(--color-text-tertiary)]">
+                                        <span>تقدمك: {Math.round(calculateWirdProgress(khitma))}%</span>
+                                        <span className="opacity-60">المتبقي: {Math.max(0, khitma.days - Math.floor(khitma.progress / 5))} يوم</span>
                                     </div>
-                                )}
-                            </button>
-                        </div>
+                                    <div className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-[var(--color-accent)] transition-all duration-1000 shadow-[0_0_12px_rgba(92,107,74,0.25)]"
+                                            style={{ width: `${calculateWirdProgress(khitma)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            )}
+                        </button>
                     </div>
                 </section>
 
