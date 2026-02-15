@@ -32,7 +32,7 @@ const getClient = () => {
 
 const client = getClient();
 
-const MP3QURAN_API_BASE = 'https://mp3quran.net/api/v3';
+const MP3QURAN_API_BASE = 'https://www.mp3quran.net/api/v3';
 const RECITER_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 let recitersCache = { data: null, ts: 0, byId: new Map() };
 
@@ -119,7 +119,11 @@ const pickBestMoshaf = (moshafList, chapterId, reciterName, reciterId) => {
 };
 
 const fetchMp3QuranReciters = async () => {
-    const response = await fetch(`${MP3QURAN_API_BASE}/reciters?language=ar`);
+    const response = await fetch(`${MP3QURAN_API_BASE}/reciters?language=ar`, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+    });
     if (!response.ok) {
         const errorText = await response.text().catch(() => '');
         throw new Error(`MP3Quran reciters error: ${response.status} ${errorText.slice(0, 200)}`);
