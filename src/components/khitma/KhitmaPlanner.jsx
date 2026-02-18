@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, Clock, Target } from 'lucide-react';
+import { Compass, Clock, Target, Calendar } from 'lucide-react';
 
 const KhitmaPlanner = ({
     planType,
@@ -13,56 +13,59 @@ const KhitmaPlanner = ({
     setMode,
     handleStart
 }) => (
-    <div className="animate-fade-in space-y-8">
+    <div className="animate-fade-in space-y-10">
         {/* Landing Hero */}
-        <div className="relative p-8 bg-[var(--color-bg-secondary)]/90 border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] overflow-hidden">
-            <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-                <div className="w-20 h-20 rounded-full bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)]">
-                    <Compass size={40} />
+        <div className="relative glass-premium p-10 md:p-12 rounded-[3rem] shadow-2xl overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-highlight)]/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
+            <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-highlight)]/20 border border-[var(--color-highlight)]/30 flex items-center justify-center text-[var(--color-highlight)] shadow-inner transform group-hover:scale-110 transition-transform duration-700">
+                    <Compass size={48} />
                 </div>
                 <div>
-                    <h2 className="font-reem-kufi-fun text-3xl text-[var(--color-text-primary)]">رحلة الختمة</h2>
-                    <p className="font-arabic text-[var(--color-text-secondary)] mt-1">خطط لمسارك in تلاوة كتاب الله</p>
+                    <h2 className="font-reem-kufi-fun text-4xl text-[var(--color-text-primary)] mb-2">رحلة الختمة</h2>
+                    <p className="font-arabic text-lg text-[var(--color-text-secondary)] opacity-80 max-w-md">خطط لمسارك المبارك في تلاوة كتاب الله العظيم</p>
                 </div>
             </div>
         </div>
 
         {/* Planning Tabs */}
-        <div className="flex gap-3 bg-[var(--color-bg-secondary)]/80 border border-[var(--color-border)] rounded-full p-2 w-fit mx-auto">
+        <div className="flex bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-2 w-fit mx-auto shadow-inner">
             <button
                 onClick={() => setPlanType('days')}
-                className={`px-6 py-2 rounded-full font-arabic text-sm transition-all border ${planType === 'days' ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] shadow-sm' : 'text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]'}`}
+                className={`px-8 py-3 rounded-2xl font-arabic font-bold text-sm transition-all duration-500 ${planType === 'days' ? 'bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] shadow-lg scale-105' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             >
                 بعدد الأيام
             </button>
             <button
                 onClick={() => setPlanType('date')}
-                className={`px-6 py-2 rounded-full font-arabic text-sm transition-all border ${planType === 'date' ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] shadow-sm' : 'text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]'}`}
+                className={`px-8 py-3 rounded-2xl font-arabic font-bold text-sm transition-all duration-500 ${planType === 'date' ? 'bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] shadow-lg scale-105' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             >
                 بتاريخ محدد
             </button>
         </div>
 
         {/* Planner Section */}
-        <div className="bg-[var(--color-bg-secondary)]/90 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-8 space-y-8">
+        <div className="glass-premium rounded-[3rem] p-8 md:p-12 space-y-10 shadow-2xl relative overflow-hidden">
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--color-accent)]/5 rounded-full blur-[60px] -ml-24 -mb-24"></div>
+
             {planType === 'days' ? (
-                <div className="space-y-6 text-center">
-                    <p className="font-arabic text-sm text-[var(--color-text-tertiary)]">خلال كم يوم تود الختم؟</p>
-                    <div className="flex items-center justify-center gap-4">
+                <div className="space-y-8 text-center relative z-10">
+                    <p className="font-arabic font-bold text-lg text-[var(--color-text-secondary)]">خلال كم يوم تود الختم؟</p>
+                    <div className="flex items-center justify-center gap-6">
                         <input
                             type="number"
                             value={days}
                             onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))}
-                            className="w-32 bg-transparent text-center font-ui font-black text-6xl text-[var(--color-text-primary)] focus:outline-none"
+                            className="w-40 bg-transparent text-center font-ui font-black text-7xl md:text-8xl text-[var(--color-text-primary)] focus:outline-none selection:bg-[var(--color-accent)]/20"
                         />
-                        <span className="font-arabic font-bold text-2xl text-[var(--color-accent)] pt-4">يوماً</span>
+                        <span className="font-arabic font-black text-3xl text-[var(--color-accent)] pt-8">يوماً</span>
                     </div>
-                    <div className="flex flex-wrap gap-2 justify-center">
+                    <div className="flex flex-wrap gap-3 justify-center">
                         {[7, 10, 15, 30, 60].map(d => (
                             <button
                                 key={d}
                                 onClick={() => setDays(d)}
-                                className={`px-5 py-2 rounded-full border transition-all text-sm font-ui font-bold ${days === d ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white shadow-sm' : 'border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-text-secondary)]'}`}
+                                className={`px-6 py-3 rounded-2xl border-2 transition-all duration-500 text-base font-ui font-black ${days === d ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white shadow-xl scale-110' : 'border-black/5 dark:border-white/10 text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)]/30'}`}
                             >
                                 {d}
                             </button>
@@ -70,46 +73,49 @@ const KhitmaPlanner = ({
                     </div>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    <label className="font-arabic font-bold text-[var(--color-text-secondary)] block text-center">اختر الموعد المستهدف</label>
-                    <input
-                        type="date"
-                        value={targetDate}
-                        onChange={(e) => setTargetDate(e.target.value)}
-                        className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-[var(--radius-md)] py-4 px-6 text-center font-ui font-bold text-lg text-[var(--color-accent)] outline-none"
-                    />
+                <div className="space-y-6 text-center relative z-10">
+                    <label className="font-arabic font-black text-xl text-[var(--color-text-secondary)] block">اختر الموعد الختامي</label>
+                    <div className="relative max-w-md mx-auto">
+                        <input
+                            type="date"
+                            value={targetDate}
+                            onChange={(e) => setTargetDate(e.target.value)}
+                            className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl py-6 px-10 text-center font-ui font-black text-2xl text-[var(--color-accent)] outline-none focus:border-[var(--color-accent)] transition-all appearance-none"
+                        />
+                        <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 text-[var(--color-accent)] pointer-events-none" size={24} />
+                    </div>
                 </div>
             )}
 
-            <div className="pt-6 border-t border-[var(--color-divider)]">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-[var(--color-highlight)]/10 flex items-center justify-center text-[var(--color-highlight)]">
-                            <Clock size={24} />
+            <div className="pt-8 border-t border-black/5 dark:border-white/5 relative z-10">
+                <div className="flex items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
+                        <div className="w-14 h-14 rounded-2xl bg-[var(--color-highlight)]/10 flex items-center justify-center text-[var(--color-highlight)] shadow-inner">
+                            <Clock size={28} />
                         </div>
                         <div>
-                            <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">الورد اليومي</p>
-                            <p className="font-arabic font-bold text-lg text-[var(--color-text-primary)]">
+                            <p className="font-arabic text-sm text-[var(--color-text-tertiary)] font-bold">الورد اليومي المقترح</p>
+                            <p className="font-arabic font-black text-2xl text-[var(--color-text-primary)]">
                                 {results.daily} {mode === 'pages' ? 'صفحة' : 'آية'}
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={() => setMode(mode === 'pages' ? 'verses' : 'pages')}
-                        className="text-[10px] font-arabic px-3 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
+                        className="font-arabic font-bold text-sm px-6 py-2 rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 hover:bg-[var(--color-accent)]/20 transition-all"
                     >
                         تبديل للآيات
                     </button>
                 </div>
             </div>
         </div>
-
         <button
             onClick={handleStart}
-            className="w-full py-5 bg-[var(--color-accent)] text-white rounded-full font-arabic font-bold text-xl shadow-[var(--shadow-md)] hover:opacity-95 transition-all flex items-center justify-center gap-4"
+            className="w-full py-6 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-[2.5rem] font-arabic font-black text-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
         >
-            <Target size={24} />
-            اعقد النية وابدأ
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+            <Target size={28} />
+            <span>اعقد النية وابدأ الرحلة</span>
         </button>
     </div>
 );

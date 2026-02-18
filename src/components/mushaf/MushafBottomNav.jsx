@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, ChevronLeft, List } from 'lucide-react';
+import { ChevronRight, ChevronLeft, List, Brain } from 'lucide-react';
 
 const MushafBottomNav = ({
     showControls,
@@ -11,7 +11,9 @@ const MushafBottomNav = ({
     mode,
     setShowNavPanel,
     setNavTab,
-    toArabicIndicDigits
+    toArabicIndicDigits,
+    isHifzMode,
+    setIsHifzMode
 }) => {
     return (
         <nav
@@ -67,6 +69,19 @@ const MushafBottomNav = ({
 
                 {/* Divider */}
                 <div className="w-px h-6 bg-current opacity-10 mx-1" style={{ color: mode.text }} />
+
+                {/* Hifz Toggle Button */}
+                <button
+                    onClick={() => setIsHifzMode(prev => !prev)}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 ${isHifzMode ? 'hifz-toggle-active' : 'hover:bg-black/5'}`}
+                    style={{
+                        backgroundColor: isHifzMode ? 'var(--color-accent)' : 'transparent',
+                        color: isHifzMode ? '#fff' : mode.text,
+                    }}
+                    title="وضع الحفظ"
+                >
+                    <Brain size={18} />
+                </button>
 
                 {/* Menu Button */}
                 <button

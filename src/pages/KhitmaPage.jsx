@@ -139,11 +139,10 @@ export const KhitmaPage = ({ onBack }) => {
     const currentStreak = useMemo(() => computeStreak(), [computeStreak]);
 
     return (
-        <div className="min-h-screen pattern-subtle pb-24 relative overflow-x-hidden" dir="rtl">
-            <div className="pointer-events-none absolute inset-0">
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle_at_center,rgba(201,162,39,0.1),transparent_70%)] blur-3xl opacity-50" />
-                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] rounded-full bg-[radial-gradient(circle_at_center,rgba(92,107,74,0.1),transparent_70%)] blur-3xl opacity-50" />
-            </div>
+        <div className="min-h-screen pb-24 relative overflow-x-hidden mesh-bg" dir="rtl">
+            {/* Immersive Floating Elements */}
+            <div className="absolute top-[10%] left-[-5%] w-[40rem] h-[40rem] bg-[var(--color-highlight)]/5 rounded-full blur-[120px] animate-pulse-slow"></div>
+            <div className="absolute bottom-[10%] right-[-5%] w-[35rem] h-[35rem] bg-[var(--color-accent)]/5 rounded-full blur-[100px] animate-pulse-slow font-delay-2000"></div>
 
             <KhitmaHeader
                 onBack={onBack}
@@ -151,7 +150,7 @@ export const KhitmaPage = ({ onBack }) => {
                 currentStreak={currentStreak}
             />
 
-            <main className="relative max-w-[700px] mx-auto px-6 py-10 space-y-8">
+            <main className="relative max-w-4xl mx-auto px-6 py-10 space-y-12">
                 {!isStarted ? (
                     <div className="animate-fade-in-up">
                         <KhitmaPlanner
@@ -168,7 +167,7 @@ export const KhitmaPage = ({ onBack }) => {
                         />
                     </div>
                 ) : (
-                    <div className="animate-fade-in space-y-8">
+                    <div className="animate-fade-in space-y-12">
                         <div className="animate-fade-in-up stagger-1">
                             <KhitmaStats
                                 currentJuz={currentJuz}
@@ -189,12 +188,17 @@ export const KhitmaPage = ({ onBack }) => {
                         </div>
 
                         {/* Journey Map Section */}
-                        <div className="space-y-4 animate-fade-in-up stagger-3">
-                            <div className="flex items-center gap-3 px-2">
-                                <Compass size={18} className="text-[var(--color-text-secondary)]" />
-                                <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">مسارك الروحاني</h3>
+                        <div className="space-y-6 animate-fade-in-up stagger-3">
+                            <div className="flex items-center gap-4 px-2">
+                                <div className="w-10 h-10 rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] flex items-center justify-center">
+                                    <Compass size={22} />
+                                </div>
+                                <div>
+                                    <h3 className="font-arabic font-black text-2xl text-[var(--color-text-primary)]">مسارك الروحاني</h3>
+                                    <p className="text-sm text-[var(--color-text-secondary)] opacity-70">خارطة تقدمك نحو الختام</p>
+                                </div>
                             </div>
-                            <div className="bg-[var(--color-bg-secondary)]/90 border border-[var(--color-border)] rounded-[var(--radius-lg)] overflow-hidden shadow-inner">
+                            <div className="glass-premium rounded-[2.5rem] overflow-hidden shadow-2xl">
                                 <KhitmaJourney
                                     currentJuz={currentJuz}
                                     progressPercentage={progressPercentage}
@@ -203,19 +207,19 @@ export const KhitmaPage = ({ onBack }) => {
                         </div>
 
                         {/* Quick Settings */}
-                        <div className="pt-6 border-t border-[var(--color-divider)]">
-                            <div className="flex flex-wrap gap-4 justify-center">
+                        <div className="pt-10 border-t border-black/5 dark:border-white/5">
+                            <div className="flex flex-wrap gap-6 justify-center">
                                 <button
                                     onClick={handleReset}
-                                    className="px-6 py-2 rounded-full border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] font-arabic text-xs hover:border-[var(--color-error)] hover:text-[var(--color-error)] transition-all flex items-center gap-2"
+                                    className="px-8 py-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-dashed border-black/10 dark:border-white/10 text-[var(--color-text-tertiary)] font-arabic font-bold text-sm hover:border-[var(--color-error)] hover:text-[var(--color-error)] transition-all flex items-center gap-3"
                                 >
-                                    <ArrowLeft size={14} className="rotate-90" />
+                                    <ArrowLeft size={16} className="rotate-90" />
                                     إعادة ضبط الخطة
                                 </button>
                                 <button
-                                    className="px-6 py-2 rounded-full border border-[var(--color-border)] text-[var(--color-text-tertiary)] font-arabic text-xs hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all flex items-center gap-2"
+                                    className="px-8 py-3 rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 font-arabic font-bold text-sm hover:bg-[var(--color-accent)]/20 transition-all flex items-center gap-3"
                                 >
-                                    <ArrowLeft size={14} className="rotate-270" />
+                                    <ArrowLeft size={16} className="rotate-270" />
                                     شارك التقدم
                                 </button>
                             </div>
@@ -224,16 +228,18 @@ export const KhitmaPage = ({ onBack }) => {
                 )}
 
                 {/* Footer Spiritual Message */}
-                <div className="pt-10 flex flex-col items-center text-center space-y-6">
-                    <div className="w-px h-12 bg-gradient-to-b from-[var(--color-border)] to-transparent opacity-50"></div>
-                    <div className="max-w-[80%] mx-auto">
-                        <p className="font-arabic text-[var(--color-text-secondary)] italic leading-relaxed text-sm opacity-80">
+                <div className="pt-20 flex flex-col items-center text-center space-y-8">
+                    <div className="w-px h-16 bg-gradient-to-b from-[var(--color-accent)]/30 to-transparent"></div>
+                    <div className="max-w-[85%] mx-auto relative">
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-4xl text-[var(--color-highlight)]/20 font-arabic">"</div>
+                        <p className="font-arabic text-[var(--color-text-secondary)] italic leading-relaxed text-lg md:text-xl opacity-90">
                             "يقال لصاحب القرآن اقرأ وارتق ورتل كما كنت ترتل في الدنيا فإن منزلتك عند آخر آية تقرؤها"
                         </p>
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-4xl text-[var(--color-highlight)]/20 font-arabic rotate-180">"</div>
                     </div>
-                    <div className="flex items-center gap-2 text-[var(--color-text-tertiary)] opacity-60">
-                        <Sparkles size={14} />
-                        <span className="text-[10px] font-arabic">رزقكم الله القبول</span>
+                    <div className="flex items-center gap-3 text-[var(--color-accent)] bg-[var(--color-accent)]/5 px-6 py-2 rounded-full border border-[var(--color-accent)]/10">
+                        <Sparkles size={16} className="animate-pulse" />
+                        <span className="text-xs font-arabic font-bold">رزقكم الله القبول</span>
                     </div>
                 </div>
             </main>

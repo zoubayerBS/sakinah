@@ -12,69 +12,55 @@ export const MiniPlayer = ({ onOpen }) => {
     if (!activeSurah) return null;
 
     return (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[92%] max-w-lg z-[400] animate-slide-up">
-            <div className="bg-[var(--color-bg-secondary)]/90 backdrop-blur-md border border-[var(--color-border)] rounded-2xl shadow-2xl overflow-hidden relative group">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 w-[94%] max-w-lg z-[400] animate-slide-up">
+            <div className="absolute inset-x-4 -bottom-4 h-8 bg-black/10 blur-2xl rounded-full -z-10"></div>
+            <div className="glass-premium border-white/30 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden relative group">
                 {/* Progress Bar background */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/5">
+                <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/10 dark:bg-white/10">
                     <div
-                        className="h-full bg-[var(--color-highlight)] transition-all duration-300 shadow-[0_0_10px_var(--color-highlight)]"
+                        className="h-full bg-[var(--color-highlight)] transition-all duration-300 shadow-[0_0_15px_var(--color-highlight)] liquid-progress"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
 
-                <div className="flex items-center p-3 gap-4">
+                <div className="flex items-center p-4 gap-5">
                     {/* Info Section - Click to open full view */}
                     <div
                         className="flex-1 flex items-center min-w-0 cursor-pointer"
                         onClick={onOpen}
                     >
-                        <div className="w-10 h-10 rounded-full bg-[var(--color-highlight)]/10 flex items-center justify-center shrink-0">
-                            <div className={`w-2 h-2 rounded-full bg-[var(--color-highlight)] ${isPlaying ? 'animate-pulse' : ''}`} />
+                        <div className="relative shrink-0">
+                            <div className={`absolute inset-0 bg-[var(--color-highlight)] blur-md rounded-full opacity-0 ${isPlaying ? 'opacity-30' : ''}`} />
+                            <div className="w-14 h-14 rounded-2xl bg-[var(--color-highlight)]/10 text-[var(--color-highlight)] flex items-center justify-center relative z-10">
+                                <span className="font-surah-name text-4xl">
+                                    {`surah${String(activeSurah.number).padStart(3, '0')}`}
+                                </span>
+                            </div>
                         </div>
-                        <div className="ml-3 truncate">
-                            <h4 className="text-sm font-arabic font-bold text-[var(--color-text-primary)] truncate">
-                                {activeSurah.name} - {currentReciter.name || currentReciter.englishName}
+                        <div className="ml-4 truncate">
+                            <h4 className="text-lg font-arabic font-black text-[var(--color-text-primary)] truncate tracking-tight">
+                                {activeSurah.name}
                             </h4>
-                            {currentReciter.selectedMoshafLabel && (
-                                <p className="text-[10px] text-[var(--color-text-secondary)] font-arabic truncate">
-                                    {currentReciter.selectedMoshafLabel}
-                                </p>
-                            )}
-                            <p className="text-[9px] text-[var(--color-text-tertiary)] uppercase tracking-widest font-bold flex items-center gap-1.5">
-                                {isWaitingForInitialBuffer ? (
-                                    `Optimisation du flux (${Math.round(bufferedProgress)}%)`
-                                ) : (
-                                    <>
-                                        <span>En cours de lecture</span>
-                                        {sleepTimerRemaining !== null && (
-                                            <>
-                                                <span className="w-1 h-1 rounded-full bg-[var(--color-text-tertiary)] opacity-30"></span>
-                                                <span className="text-[var(--color-accent)] animate-pulse flex items-center gap-1">
-                                                    <Clock size={10} />
-                                                    {Math.floor(sleepTimerRemaining / 60)}:{(sleepTimerRemaining % 60).toString().padStart(2, '0')}
-                                                </span>
-                                            </>
-                                        )}
-                                    </>
-                                )}
+                            <p className="text-xs text-[var(--color-text-tertiary)] font-bold truncate opacity-80 mt-0.5">
+                                {currentReciter.name || currentReciter.englishName}
                             </p>
                         </div>
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={togglePlay}
-                            className="w-10 h-10 flex items-center justify-center bg-[var(--color-highlight)] text-white rounded-full shadow-lg hover:scale-105 transition-transform"
+                            className="w-14 h-14 flex items-center justify-center bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all duration-300"
                         >
-                            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
+                            {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
                         </button>
 
                         <button
                             onClick={() => setActiveSurah(null)}
-                            className="p-2 text-[var(--color-text-tertiary)] hover:text-red-500 transition-colors"
+                            className="w-10 h-10 flex items-center justify-center text-[var(--color-text-tertiary)] hover:bg-red-500 hover:text-white rounded-xl transition-all duration-300"
                         >
-                            <X size={18} />
+                            <X size={20} />
                         </button>
                     </div>
                 </div>

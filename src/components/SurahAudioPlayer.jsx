@@ -77,15 +77,29 @@ export const SurahAudioPlayer = ({
 
                 {/* Progress & Time */}
                 <div className="w-full space-y-2.5" dir="ltr">
-                    <div className="relative group/seeker">
+                    <div className="relative h-1.5 w-full bg-[var(--color-text-primary)]/10 rounded-full group/seeker overflow-visible">
+                        {/* 1. Buffered visualizer (Lowest layer) */}
+                        <div
+                            className="absolute top-0 left-0 h-full bg-[var(--color-highlight)]/20 rounded-full pointer-events-none transition-all duration-500"
+                            style={{ width: `${bufferedProgress}%` }}
+                        />
+
+                        {/* 2. Active Progress Fill (Middle layer) */}
+                        <div
+                            className="absolute top-0 left-0 h-full bg-[var(--color-highlight)] rounded-full pointer-events-none transition-all duration-300 shadow-[0_0_8px_var(--color-highlight)]"
+                            style={{ width: `${progress}%` }}
+                        />
+
+                        {/* 3. Invisible Input for Interaction (Top layer) */}
                         <input
                             type="range" min="0" max="100" value={progress} onChange={handleSeek}
-                            className="w-full h-1.5 bg-[var(--color-border)]/50 rounded-full appearance-none cursor-pointer accent-[var(--color-text-primary)] hover:accent-[var(--color-highlight)] transition-all"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         />
-                        {/* Buffered visualizer */}
+
+                        {/* 4. Custom Thumb (Sync with progress) */}
                         <div
-                            className="absolute top-1/2 -translate-y-1/2 left-0 h-1.5 bg-[var(--color-highlight)]/10 rounded-full pointer-events-none -z-10"
-                            style={{ width: `${bufferedProgress}%` }}
+                            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-[var(--color-highlight)] rounded-full shadow-lg pointer-events-none transition-all duration-300 opacity-0 group-hover/seeker:opacity-100 scale-75 group-hover/seeker:scale-100 z-20"
+                            style={{ left: `calc(${progress}% - 8px)` }}
                         />
                     </div>
                     <div className="flex justify-between text-[12px] font-black text-[var(--color-text-tertiary)] tracking-widest">
@@ -171,17 +185,13 @@ export const SurahAudioPlayer = ({
                 input[type='range']::-webkit-slider-thumb {
                     -webkit-appearance: none;
                     appearance: none;
-                    width: 14px;
-                    height: 14px;
+                    width: 16px;
+                    height: 16px;
                     border-radius: 50%;
-                    background: var(--color-text-primary);
+                    background: var(--color-highlight);
                     cursor: pointer;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    opacity: 0;
-                    transition: opacity 0.2s;
-                }
-                .group\\/seeker:hover input[type='range']::-webkit-slider-thumb {
-                    opacity: 1;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    border: 2px solid white;
                 }
             `}} />
         </div>

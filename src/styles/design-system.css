@@ -240,6 +240,40 @@
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 
+/* Refine mesh background and add liquid shimmer */
+.mesh-bg {
+  background-color: var(--color-bg-primary);
+  background-image:
+    radial-gradient(at 0% 0%, var(--mesh-color-1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, var(--mesh-color-2) 0, transparent 50%),
+    radial-gradient(at 100% 0%, var(--mesh-color-3) 0, transparent 50%);
+  transition: background-image 0.8s ease;
+}
+
+:root {
+  --mesh-color-1: hsla(42, 63%, 91%, 1);
+  --mesh-color-2: hsla(43, 62%, 85%, 1);
+  --mesh-color-3: hsla(45, 60%, 80%, 1);
+}
+
+[data-theme="dark"] {
+  --mesh-color-1: hsla(30, 20%, 8%, 1);
+  --mesh-color-2: hsla(30, 25%, 12%, 1);
+  --mesh-color-3: hsla(30, 30%, 15%, 1);
+}
+
+[data-theme="damas"] {
+  --mesh-color-1: hsla(168, 38%, 95%, 1);
+  --mesh-color-2: hsla(168, 30%, 90%, 1);
+  --mesh-color-3: hsla(168, 25%, 85%, 1);
+}
+
+[data-theme="royal"] {
+  --mesh-color-1: hsla(222, 47%, 10%, 1);
+  --mesh-color-2: hsla(222, 35%, 15%, 1);
+  --mesh-color-3: hsla(222, 25%, 20%, 1);
+}
+
 /* Simple Pattern Background */
 .pattern-subtle {
   background-image:
@@ -329,6 +363,46 @@
   z-index: 61;
   pointer-events: none;
   background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.15) 0%, transparent 80%);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* HIFZ (MEMORIZATION) MODE (Phase 18)                             */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.mushaf-word-hidden {
+  filter: blur(8px);
+  opacity: 0.15;
+  cursor: pointer;
+  transition: filter 0.4s ease, opacity 0.4s ease;
+  user-select: none;
+}
+
+.mushaf-word-hidden:hover {
+  filter: blur(5px);
+  opacity: 0.25;
+}
+
+.mushaf-word-revealed {
+  filter: blur(0);
+  opacity: 1;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.hifz-toggle-active {
+  box-shadow: 0 0 12px rgba(var(--color-accent-rgb, 139, 92, 246), 0.5);
+  animation: hifzPulse 2s ease-in-out infinite;
+}
+
+@keyframes hifzPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.6);
+  }
 }
 
 /* Utility Classes */

@@ -10,6 +10,7 @@ import MushafHeader from '../components/mushaf/MushafHeader.jsx';
 import MushafBottomNav from '../components/mushaf/MushafBottomNav.jsx';
 import MushafNavPanel from '../components/mushaf/MushafNavPanel.jsx';
 import AyahDetailPanel from '../components/mushaf/AyahDetailPanel.jsx';
+import HifzModeControls from '../components/mushaf/HifzModeControls.jsx';
 
 // Juz data for quick navigation
 const JUZ_PAGES = [
@@ -93,6 +94,36 @@ const MushafPage = ({ onBack, theme, setTheme }) => {
     const [tafsirList, setTafsirList] = useState([]);
     const [selectedTafsir, setSelectedTafsir] = useState(16); // Default: Al-Muyassar (Arabic ID)
     const [showTafsirSelect, setShowTafsirSelect] = useState(false);
+
+    // Hifz (Memorization) Mode state
+    const [isHifzMode, setIsHifzMode] = useState(false);
+    const [hifzLevel, setHifzLevel] = useState(() => {
+        const saved = parseInt(localStorage.getItem('hifz-level') || '1');
+        return [1, 2, 3].includes(saved) ? saved : 1;
+    });
+    const [revealedWords, setRevealedWords] = useState(new Set());
+
+    // Deterministic word-hiding: uses page + word index as seed for consistent results
+    const getHiddenWordIndices = useCallback((totalWords, level, page) => {
+        const hidden = new Set();
+        const ratio = level === 1 ? 0.25 : level === 2 ? 0.5 : 1.0;
+        for (let i = 0; i < totalWords; i++) {
+            // Simple hash for deterministic randomness
+            const hash = ((page * 7919 + i * 104729) % 100) / 100;
+            if (hash < ratio) hidden.add(i);
+        }
+        return hidden;
+    }, []);
+
+    // Reset revealed words when page changes or hifz level changes
+    useEffect(() => {
+        setRevealedWords(new Set());
+    }, [pageNumber, hifzLevel]);
+
+    // Save hifz level
+    useEffect(() => {
+        localStorage.setItem('hifz-level', String(hifzLevel));
+    }, [hifzLevel]);
 
     // Khitma State Integration
     const [khitma, setKhitma] = useState(null);
@@ -739,17 +770,25 @@ const MushafPage = ({ onBack, theme, setTheme }) => {
                                                                         {words.map((word, wIdx) => {
                                                                             const vKey = word.verse_key || word.verseKey;
                                                                             const isSelected = selectedVerseKey === vKey;
+                                                                            const globalIdx = wIdx;
+                                                                            const isWordHidden = isHifzMode && word.char_type !== 'end' && getHiddenWordIndices(words.length, hifzLevel, pageNumber).has(globalIdx) && !revealedWords.has(`${lineNum}-${wIdx}`);
+                                                                            const hifzClass = isHifzMode ? (isWordHidden ? 'mushaf-word-hidden' : 'mushaf-word-revealed') : '';
                                                                             return (
                                                                                 <span
                                                                                     key={`${lineNum}-${wIdx}`}
                                                                                     dangerouslySetInnerHTML={{ __html: word.code_v2 || word.codeV2 || '' }}
-                                                                                    className={`inline-block text-center select-none mushaf-word mushaf-word-selectable transition-all duration-300 ${isSelected ? 'selected-ayah' : ''}`}
+                                                                                    className={`inline-block text-center select-none mushaf-word mushaf-word-selectable transition-all duration-300 ${isSelected ? 'selected-ayah' : ''} ${hifzClass}`}
                                                                                     style={{
                                                                                         marginLeft: word.char_type === 'end' ? '0.5rem' : '0',
                                                                                     }}
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        handleVerseClick(vKey);
+                                                                                        if (isWordHidden) {
+                                                                                            setRevealedWords(prev => new Set([...prev, `${lineNum}-${wIdx}`]));
+                                                                                            setTimeout(() => setRevealedWords(prev => { const n = new Set(prev); n.delete(`${lineNum}-${wIdx}`); return n; }), 1500);
+                                                                                        } else {
+                                                                                            handleVerseClick(vKey);
+                                                                                        }
                                                                                     }}
                                                                                 />
                                                                             );
@@ -863,14 +902,21 @@ const MushafPage = ({ onBack, theme, setTheme }) => {
                                                                         {words.map((word, wIdx) => {
                                                                             const vKey = word.verse_key || word.verseKey;
                                                                             const isSelected = selectedVerseKey === vKey;
+                                                                            const isWordHidden = isHifzMode && word.char_type !== 'end' && getHiddenWordIndices(words.length, hifzLevel, pageNumber).has(wIdx) && !revealedWords.has(`auth-${lineNum}-${wIdx}`);
+                                                                            const hifzClass = isHifzMode ? (isWordHidden ? 'mushaf-word-hidden' : 'mushaf-word-revealed') : '';
                                                                             return (
                                                                                 <span
                                                                                     key={`${lineNum}-${wIdx}`}
                                                                                     dangerouslySetInnerHTML={{ __html: word.code_v2 || word.codeV2 || '' }}
-                                                                                    className={`mushaf-word-selectable transition-all duration-300 ${isSelected ? 'selected-ayah' : ''}`}
+                                                                                    className={`mushaf-word-selectable transition-all duration-300 ${isSelected ? 'selected-ayah' : ''} ${hifzClass}`}
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        handleVerseClick(vKey);
+                                                                                        if (isWordHidden) {
+                                                                                            setRevealedWords(prev => new Set([...prev, `auth-${lineNum}-${wIdx}`]));
+                                                                                            setTimeout(() => setRevealedWords(prev => { const n = new Set(prev); n.delete(`auth-${lineNum}-${wIdx}`); return n; }), 1500);
+                                                                                        } else {
+                                                                                            handleVerseClick(vKey);
+                                                                                        }
                                                                                     }}
                                                                                 />
                                                                             );
@@ -907,6 +953,17 @@ const MushafPage = ({ onBack, theme, setTheme }) => {
             </main>
 
             {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* HIFZ MODE CONTROLS (Floating difficulty panel) */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <HifzModeControls
+                isActive={isHifzMode}
+                level={hifzLevel}
+                setLevel={setHifzLevel}
+                onClose={() => setIsHifzMode(false)}
+                mode={mode}
+            />
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
             {/* MINIMAL FLOATING BOTTOM NAV BAR */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <MushafBottomNav
@@ -920,6 +977,8 @@ const MushafPage = ({ onBack, theme, setTheme }) => {
                 setShowNavPanel={setShowNavPanel}
                 setNavTab={setNavTab}
                 toArabicIndicDigits={toArabicIndicDigits}
+                isHifzMode={isHifzMode}
+                setIsHifzMode={setIsHifzMode}
             />
 
             {/* ═══════════════════════════════════════════════════════════════ */}

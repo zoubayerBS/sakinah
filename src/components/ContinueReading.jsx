@@ -7,27 +7,27 @@ export const ContinueReading = ({ lastRead, onClick }) => {
     return (
         <div
             onClick={onClick}
-            className="group relative w-full overflow-hidden bg-[var(--color-bg-secondary)]/90 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-5 shadow-[var(--shadow-md)] hover:border-[var(--color-highlight)] transition-all cursor-pointer"
+            className="group relative w-full overflow-hidden glass-premium rounded-[2rem] p-8 shadow-2xl hover:border-[var(--color-accent)]/40 transition-all duration-500 cursor-pointer"
             dir="rtl"
         >
-            <div className="absolute -top-10 -left-10 w-32 h-32 rounded-full bg-[var(--color-highlight)]/10 blur-2xl"></div>
-            <div className="flex items-center justify-between gap-4 relative">
+            <div className="absolute -top-12 -left-12 w-40 h-40 rounded-full bg-[var(--color-highlight)]/10 blur-3xl group-hover:bg-[var(--color-highlight)]/20 transition-colors duration-700"></div>
+            <div className="flex items-center justify-between gap-6 relative z-10">
                 <div className="flex flex-col items-end text-right">
-                    <span className="font-ui text-[10px] tracking-[0.35em] uppercase text-[var(--color-text-tertiary)]">
+                    <span className="font-ui text-[12px] font-black tracking-[0.4em] uppercase text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-4 py-1.5 rounded-full mb-3">
                         متابعة
                     </span>
-                    <h3 className="font-arabic text-2xl text-[var(--color-text-primary)] mt-1">
+                    <h3 className="font-arabic font-black text-3xl text-[var(--color-text-primary)] tracking-tight">
                         {lastRead.surahName}
                     </h3>
                     {lastRead.verseNumber && (
-                        <span className="font-arabic text-xs text-[var(--color-text-tertiary)] mt-1">
+                        <span className="font-arabic font-bold text-lg text-[var(--color-text-secondary)] mt-2 opacity-80">
                             آية {lastRead.verseNumber}
                         </span>
                     )}
                 </div>
 
-                <div className="w-12 h-12 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-accent)] group-hover:bg-[var(--color-accent)] group-hover:text-white transition-colors">
-                    <Headphones size={20} />
+                <div className="w-16 h-16 rounded-3xl bg-[var(--color-accent)] text-white flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                    <Headphones size={28} />
                 </div>
             </div>
         </div>

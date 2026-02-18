@@ -230,22 +230,7 @@ router.get('/chapter/:id/images', async (req, res) => {
     }
 });
 
-// New Route: Get Verse Info
-router.get('/verse/:verseKey', async (req, res) => {
-    try {
-        const { verseKey } = req.params;
-        const verse = await client.verses.findByKey(verseKey, {
-            fields: {
-                textUthmani: true,
-                chapterId: true
-            }
-        });
-        res.json(verse);
-    } catch (error) {
-        console.error(`Error fetching verse ${req.params.verseKey}:`, error);
-        res.status(500).json({ error: error.message });
-    }
-});
+
 
 const getRecitersWithFallback = async () => {
     try {
@@ -402,6 +387,23 @@ router.get('/verse/random', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching random verse:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// New Route: Get Verse Info
+router.get('/verse/:verseKey', async (req, res) => {
+    try {
+        const { verseKey } = req.params;
+        const verse = await client.verses.findByKey(verseKey, {
+            fields: {
+                textUthmani: true,
+                chapterId: true
+            }
+        });
+        res.json(verse);
+    } catch (error) {
+        console.error(`Error fetching verse ${req.params.verseKey}:`, error);
         res.status(500).json({ error: error.message });
     }
 });

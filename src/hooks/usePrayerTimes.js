@@ -6,9 +6,10 @@ import { useState, useEffect } from 'react';
  * @param {string} initialCountry - Default country to fetch times for.
  * @returns {object} - { timings, date, meta, loading, error, fetchPrayerTimes }
  */
-export const usePrayerTimes = (initialCity = 'Tunis', initialCountry = 'Tunisia') => {
+export const usePrayerTimes = (initialCity = 'Moknine', initialCountry = 'Tunisia', initialAdjustment = -1) => {
     const [city, setCity] = useState(initialCity);
     const [country, setCountry] = useState(initialCountry);
+    const [adjustment, setAdjustment] = useState(initialAdjustment);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -19,8 +20,13 @@ export const usePrayerTimes = (initialCity = 'Tunis', initialCountry = 'Tunisia'
         try {
             const queryAddress = searchAddress || city;
 
+            // Method 13 is Directorate of Religious Affairs, Tunisia
+            // We use method 2 (Islamic Society of North America) as fallback
+            const isTunisia = queryAddress.toLowerCase().includes('tunis') || country === 'Tunisia';
+            const method = isTunisia ? 13 : 2;
+
             const response = await fetch(
-                `https://api.aladhan.com/v1/timingsByAddress?address=${encodeURIComponent(queryAddress)}&method=2`
+                `https://api.aladhan.com/v1/timingsByAddress?address=${encodeURIComponent(queryAddress)}&method=${method}&adjustment=${adjustment}`
             );
 
             if (!response.ok) {
@@ -31,7 +37,6 @@ export const usePrayerTimes = (initialCity = 'Tunis', initialCountry = 'Tunisia'
             if (result.code === 200 && result.data) {
                 setData(result.data);
                 if (searchAddress) setCity(searchAddress);
-                // Country logic simplified as it's part of the address string if user provides it
             } else {
                 throw new Error(result.status || 'Unknown error');
             }
@@ -44,7 +49,7 @@ export const usePrayerTimes = (initialCity = 'Tunis', initialCountry = 'Tunisia'
 
     useEffect(() => {
         fetchPrayerTimes();
-    }, []);
+    }, [adjustment]);
 
     return {
         timings: data?.timings || null,
@@ -54,6 +59,8 @@ export const usePrayerTimes = (initialCity = 'Tunis', initialCountry = 'Tunisia'
         error,
         city,
         country,
+        adjustment,
+        setAdjustment,
         fetchPrayerTimes
     };
 };

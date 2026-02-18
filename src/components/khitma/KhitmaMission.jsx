@@ -1,40 +1,58 @@
 import React from 'react';
-import { Sparkles, CheckCircle2, Heart } from 'lucide-react';
+import { Sparkles, CheckCircle2, Heart, Award } from 'lucide-react';
 
 const KhitmaMission = ({ remainingToday, todayPortions, handleFinishPortion, progress, totalPortions }) => (
-    <div className="bg-[var(--color-bg-secondary)]/90 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-6 space-y-6">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <Sparkles size={18} className="text-[var(--color-highlight)]" />
-                <h4 className="font-arabic font-bold text-[var(--color-text-primary)]">أوراد اليوم</h4>
+    <div className="glass-premium rounded-[2.5rem] p-8 md:p-10 shadow-2xl space-y-8 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-accent)]/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+
+        <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[var(--color-highlight)]/10 text-[var(--color-highlight)] flex items-center justify-center">
+                    <Sparkles size={24} className="animate-pulse-slow" />
+                </div>
+                <div>
+                    <h4 className="font-arabic font-black text-2xl text-[var(--color-text-primary)]">أوراد اليوم</h4>
+                    <p className="text-xs text-[var(--color-text-tertiary)] opacity-70">أكمل أورادك الخمسة لليوم</p>
+                </div>
             </div>
-            <span className="text-[10px] font-arabic text-[var(--color-text-tertiary)] bg-[var(--color-bg-tertiary)] px-3 py-1 rounded-full border border-[var(--color-border)]">
-                {remainingToday > 0 ? `باقي ${remainingToday}` : 'تمت المهمة ✨'}
-            </span>
+            <div className={`px-4 py-2 rounded-xl font-arabic font-bold text-sm border transition-all duration-500
+                ${remainingToday > 0
+                    ? 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-black/60 dark:text-white/60'
+                    : 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]/20 text-[var(--color-accent)]'}`}>
+                {remainingToday > 0 ? `باقي ${remainingToday} أوراد` : 'اكتملت مهمة اليوم ✨'}
+            </div>
         </div>
 
-        <div className="overflow-x-auto no-scrollbar -mx-2 px-2 pb-4 touch-pan-x">
-            <div className="flex items-center gap-4 min-w-max">
-                {[1, 2, 3, 4, 5].map(idx => (
-                    <div key={idx} className="flex flex-col items-center gap-2 group shrink-0">
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-500
-                            ${idx <= todayPortions ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white shadow-md' : 'bg-[var(--color-bg-tertiary)] border-[var(--color-border)] text-[var(--color-text-tertiary)]'}
-                        `}>
-                            {idx <= todayPortions ? <CheckCircle2 size={24} /> : <span className="font-ui font-bold">{idx}</span>}
+        <div className="overflow-x-auto no-scrollbar -mx-2 px-2 pb-4 touch-pan-x relative z-10">
+            <div className="flex items-center justify-between min-w-max gap-6 md:gap-8 px-4">
+                {[1, 2, 3, 4, 5].map(idx => {
+                    const isDone = idx <= todayPortions;
+                    return (
+                        <div key={idx} className="flex flex-col items-center gap-3 group/item shrink-0">
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-700
+                                ${isDone
+                                    ? 'bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-highlight)] border-[var(--color-highlight)] text-white shadow-lg scale-110'
+                                    : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)]/30'}
+                            `}>
+                                {isDone ? <CheckCircle2 size={28} /> : <span className="font-ui font-black text-xl">{idx}</span>}
+                            </div>
+                            <span className={`font-arabic text-xs font-bold transition-colors ${isDone ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)] opacity-60'}`}>
+                                الورد {idx}
+                            </span>
                         </div>
-                        <span className={`font-arabic text-[9px] ${idx <= todayPortions ? 'text-[var(--color-accent)] font-bold' : 'text-[var(--color-text-tertiary)] opacity-60'}`}>الورد {idx}</span>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
 
         <button
             onClick={handleFinishPortion}
             disabled={progress >= totalPortions}
-            className="w-full py-4 bg-[var(--color-accent)] text-white rounded-full font-arabic font-bold text-lg shadow-[var(--shadow-sm)] hover:opacity-95 transition-all flex items-center justify-center gap-3 disabled:opacity-30"
+            className="w-full py-5 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-3xl font-arabic font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-30 group/btn relative overflow-hidden"
         >
-            <Heart size={20} className={remainingToday === 0 ? 'fill-current' : ''} />
-            {remainingToday === 0 ? 'سجل ورداً إضافياً' : 'أتممت ورداً الآن'}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:animate-shimmer"></div>
+            <Award size={24} className={remainingToday === 0 ? 'text-[var(--color-highlight)]' : ''} />
+            <span>{remainingToday === 0 ? 'سجل ورداً إضافياً للبركة' : 'أتممت ورداً الآن'}</span>
         </button>
     </div>
 );

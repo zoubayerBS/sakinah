@@ -69,28 +69,35 @@ export const DailyAyah = () => {
     }, []);
 
     return (
-        <div className="relative overflow-hidden p-6 bg-[var(--color-bg-secondary)]/85 border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)]" dir="rtl">
-            <div className="absolute -bottom-8 -right-8 w-28 h-28 rounded-full bg-[var(--color-accent)]/10 blur-2xl" />
-            <h4 className="font-ui text-[10px] tracking-[0.35em] uppercase text-[var(--color-text-tertiary)] mb-3 text-right">
-                آية اليوم
-            </h4>
-            {isLoading ? (
-                <p className="font-arabic text-base text-[var(--color-text-tertiary)] text-right">...</p>
-            ) : (
-                <>
-                    <p className="font-arabic text-2xl text-[var(--color-text-primary)] leading-relaxed mb-4 text-right">
-                        {ayah.text}
-                    </p>
-                    <p className="font-arabic text-sm text-[var(--color-text-secondary)] text-right">
-                        سورة {ayah.surah} • آية {ayah.number}
-                    </p>
-                    {ayah.verseKey && (
-                        <p className="font-ui text-[10px] text-[var(--color-text-tertiary)] text-right mt-1">
-                            {ayah.verseKey}
+        <div className="relative overflow-hidden p-8 bg-transparent" dir="rtl">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 opacity-50"></div>
+            <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="h-0.5 flex-1 bg-gradient-to-l from-[var(--color-accent)]/30 to-transparent"></div>
+                    <h4 className="font-ui text-[12px] font-black tracking-[0.4em] uppercase text-[var(--color-accent)] px-6">
+                        آية اليوم
+                    </h4>
+                    <div className="h-0.5 flex-1 bg-gradient-to-r from-[var(--color-accent)]/30 to-transparent"></div>
+                </div>
+
+                {isLoading ? (
+                    <div className="space-y-4 animate-pulse">
+                        <div className="h-8 bg-[var(--color-text-primary)]/10 rounded-full w-3/4 mr-auto"></div>
+                        <div className="h-8 bg-[var(--color-text-primary)]/10 rounded-full w-1/2 mr-auto"></div>
+                    </div>
+                ) : (
+                    <div className="space-y-8">
+                        <p className="font-arabic font-black text-3xl md:text-4xl text-[var(--color-text-primary)] leading-tight text-right text-glow-accent">
+                            {ayah.text}
                         </p>
-                    )}
-                </>
-            )}
+                        <div className="flex items-center justify-end gap-3 text-[var(--color-text-secondary)]">
+                            <span className="font-arabic font-black text-xl">سورة {ayah.surah}</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]/40"></span>
+                            <span className="font-ui font-black text-lg">آية {ayah.number}</span>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
