@@ -682,16 +682,19 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     <div
                         className="absolute top-12 left-6 right-6 flex items-center justify-between text-[11px] font-bold opacity-70 pointer-events-none"
                         style={{ color: mode.text }}
+                        dir="ltr"
                     >
                         <span
-                            className="font-kfgqpc text-[20.8px]"
-                            style={{ direction: 'rtl', textAlign: 'right' }}
+                            className={pageInfo && pageInfo.surahNumber ? "font-surah-name text-4xl mt-[-5px]" : "font-kfgqpc text-[20.8px]"}
+                            style={{ direction: 'rtl', textAlign: 'left', lineHeight: 1 }}
                             aria-label={pageInfo ? pageInfo.surah : 'المصحف'}
                             title={pageInfo ? pageInfo.surah : 'المصحف'}
                         >
-                            {pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف'}
+                            {pageInfo && pageInfo.surahNumber
+                                ? `surah${String(pageInfo.surahNumber).padStart(3, '0')}`
+                                : (pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف')}
                         </span>
-                        <span className="font-kfgqpc text-[18.2px]" style={{ direction: 'rtl', textAlign: 'left' }}>
+                        <span className="font-kfgqpc text-[18.2px]" style={{ direction: 'rtl', textAlign: 'right' }}>
                             {pageInfo ? `الجزء ${toArabicIndicDigits(pageInfo.juz)}` : ''}
                         </span>
                     </div>
