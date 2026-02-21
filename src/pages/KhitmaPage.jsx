@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, Compass, Sparkles, PartyPopper, RotateCcw, Share2 } from 'lucide-react';
 import { calculateWirdProgress, calculateKhitmaProgress, getKhitmaDailyTarget, getDaysElapsed, getDailyAverage, getEstimatedEndDate, isKhitmaComplete, getWeeklyHistory } from '../utils/quran-utils.js';
+import { tapMedium, tapSuccess } from '../utils/haptics.js';
 
 // Import modular components
 import KhitmaHeader from '../components/khitma/KhitmaHeader.jsx';
@@ -118,6 +119,7 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
     };
 
     const handleLogProgress = (amount = 1) => {
+        tapMedium();
         const currentProgress = khitma?.progress || 0;
         if (currentProgress < results.totalUnits) {
             const todayKey = new Date().toISOString().split('T')[0];

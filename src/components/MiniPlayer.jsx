@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, Pause, X, Clock } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
+import { tapLight } from '../utils/haptics.js';
 
 export const MiniPlayer = ({ onOpen }) => {
     const {
@@ -50,14 +51,14 @@ export const MiniPlayer = ({ onOpen }) => {
                     {/* Controls */}
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={togglePlay}
+                            onClick={() => { tapLight(); togglePlay(); }}
                             className="w-14 h-14 flex items-center justify-center bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all duration-300"
                         >
                             {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
                         </button>
 
                         <button
-                            onClick={() => setActiveSurah(null)}
+                            onClick={() => { tapLight(); setActiveSurah(null); }}
                             className="w-10 h-10 flex items-center justify-center text-[var(--color-text-tertiary)] hover:bg-red-500 hover:text-white rounded-xl transition-all duration-300"
                         >
                             <X size={20} />

@@ -194,3 +194,38 @@
     opacity: 0;
     transition: opacity 300ms ease-out;
 }
+
+/* Page Flip - Mushaf page turn effect */
+@keyframes pageFlipLeft {
+    from {
+        opacity: 0;
+        transform: rotateY(12deg) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: rotateY(0) scale(1);
+    }
+}
+
+@keyframes pageFlipRight {
+    from {
+        opacity: 0;
+        transform: rotateY(-12deg) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: rotateY(0) scale(1);
+    }
+}
+
+.animate-page-flip-left {
+    animation: pageFlipLeft 0.45s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    transform-origin: right center;
+}
+
+.animate-page-flip-right {
+    animation: pageFlipRight 0.45s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    transform-origin: left center;
+}

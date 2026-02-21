@@ -1,12 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Music, User, Globe, Check } from 'lucide-react';
+import { Search, X, Music, User, Globe, Check, Heart } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
+import { tapLight } from '../utils/haptics.js';
 
 export const ReciterSelector = ({ isOpen, onClose, selectedReciter, selectedMoshafId, onSelect }) => {
     const [reciters, setReciters] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [expandedReciterId, setExpandedReciterId] = useState(null);
+    const [favorites, setFavorites] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('favorite-reciters') || '[]'); }
+        catch { return []; }
+    });
+
+    const toggleFavorite = (identifier) => {
+        tapLight();
+        setFavorites(prev => {
+            const next = prev.includes(identifier)
+                ? prev.filter(id => id !== identifier)
+                : [...prev, identifier];
+            localStorage.setItem('favorite-reciters', JSON.stringify(next));
+            return next;
+        });
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -37,6 +53,13 @@ export const ReciterSelector = ({ isOpen, onClose, selectedReciter, selectedMosh
             ? r.moshaf.some((m) => String(m.id || '').toLowerCase().includes(query))
             : false;
         return matchesName || matchesId || matchesMoshafId;
+    });
+
+    // Sort: favorites first
+    const sortedReciters = [...filteredReciters].sort((a, b) => {
+        const aFav = favorites.includes(a.identifier) ? 0 : 1;
+        const bFav = favorites.includes(b.identifier) ? 0 : 1;
+        return aFav - bFav;
     });
 
     if (!isOpen) return null;
@@ -90,8 +113,8 @@ export const ReciterSelector = ({ isOpen, onClose, selectedReciter, selectedMosh
                             <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-[var(--color-text-secondary)]">جاري تحميل القراء...</p>
                         </div>
-                    ) : filteredReciters.length > 0 ? (
-                        filteredReciters.map((reciter) => {
+                    ) : sortedReciters.length > 0 ? (
+                        sortedReciters.map((reciter) => {
                             const moshafOptions = Array.isArray(reciter.moshaf) ? reciter.moshaf : [];
                             const hasMultipleMoshaf = moshafOptions.length > 1;
                             const defaultMoshafId = reciter.defaultMoshafId || moshafOptions[0]?.id || null;
@@ -127,25 +150,36 @@ export const ReciterSelector = ({ isOpen, onClose, selectedReciter, selectedMosh
                                                 }`}>
                                                 <User size={24} />
                                             </div>
-                                    <div>
-                                        <p className="font-bold text-[var(--color-text-primary)]">
-                                            {reciter.name}
-                                        </p>
-                                        <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
-                                            ID: {reciter.identifier}
-                                        </p>
-                                        {hasMultipleMoshaf && (
-                                            <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
-                                                اختر الرواية
-                                            </p>
-                                        )}
-                                    </div>
+                                            <div>
+                                                <p className="font-bold text-[var(--color-text-primary)]">
+                                                    {reciter.name}
+                                                </p>
+                                                <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                                                    ID: {reciter.identifier}
+                                                </p>
+                                                {hasMultipleMoshaf && (
+                                                    <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                                                        اختر الرواية
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                         {selectedReciter === reciter.identifier && (
                                             <div className="w-6 h-6 bg-[var(--color-accent)] rounded-full flex items-center justify-center">
                                                 <Check size={14} className="text-white" />
                                             </div>
                                         )}
+
+                                        {/* Favorite heart */}
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); toggleFavorite(reciter.identifier); }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                        >
+                                            <Heart
+                                                size={16}
+                                                className={favorites.includes(reciter.identifier) ? 'text-red-500 fill-red-500' : 'text-[var(--color-text-tertiary)]'}
+                                            />
+                                        </button>
                                     </button>
 
                                     {hasMultipleMoshaf && expandedReciterId === reciter.identifier && (

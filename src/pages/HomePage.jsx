@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Clock, Book, Sparkles, Trophy, Award, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, Clock, Book, Sparkles, Trophy, Award, Star, RefreshCw } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
 import { ContinueReading } from '../components/ContinueReading.jsx';
 import { DailyAyah } from '../components/DailyAyah.jsx';
@@ -9,11 +9,20 @@ import { calculateWirdProgress, calculateKhitmaProgress, getKhitmaDailyTarget, g
 import { surahPageMapping } from '../data/surah-pages.js';
 import PrayerTimesSection from '../components/PrayerTimesSection.jsx';
 import IntegratedSearch from '../components/IntegratedSearch.jsx';
+import RamadanWidget from '../components/RamadanWidget.jsx';
+import { tapLight } from '../utils/haptics.js';
 
 export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) => {
     const [lastRead, setLastRead] = useState(null);
     const [surahs, setSurahs] = useState([]);
     const { activeSurah, isPlaying } = useAudio();
+
+    // Pull-to-refresh state
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [pullDistance, setPullDistance] = useState(0);
+    const touchStartY = useRef(0);
+    const scrollContainerRef = useRef(null);
+    const PULL_THRESHOLD = 80;
 
     // Fetch data
     const fetchData = async () => {
@@ -33,10 +42,60 @@ export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) 
         fetchData();
     }, []);
 
+    // Pull-to-refresh handlers
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        tapLight();
+        // Clear daily ayah cache to force re-fetch
+        localStorage.removeItem('daily-ayah-cache');
+        await fetchData();
+        setTimeout(() => setIsRefreshing(false), 800);
+    }, []);
+
+    const handleTouchStart = useCallback((e) => {
+        touchStartY.current = e.touches[0].clientY;
+    }, []);
+
+    const handleTouchMove = useCallback((e) => {
+        if (isRefreshing) return;
+        const scrollTop = scrollContainerRef.current?.scrollTop || window.scrollY;
+        if (scrollTop > 5) return; // Only trigger at top
+        const diff = e.touches[0].clientY - touchStartY.current;
+        if (diff > 0) {
+            setPullDistance(Math.min(diff * 0.4, PULL_THRESHOLD * 1.5));
+        }
+    }, [isRefreshing]);
+
+    const handleTouchEnd = useCallback(() => {
+        if (pullDistance >= PULL_THRESHOLD) {
+            handleRefresh();
+        }
+        setPullDistance(0);
+    }, [pullDistance, handleRefresh]);
 
     return (
 
-        <div className="min-h-screen pb-24 relative overflow-hidden mesh-bg">
+        <div
+            ref={scrollContainerRef}
+            className="min-h-screen pb-24 relative overflow-hidden mesh-bg"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
+            {/* Pull-to-Refresh Indicator */}
+            {(pullDistance > 0 || isRefreshing) && (
+                <div
+                    className="flex items-center justify-center transition-all duration-300"
+                    style={{ height: isRefreshing ? '60px' : `${pullDistance}px`, opacity: Math.min(1, pullDistance / PULL_THRESHOLD) }}
+                >
+                    <RefreshCw
+                        size={22}
+                        className={`text-[var(--color-accent)] ${isRefreshing ? 'animate-spin' : ''}`}
+                        style={{ transform: `rotate(${pullDistance * 3}deg)` }}
+                    />
+                </div>
+            )}
+
             {/* Immersive Floating Elements */}
             <div className="absolute top-[10%] left-[-5%] w-[40rem] h-[40rem] bg-[var(--color-highlight)]/5 rounded-full blur-[120px] animate-pulse-slow"></div>
             <div className="absolute bottom-[10%] right-[-5%] w-[35rem] h-[35rem] bg-[var(--color-accent)]/5 rounded-full blur-[100px] animate-pulse-slow font-delay-2000"></div>
@@ -92,6 +151,9 @@ export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) 
                                 </button>
                             </div>
                         </section>
+
+                        {/* Ramadan Widget */}
+                        <RamadanWidget />
 
                         {/* Status Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

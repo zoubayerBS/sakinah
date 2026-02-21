@@ -4,6 +4,7 @@ import { quranAPI } from '../services/quran-api.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import { getKhitmaState, saveLastRead } from '../utils/storage-utils.js';
 import { toArabicIndicDigits, formatSurahTitle, calculateWirdProgress, findJuzForPage, getKhitmaDailyTarget } from '../utils/quran-utils.js';
+import { tapTick, tapMedium } from '../utils/haptics.js';
 
 // Import modular components
 import MushafHeader from '../components/mushaf/MushafHeader.jsx';
@@ -540,10 +541,11 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
         }
     }, []);
 
-    const handleNext = () => navigateTo(pageNumber + 1, 'left');
-    const handlePrev = () => navigateTo(pageNumber - 1, 'right');
+    const handleNext = () => { tapTick(); navigateTo(pageNumber + 1, 'left'); };
+    const handlePrev = () => { tapTick(); navigateTo(pageNumber - 1, 'right'); };
 
     const toggleBookmark = () => {
+        tapMedium();
         setBookmarkedPages(prev =>
             prev.includes(pageNumber)
                 ? prev.filter(p => p !== pageNumber)
@@ -707,7 +709,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                 <p className="font-arabic text-xl tracking-wide opacity-50 animate-pulse">جاري التحميل...</p>
                             </div>
                         ) : (
-                            <div className={`w-full flex-1 flex flex-col items-center justify-center transition-all duration-500 ${slideDirection === 'left' ? 'animate-slide-in-left' : slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-fade-in'}`}>
+                            <div className={`w-full flex-1 flex flex-col items-center justify-center transition-all duration-500 ${slideDirection === 'left' ? 'animate-page-flip-left' : slideDirection === 'right' ? 'animate-page-flip-right' : 'animate-fade-in'}`} style={{ perspective: '1200px' }}>
                                 {viewMode === 'text' ? (
                                     // MUSHAF READING MODE - Quran.com style: words grouped by line
                                     <div

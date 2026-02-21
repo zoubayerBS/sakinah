@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { quranAPI } from '../services/quran-api.js';
+import { Copy, Share2, BookOpen, Check } from 'lucide-react';
+import { tapLight, tapMedium } from '../utils/haptics.js';
 
 export const DailyAyah = () => {
     const fallbackAyah = {
@@ -10,6 +12,10 @@ export const DailyAyah = () => {
 
     const [ayah, setAyah] = useState(fallbackAyah);
     const [isLoading, setIsLoading] = useState(true);
+    const [showTafsir, setShowTafsir] = useState(false);
+    const [tafsirText, setTafsirText] = useState('');
+    const [tafsirLoading, setTafsirLoading] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         let isCancelled = false;
@@ -68,6 +74,56 @@ export const DailyAyah = () => {
         return () => { isCancelled = true; };
     }, []);
 
+    // Fetch tafsir on demand
+    const fetchTafsir = useCallback(async () => {
+        if (tafsirText || !ayah.verseKey) return;
+        setTafsirLoading(true);
+        try {
+            const [surahNum, verseNum] = ayah.verseKey.split(':');
+            const res = await fetch(`https://api.quran.com/api/v4/tafsirs/16/by_ayah/${surahNum}:${verseNum}?language=ar`);
+            const data = await res.json();
+            const text = data?.tafsir?.text || '';
+            // Strip HTML tags
+            setTafsirText(text.replace(/<[^>]*>/g, ''));
+        } catch {
+            setTafsirText('لم نتمكن من تحميل التفسير');
+        } finally {
+            setTafsirLoading(false);
+        }
+    }, [ayah.verseKey, tafsirText]);
+
+    const handleToggleTafsir = () => {
+        tapLight();
+        setShowTafsir(!showTafsir);
+        if (!showTafsir) fetchTafsir();
+    };
+
+    const handleCopy = async () => {
+        tapMedium();
+        const text = `${ayah.text}\n\n— سورة ${ayah.surah}، آية ${ayah.number}`;
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // fallback
+        }
+    };
+
+    const handleShare = async () => {
+        tapLight();
+        const text = `${ayah.text}\n\n— سورة ${ayah.surah}، آية ${ayah.number}`;
+        if (navigator.share) {
+            try {
+                await navigator.share({ text, title: 'آية اليوم' });
+            } catch {
+                // cancelled
+            }
+        } else {
+            handleCopy();
+        }
+    };
+
     return (
         <div className="relative overflow-hidden p-8 bg-transparent" dir="rtl">
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 opacity-50"></div>
@@ -86,15 +142,60 @@ export const DailyAyah = () => {
                         <div className="h-8 bg-[var(--color-text-primary)]/10 rounded-full w-1/2 mr-auto"></div>
                     </div>
                 ) : (
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                         <p className="font-arabic font-black text-3xl md:text-4xl text-[var(--color-text-primary)] leading-tight text-right text-glow-accent">
                             {ayah.text}
                         </p>
-                        <div className="flex items-center justify-end gap-3 text-[var(--color-text-secondary)]">
-                            <span className="font-arabic font-black text-xl">سورة {ayah.surah}</span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]/40"></span>
-                            <span className="font-ui font-black text-lg">آية {ayah.number}</span>
+
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-[var(--color-text-secondary)]">
+                                <span className="font-arabic font-black text-xl">سورة {ayah.surah}</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]/40"></span>
+                                <span className="font-ui font-black text-lg">آية {ayah.number}</span>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleToggleTafsir}
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${showTafsir ? 'bg-[var(--color-accent)] text-white' : 'bg-black/5 dark:bg-white/5 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]'}`}
+                                    title="التفسير"
+                                >
+                                    <BookOpen size={16} />
+                                </button>
+                                <button
+                                    onClick={handleCopy}
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-all"
+                                    title="نسخ"
+                                >
+                                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                                </button>
+                                <button
+                                    onClick={handleShare}
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-all"
+                                    title="مشاركة"
+                                >
+                                    <Share2 size={16} />
+                                </button>
+                            </div>
                         </div>
+
+                        {/* Tafsir Panel */}
+                        {showTafsir && (
+                            <div className="animate-fade-in bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/5">
+                                <p className="text-xs font-arabic font-bold text-[var(--color-accent)] mb-3">تفسير الميسر</p>
+                                {tafsirLoading ? (
+                                    <div className="space-y-2 animate-pulse">
+                                        <div className="h-4 bg-[var(--color-text-primary)]/10 rounded-full w-full"></div>
+                                        <div className="h-4 bg-[var(--color-text-primary)]/10 rounded-full w-3/4"></div>
+                                    </div>
+                                ) : (
+                                    <p className="font-arabic text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                                        {tafsirText}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

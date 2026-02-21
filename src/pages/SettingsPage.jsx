@@ -11,13 +11,14 @@ import {
     Github,
     Download,
     Globe,
-    Bell
+    Bell,
+    Sunset
 } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { useAudio } from '../context/AudioContext.jsx';
 import { usePWAInstall } from '../hooks/usePWAInstall.js';
 
-export const SettingsPage = ({ theme, toggleTheme, setTheme, onBack }) => {
+export const SettingsPage = ({ theme, toggleTheme, setTheme, onBack, autoNightMode, setAutoNightMode }) => {
     const { sleepTimer, setSleepTimer, sleepTimerRemaining } = useAudio();
     const { isInstallable, promptInstall } = usePWAInstall();
 
@@ -56,6 +57,7 @@ export const SettingsPage = ({ theme, toggleTheme, setTheme, onBack }) => {
                         <div className="grid grid-cols-3 gap-4" dir="rtl">
                             {[
                                 { id: 'light', name: 'نهاري', sub: 'Beige', bg: '#F5F1E8', text: '#2C2416' },
+                                { id: 'white', name: 'أبيض', sub: 'Blanc', bg: '#FFFFFF', text: '#1A1A2E' },
                                 { id: 'dark', name: 'ليلي', sub: 'Sombre', bg: '#1A1612', text: '#F5F1E8' },
                                 { id: 'manuscript', name: 'منشور', sub: 'Parchmin', bg: '#F4ECD8', text: '#2B1B17' },
                                 { id: 'damas', name: 'دمشقي', sub: 'Damas', bg: '#F8FAF9', text: '#1A3A34' },
@@ -82,6 +84,25 @@ export const SettingsPage = ({ theme, toggleTheme, setTheme, onBack }) => {
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    {/* Auto Night Mode Toggle */}
+                    <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-4 flex items-center justify-between" dir="rtl">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)]">
+                                <Sunset size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-arabic font-bold text-[var(--color-text-primary)]">الوضع الليلي التلقائي</h3>
+                                <p className="font-arabic text-xs text-[var(--color-text-tertiary)]">تبديل تلقائي بعد المغرب والفجر</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setAutoNightMode(!autoNightMode)}
+                            className={`w-12 h-7 rounded-full transition-all duration-300 relative ${autoNightMode ? 'bg-[var(--color-accent)]' : 'bg-black/10 dark:bg-white/10'}`}
+                        >
+                            <div className={`w-5 h-5 rounded-full bg-white shadow-md absolute top-1 transition-all duration-300 ${autoNightMode ? 'right-1' : 'right-6'}`} />
+                        </button>
                     </div>
                 </section>
 
