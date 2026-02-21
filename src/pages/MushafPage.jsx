@@ -56,6 +56,10 @@ const READING_MODES = {
 const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     // Core state
     const [pageNumber, setPageNumber] = useState(() => {
+        // If Khitma is active in pages mode, resume from Khitma position
+        if (khitma?.isStarted && khitma.mode === 'pages' && khitma.lastReadPage > 0) {
+            return Math.min(604, khitma.lastReadPage + 1);
+        }
         const saved = localStorage.getItem('mushaf-last-page');
         return saved ? parseInt(saved) : 1;
     });
@@ -127,7 +131,39 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
 
     // MushafPage Component Props: ({ onBack, theme, setTheme, khitma, onUpdateKhitma })
 
-    // Khitma Progress Handler
+    // Automatic Khitma Progress Tracking — aligned with page position
+    const prevPageRef = useRef(pageNumber);
+    useEffect(() => {
+        if (!khitma?.isStarted || !onUpdateKhitma || khitma.mode !== 'pages') {
+            prevPageRef.current = pageNumber;
+            return;
+        }
+        const prevPage = prevPageRef.current;
+        prevPageRef.current = pageNumber;
+
+        // Only auto-log if user moved forward (normal reading direction)
+        if (pageNumber > prevPage) {
+            const delta = pageNumber - prevPage;
+            const todayKey = new Date().toISOString().split('T')[0];
+
+            // Progress = highest page reached (aligned with Mushaf position)
+            const newProgress = Math.max(khitma.progress || 0, pageNumber);
+
+            if (newProgress > (khitma.progress || 0)) {
+                onUpdateKhitma({
+                    ...khitma,
+                    progress: Math.min(604, newProgress),
+                    lastReadPage: pageNumber,
+                    progressLog: {
+                        ...(khitma.progressLog || {}),
+                        [todayKey]: ((khitma.progressLog || {})[todayKey] || 0) + delta
+                    }
+                });
+            }
+        }
+    }, [pageNumber]);
+
+    // Manual Khitma Progress Handler (kept as fallback for header button)
     const handleFinishPortion = useCallback(() => {
         if (!khitma || !khitma.isStarted || !onUpdateKhitma) return;
 
@@ -138,6 +174,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             const newState = {
                 ...khitma,
                 progress: Math.min(total, khitma.progress + 1),
+                lastReadPage: pageNumber,
                 progressLog: {
                     ...(khitma.progressLog || {}),
                     [todayKey]: ((khitma.progressLog || {})[todayKey] || 0) + 1
@@ -145,9 +182,10 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             };
             onUpdateKhitma(newState);
         }
-    }, [khitma, onUpdateKhitma]);
+    }, [khitma, onUpdateKhitma, pageNumber]);
 
     const wirdProgress = useMemo(() => calculateWirdProgress(khitma, getKhitmaDailyTarget(khitma)), [khitma]);
+
 
     // Refs
     const containerRef = useRef(null);

@@ -3,6 +3,16 @@ import { ArrowLeft, Search, MapPin, Calendar, Clock, Sun, Moon, CloudSun, Sunris
 import { usePrayerTimes } from '../hooks/usePrayerTimes.js';
 import { useCitySuggestions } from '../hooks/useCitySuggestions.js';
 
+// Compute Umm al-Qura Hijri date locally
+const getUmmAlQuraDate = (adjustment = -1) => {
+    const now = new Date();
+    now.setDate(now.getDate() + adjustment);
+    const day = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', { day: 'numeric' }).format(now);
+    const month = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura', { month: 'long' }).format(now);
+    const year = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', { year: 'numeric' }).format(now).replace(/\s*هـ$/, '');
+    return { day, month, year };
+};
+
 const PrayerTimeCard = ({ name, time, icon: Icon, isNext }) => (
     <div className={`p-4 rounded-2xl flex items-center justify-between border transition-all duration-300 ${isNext
         ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)] scale-[1.02] shadow-md'
@@ -217,7 +227,7 @@ export const PrayerTimesPage = ({ onBack }) => {
                             <div className="flex items-center justify-center gap-6 text-sm text-[var(--color-text-tertiary)]">
                                 <div className="flex items-center gap-2">
                                     <Calendar size={16} />
-                                    <span className="font-ui">{date.hijri?.day} {date.hijri?.month?.ar} {date.hijri?.year}</span>
+                                    <span className="font-ui">{getUmmAlQuraDate().day} {getUmmAlQuraDate().month} {getUmmAlQuraDate().year}</span>
                                 </div>
                                 <div className="w-px h-4 bg-[var(--color-border)]"></div>
                                 <span className="font-ui">{date.gregorian?.date}</span>

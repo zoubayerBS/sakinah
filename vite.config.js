@@ -111,7 +111,7 @@ export default defineConfig({
                     },
                     {
                         urlPattern: /^https:\/\/.*\.mp3quran\.net\/.*/i,
-                        handler: 'StaleWhileRevalidate',
+                        handler: 'NetworkFirst',
                         options: {
                             cacheName: 'audio-cache',
                             expiration: {
@@ -119,7 +119,7 @@ export default defineConfig({
                                 maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
                             },
                             cacheableResponse: {
-                                statuses: [0, 200]
+                                statuses: [200]
                             },
                             rangeRequests: true
                         }

@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Calendar, Clock, Sun, Moon, CloudSun, Sunrise, Sunset, Loader2 } from 'lucide-react';
 import { usePrayerTimes } from '../hooks/usePrayerTimes.js';
 
+// Compute Umm al-Qura Hijri date locally
+const getUmmAlQuraDate = (adjustment = -1) => {
+    const now = new Date();
+    now.setDate(now.getDate() + adjustment);
+    const day = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', { day: 'numeric' }).format(now);
+    const month = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura', { month: 'long' }).format(now);
+    const year = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', { year: 'numeric' }).format(now).replace(/\s*هـ$/, '');
+    return { day, month, year };
+};
+
 const PrayerTimesSection = () => {
     // Default to Tunis for now, can be made dynamic later or use existing hook defaults
     const { timings, date, meta, loading, error, city } = usePrayerTimes();
@@ -128,7 +138,7 @@ const PrayerTimesSection = () => {
                     <div className="flex items-center gap-4 text-sm text-[var(--color-text-primary)] bg-black/5 dark:bg-white/5 px-4 py-2 lg:px-6 lg:py-3 rounded-xl lg:rounded-2xl border border-white/20 backdrop-blur-sm shadow-inner">
                         <div className="flex items-center gap-2">
                             <Calendar size={18} className="text-[var(--color-accent)]" />
-                            <span className="font-arabic font-bold text-sm lg:text-lg">{date.hijri?.day} {date.hijri?.month?.ar}</span>
+                            <span className="font-arabic font-bold text-sm lg:text-lg">{getUmmAlQuraDate().day} {getUmmAlQuraDate().month}</span>
                         </div>
                         <div className="w-px h-6 bg-black/10 dark:bg-white/10"></div>
                         <div className="font-ui font-black opacity-60 tracking-tighter text-xs">{date.gregorian?.date}</div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Compass, Sparkles } from 'lucide-react';
-import { getKhitmaState, saveKhitmaState } from '../utils/storage-utils.js';
-import { calculateWirdProgress, calculateKhitmaProgress } from '../utils/quran-utils.js';
+import { ArrowLeft, Compass, Sparkles, PartyPopper, RotateCcw, Share2 } from 'lucide-react';
+import { calculateWirdProgress, calculateKhitmaProgress, getKhitmaDailyTarget, getDaysElapsed, getDailyAverage, getEstimatedEndDate, isKhitmaComplete, getWeeklyHistory } from '../utils/quran-utils.js';
 
 // Import modular components
 import KhitmaHeader from '../components/khitma/KhitmaHeader.jsx';
@@ -10,25 +9,23 @@ import KhitmaStats from '../components/khitma/KhitmaStats.jsx';
 import KhitmaJourney from '../components/khitma/KhitmaJourney.jsx';
 
 export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
-    // 1. Data Definitions
+    // 1. Constants
     const TOTAL_PAGES = 604;
     const TOTAL_VERSES = 6236;
     const JUZ_TOTAL = 30;
 
-    // 2. Planning State (local until started/updated)
+    // 2. Planning State (local until started)
     const [localPlan, setLocalPlan] = useState({
         days: khitma?.days || 30,
         planType: khitma?.planType || 'days',
         targetDate: khitma?.targetDate || '',
         mode: khitma?.mode || 'pages',
-        reminderEnabled: khitma?.reminderEnabled || false,
-        reminderTime: khitma?.reminderTime || '20:30'
     });
 
-    const [results, setResults] = useState({ daily: 0, perPrayer: 0, totalPortions: 0 });
+    const [results, setResults] = useState({ daily: 0, perPrayer: 0, totalUnits: 0 });
+    const [showCompletion, setShowCompletion] = useState(false);
 
-    // 4. Shared Data Sync
-    // We only update localPlan from props if the khitma object changes (e.g. loaded from DB)
+    // 3. Sync localPlan from props
     useEffect(() => {
         if (khitma) {
             setLocalPlan({
@@ -36,13 +33,11 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                 planType: khitma.planType || 'days',
                 targetDate: khitma.targetDate || '',
                 mode: khitma.mode || 'pages',
-                reminderEnabled: khitma.reminderEnabled !== undefined ? Boolean(khitma.reminderEnabled) : false,
-                reminderTime: khitma.reminderTime || '20:30'
             });
         }
     }, [khitma]);
 
-    // 5. Calculations
+    // 4. Calculations
     useEffect(() => {
         const total = localPlan.mode === 'pages' ? TOTAL_PAGES : TOTAL_VERSES;
         const daily = Math.ceil(total / localPlan.days);
@@ -63,6 +58,13 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
         }
     }, [localPlan.planType, localPlan.targetDate, localPlan.days]);
 
+    // 5. Detect completion
+    useEffect(() => {
+        if (khitma?.isStarted && isKhitmaComplete(khitma) && !showCompletion) {
+            setShowCompletion(true);
+        }
+    }, [khitma]);
+
     // 6. Handlers
     const updateKhitmaState = (updates) => {
         if (!onUpdateKhitma) return;
@@ -71,6 +73,9 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
             isStarted: khitma?.isStarted || false,
             progress: khitma?.progress || 0,
             progressLog: khitma?.progressLog || {},
+            startDate: khitma?.startDate || null,
+            lastReadPage: khitma?.lastReadPage || 0,
+            completedKhitmas: khitma?.completedKhitmas || 0,
             ...updates
         };
         onUpdateKhitma(newState);
@@ -81,67 +86,86 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
         updateKhitmaState({
             isStarted: true,
             progress: 0,
-            progressLog: {}
+            progressLog: {},
+            startDate: new Date().toISOString().split('T')[0],
+            lastReadPage: 0,
         });
     };
 
     const handleReset = () => {
         if (window.confirm('إعادة ضبط خطة الختمة؟')) {
+            setShowCompletion(false);
             updateKhitmaState({
                 isStarted: false,
                 progress: 0,
-                progressLog: {}
+                progressLog: {},
+                startDate: null,
+                lastReadPage: 0,
             });
         }
     };
 
+    const handleCompleteAndRestart = () => {
+        setShowCompletion(false);
+        updateKhitmaState({
+            isStarted: true,
+            progress: 0,
+            progressLog: {},
+            startDate: new Date().toISOString().split('T')[0],
+            lastReadPage: 0,
+            completedKhitmas: (khitma?.completedKhitmas || 0) + 1,
+        });
+    };
+
     const handleLogProgress = (amount = 1) => {
         const currentProgress = khitma?.progress || 0;
-        const currentLog = khitma?.progressLog || {};
-
         if (currentProgress < results.totalUnits) {
             const todayKey = new Date().toISOString().split('T')[0];
             updateKhitmaState({
                 progress: Math.min(results.totalUnits, currentProgress + amount),
                 progressLog: {
-                    ...currentLog,
-                    [todayKey]: (currentLog[todayKey] || 0) + amount
+                    ...(khitma?.progressLog || {}),
+                    [todayKey]: ((khitma?.progressLog || {})[todayKey] || 0) + amount
                 }
             });
         }
     };
 
     // 7. Derived Values
-    const progressPercentage = useMemo(() => {
-        return calculateKhitmaProgress(khitma);
-    }, [khitma]);
-
+    const progressPercentage = useMemo(() => Math.round(calculateKhitmaProgress(khitma)), [khitma]);
     const currentJuz = Math.min(30, Math.floor((progressPercentage / 100) * JUZ_TOTAL) + 1);
     const todayKey = new Date().toISOString().split('T')[0];
     const todayProgress = khitma?.progressLog?.[todayKey] || 0;
-    const remainingToday = Math.max(0, results.daily - todayProgress);
+    const dailyTarget = results.daily;
+    const remainingToday = Math.max(0, dailyTarget - todayProgress);
+    const daysElapsed = getDaysElapsed(khitma);
+    const dailyAverage = getDailyAverage(khitma);
+    const estimatedEnd = getEstimatedEndDate(khitma);
+    const weeklyHistory = getWeeklyHistory(khitma);
 
     const computeStreak = useCallback(() => {
         const log = khitma?.progressLog || {};
         let streak = 0;
         const date = new Date();
         const todayCount = log[date.toISOString().split('T')[0]] || 0;
-        if (todayCount < results.daily) {
-            date.setDate(date.getDate() - 1);
-        }
-        while (streak < 1000) { // Safety break
+        if (todayCount < dailyTarget) date.setDate(date.getDate() - 1);
+        while (streak < 1000) {
             const key = date.toISOString().split('T')[0];
-            if ((log[key] || 0) >= results.daily) {
+            if ((log[key] || 0) >= dailyTarget) {
                 streak += 1;
                 date.setDate(date.getDate() - 1);
-            } else {
-                break;
-            }
+            } else break;
         }
         return streak;
-    }, [khitma?.progressLog, results.daily]);
-
+    }, [khitma?.progressLog, dailyTarget]);
     const currentStreak = useMemo(() => computeStreak(), [computeStreak]);
+
+    // Format date for display (Latin script)
+    const formatDate = (d) => {
+        if (!d) return '—';
+        const date = d instanceof Date ? d : new Date(d);
+        return date.toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
 
     return (
         <div className="min-h-screen pb-24 relative overflow-x-hidden mesh-bg" dir="rtl">
@@ -153,10 +177,65 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                 onBack={onBack}
                 isStarted={khitma?.isStarted}
                 currentStreak={currentStreak}
+                completedKhitmas={khitma?.completedKhitmas || 0}
+                progressPercentage={progressPercentage}
             />
 
             <main className="relative max-w-4xl mx-auto px-6 py-10 space-y-12">
-                {!khitma?.isStarted ? (
+
+                {/* ─── COMPLETION CELEBRATION ─── */}
+                {showCompletion && (
+                    <div className="animate-fade-in-up">
+                        <div className="glass-premium rounded-[3rem] p-10 md:p-14 shadow-2xl text-center space-y-8 relative overflow-hidden border-2 border-[var(--color-accent)]/30">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 via-transparent to-[var(--color-highlight)]/5"></div>
+
+                            <div className="relative z-10 space-y-6">
+                                <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-highlight)] flex items-center justify-center shadow-2xl animate-bounce">
+                                    <PartyPopper size={48} className="text-white" />
+                                </div>
+                                <h2 className="font-arabic font-black text-4xl text-[var(--color-text-primary)]">مبارك! أتممت الختمة 🎉</h2>
+                                <p className="font-arabic text-lg text-[var(--color-text-secondary)] max-w-md mx-auto">
+                                    تقبل الله منك وجعله في ميزان حسناتك
+                                </p>
+
+                                <div className="flex flex-wrap gap-4 justify-center">
+                                    <div className="bg-black/5 dark:bg-white/5 px-6 py-4 rounded-2xl text-center">
+                                        <p className="font-ui font-black text-3xl text-[var(--color-accent)]">{daysElapsed}</p>
+                                        <p className="text-xs font-arabic opacity-50">يوم</p>
+                                    </div>
+                                    <div className="bg-black/5 dark:bg-white/5 px-6 py-4 rounded-2xl text-center">
+                                        <p className="font-ui font-black text-3xl text-[var(--color-highlight)]">{dailyAverage}</p>
+                                        <p className="text-xs font-arabic opacity-50">معدل يومي</p>
+                                    </div>
+                                    <div className="bg-black/5 dark:bg-white/5 px-6 py-4 rounded-2xl text-center">
+                                        <p className="font-ui font-black text-3xl text-[var(--color-text-primary)]">{(khitma?.completedKhitmas || 0) + 1}</p>
+                                        <p className="text-xs font-arabic opacity-50">ختمة</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                                    <button
+                                        onClick={handleCompleteAndRestart}
+                                        className="flex-1 py-5 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-2xl font-arabic font-black text-lg shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                    >
+                                        <RotateCcw size={20} />
+                                        ابدأ ختمة جديدة
+                                    </button>
+                                    <button
+                                        onClick={() => setShowCompletion(false)}
+                                        className="flex-1 py-5 bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 rounded-2xl font-arabic font-black text-lg hover:bg-[var(--color-accent)]/20 transition-all flex items-center justify-center gap-3"
+                                    >
+                                        <Share2 size={20} />
+                                        شارك الإنجاز
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── PLANNER (Not Started) ─── */}
+                {!khitma?.isStarted && !showCompletion && (
                     <div className="animate-fade-in-up">
                         <KhitmaPlanner
                             planType={localPlan.planType}
@@ -171,17 +250,28 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                             handleStart={handleStart}
                         />
                     </div>
-                ) : (
+                )}
+
+                {/* ─── ACTIVE KHITMA ─── */}
+                {khitma?.isStarted && !showCompletion && (
                     <div className="animate-fade-in space-y-12">
+
+                        {/* Professional Stats Dashboard */}
                         <div className="animate-fade-in-up stagger-1">
                             <KhitmaStats
                                 currentJuz={currentJuz}
                                 progressPercentage={progressPercentage}
                                 results={results}
                                 progress={khitma?.progress || 0}
+                                daysElapsed={daysElapsed}
+                                dailyAverage={dailyAverage}
+                                estimatedEnd={formatDate(estimatedEnd)}
+                                weeklyHistory={weeklyHistory}
+                                mode={localPlan.mode}
                             />
                         </div>
 
+                        {/* Today's Progress Section */}
                         <div className="animate-fade-in-up stagger-2">
                             <div className="glass-premium rounded-[2.5rem] p-8 md:p-10 shadow-2xl space-y-8 relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-accent)]/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
@@ -200,8 +290,22 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                                             ? 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-black/60 dark:text-white/60'
                                             : 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]/20 text-[var(--color-accent)]'}`}>
                                         {remainingToday > 0
-                                            ? `أنجزت ${Math.round(calculateWirdProgress(khitma, results.daily))}%`
+                                            ? `أنجزت ${Math.round(calculateWirdProgress(khitma, dailyTarget))}%`
                                             : 'اكتمل ورد اليوم ✨'}
+                                    </div>
+                                </div>
+
+                                {/* Today's progress bar */}
+                                <div className="relative z-10 space-y-2">
+                                    <div className="w-full h-3 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-highlight)] transition-all duration-1000 rounded-full"
+                                            style={{ width: `${Math.min(100, (todayProgress / dailyTarget) * 100)}%` }}
+                                        ></div>
+                                    </div>
+                                    <div className="flex justify-between text-[10px] font-arabic font-bold opacity-40">
+                                        <span>{todayProgress} {localPlan.mode === 'pages' ? 'صفحة' : 'آية'}</span>
+                                        <span>الهدف: {dailyTarget}</span>
                                     </div>
                                 </div>
 
@@ -211,7 +315,7 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                                             <button
                                                 key={amount}
                                                 onClick={() => handleLogProgress(amount)}
-                                                className="flex-1 py-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[var(--color-text-primary)] font-arabic font-bold hover:border-[var(--color-accent)]/30 transition-all flex flex-col items-center gap-1 group/btn"
+                                                className="flex-1 py-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[var(--color-text-primary)] font-arabic font-bold hover:border-[var(--color-accent)]/30 transition-all flex flex-col items-center gap-1 group/btn active:scale-95"
                                             >
                                                 <span className="text-lg">+{amount}</span>
                                                 <span className="text-[10px] opacity-60 font-medium">{localPlan.mode === 'pages' ? 'صفحة' : 'آية'}</span>
@@ -226,6 +330,13 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                                     >
                                         {remainingToday <= 0 ? 'أتممت هدفك لليوم مبارك!' : 'تسجيل إتمام الورد اليومي'}
                                     </button>
+
+                                    {/* Auto-tracking hint */}
+                                    {localPlan.mode === 'pages' && (
+                                        <p className="text-center text-[10px] font-arabic text-[var(--color-text-tertiary)] opacity-50">
+                                            💡 يتم تسجيل التقدم تلقائياً عند القراءة في المصحف
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -258,12 +369,6 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                                 >
                                     <ArrowLeft size={16} className="rotate-90" />
                                     إعادة ضبط الخطة
-                                </button>
-                                <button
-                                    className="px-8 py-3 rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 font-arabic font-bold text-sm hover:bg-[var(--color-accent)]/20 transition-all flex items-center gap-3"
-                                >
-                                    <ArrowLeft size={16} className="rotate-270" />
-                                    شارك التقدم
                                 </button>
                             </div>
                         </div>

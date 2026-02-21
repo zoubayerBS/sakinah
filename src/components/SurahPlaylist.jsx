@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Music, ChevronLeft, Headphones } from 'lucide-react';
+import { X, Search, Music } from 'lucide-react';
 
 const SurahPlaylist = ({ isOpen, onClose, surahs, currentSurah, onSurahSelect, isDarkMode, mode }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -30,12 +30,12 @@ const SurahPlaylist = ({ isOpen, onClose, surahs, currentSurah, onSurahSelect, i
                 {/* Header */}
                 <div className="px-6 py-4 flex items-center justify-between">
                     <div>
-                        <h2 className="font-arabic font-bold text-xl text-[var(--color-text-primary)]">قائمة السور</h2>
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-bold">Surah Playlist</p>
+                        <h2 className="font-arabic font-black text-2xl text-[var(--color-text-primary)]">قائمة السور</h2>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-bold mt-1">{surahs.length} سورة</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
+                        className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-[var(--color-text-primary)]"
                     >
                         <X size={20} />
                     </button>
@@ -48,7 +48,7 @@ const SurahPlaylist = ({ isOpen, onClose, surahs, currentSurah, onSurahSelect, i
                         <input
                             type="text"
                             placeholder="ابحث عن سورة..."
-                            className="w-full bg-black/5 border border-transparent focus:border-[var(--color-accent)]/30 rounded-full pr-12 pl-4 py-3 font-arabic text-sm transition-all focus:outline-none"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[var(--color-accent)]/30 rounded-2xl pr-12 pl-4 py-3.5 font-arabic font-bold text-sm text-[var(--color-text-primary)] transition-all focus:outline-none placeholder:text-[var(--color-text-tertiary)] placeholder:opacity-50"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             dir="rtl"
@@ -57,40 +57,41 @@ const SurahPlaylist = ({ isOpen, onClose, surahs, currentSurah, onSurahSelect, i
                 </div>
 
                 {/* Surah List */}
-                <div className="flex-1 overflow-y-auto px-6 pb-12 custom-scrollbar space-y-2">
+                <div className="flex-1 overflow-y-auto px-4 pb-12 custom-scrollbar space-y-1">
                     {filteredSurahs.map((surah, idx) => {
                         const isActive = currentSurah?.number === surah.number;
                         return (
                             <div
                                 key={surah.number}
                                 onClick={() => onSurahSelect(surah)}
-                                className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border animate-fade-in-up ${isActive
-                                        ? 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]/30'
-                                        : 'hover:bg-black/5 border-transparent'
+                                className={`group flex items-center justify-between px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300 border ${isActive
+                                    ? 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]/20 shadow-sm'
+                                    : 'hover:bg-black/5 dark:hover:bg-white/5 border-transparent'
                                     }`}
-                                style={{ animationDelay: `${idx * 0.02}s` }}
                                 dir="rtl"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isActive ? 'bg-[var(--color-accent)] text-white' : 'bg-black/5 text-[var(--color-text-tertiary)]'
+                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-ui font-black text-sm transition-all ${isActive
+                                        ? 'bg-[var(--color-accent)] text-white shadow-lg'
+                                        : 'bg-black/5 dark:bg-white/5 text-[var(--color-text-tertiary)]'
                                         }`}>
                                         {isActive ? <Music size={16} className="animate-pulse" /> : surah.number}
                                     </div>
                                     <div className="text-right">
-                                        <h3 className={`font-arabic font-bold text-lg ${isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
+                                        <h3 className={`font-arabic font-black text-lg leading-tight ${isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
                                             {surah.name}
                                         </h3>
-                                        <p className="text-[10px] text-[var(--color-text-secondary)] opacity-60">
+                                        <p className="font-arabic text-xs text-[var(--color-text-tertiary)] opacity-60 mt-0.5">
                                             {surah.verses} آية • {surah.revelation === 'Meccan' ? 'مكية' : 'مدنية'}
                                         </p>
                                     </div>
                                 </div>
 
                                 {isActive && (
-                                    <div className="flex items-center gap-1">
-                                        <div className="w-1 h-3 bg-[var(--color-accent)] rounded-full animate-pulse-slow"></div>
-                                        <div className="w-1 h-5 bg-[var(--color-accent)] rounded-full animate-pulse-slow ml-0.5" style={{ animationDelay: '0.2s' }}></div>
-                                        <div className="w-1 h-3 bg-[var(--color-accent)] rounded-full animate-pulse-slow ml-0.5" style={{ animationDelay: '0.4s' }}></div>
+                                    <div className="flex items-center gap-0.5">
+                                        <div className="w-1 h-3 bg-[var(--color-accent)] rounded-full animate-eq-bar"></div>
+                                        <div className="w-1 h-5 bg-[var(--color-accent)] rounded-full animate-eq-bar" style={{ animationDelay: '0.2s' }}></div>
+                                        <div className="w-1 h-3 bg-[var(--color-accent)] rounded-full animate-eq-bar" style={{ animationDelay: '0.4s' }}></div>
                                     </div>
                                 )}
                             </div>
@@ -101,12 +102,13 @@ const SurahPlaylist = ({ isOpen, onClose, surahs, currentSurah, onSurahSelect, i
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-                @keyframes pulse-slow {
-                    0%, 100% { transform: scaleY(1); opacity: 0.5; }
-                    50% { transform: scaleY(1.5); opacity: 1; }
+                @keyframes eq-bar {
+                    0%, 100% { transform: scaleY(1); opacity: 0.6; }
+                    50% { transform: scaleY(1.6); opacity: 1; }
                 }
-                .animate-pulse-slow {
-                    animation: pulse-slow 1.2s ease-in-out infinite;
+                .animate-eq-bar {
+                    animation: eq-bar 1.2s ease-in-out infinite;
+                    transform-origin: bottom;
                 }
             `}} />
         </div>

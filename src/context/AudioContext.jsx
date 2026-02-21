@@ -138,18 +138,23 @@ export const AudioProvider = ({ children }) => {
             if (nextIndex < urls.length) {
                 console.log(`[AudioContext] Audio source failed, trying fallback URL ${nextIndex + 1}/${urls.length}`);
                 currentUrlIndexRef.current = nextIndex;
-                retryCountRef.current = 0; // Reset retries for new URL
+                retryCountRef.current = 0;
                 audio.src = urls[nextIndex];
                 audio.load();
                 audio.play().then(() => setIsPlaying(true)).catch(err => {
                     console.error("[AudioContext] Playback failed after fallback:", err);
-                    handleError(); // Try next if this one fails to play immediately
+                    handleError();
                 });
             } else if (retryCountRef.current < maxRetries) {
                 const delay = Math.pow(2, retryCountRef.current) * 1000;
-                console.log(`[AudioContext] All URLs failed, retrying current URL in ${delay}ms (Attempt ${retryCountRef.current + 1}/${maxRetries})`);
                 retryCountRef.current += 1;
+                // Reset to first URL and add cache-buster to bypass stale SW cache
+                currentUrlIndexRef.current = 0;
+                console.log(`[AudioContext] All URLs failed, restarting from first URL in ${delay}ms (Attempt ${retryCountRef.current}/${maxRetries})`);
                 setTimeout(() => {
+                    const bustParam = `_t=${Date.now()}`;
+                    const separator = urls[0].includes('?') ? '&' : '?';
+                    audio.src = urls[0] + separator + bustParam;
                     audio.load();
                     audio.play().then(() => setIsPlaying(true)).catch(handleError);
                 }, delay);

@@ -14,7 +14,7 @@ export const MiniPlayer = ({ onOpen }) => {
     return (
         <div className="fixed bottom-28 left-1/2 -translate-x-1/2 w-[94%] max-w-lg z-[400] animate-slide-up">
             <div className="absolute inset-x-4 -bottom-4 h-8 bg-black/10 blur-2xl rounded-full -z-10"></div>
-            <div className="glass-premium border-white/30 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden relative group">
+            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.2)] overflow-hidden relative group">
                 {/* Progress Bar background */}
                 <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/10 dark:bg-white/10">
                     <div
