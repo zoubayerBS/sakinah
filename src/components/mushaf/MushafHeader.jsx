@@ -1,3 +1,4 @@
+import React from 'react';
 import { Home, Bookmark, BookmarkCheck, CheckCircle2 } from 'lucide-react';
 
 const MushafHeader = ({
@@ -110,7 +111,7 @@ const MushafHeader = ({
                         className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 opacity-60 hover:opacity-100"
                         style={{ color: mode.text }}
                     >
-                        {React.createElement(mode.icon, { size: 18 })}
+                        {mode.icon && <mode.icon size={18} />}
                     </button>
                 </div>
             </div>
