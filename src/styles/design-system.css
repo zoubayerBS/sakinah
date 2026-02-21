@@ -27,32 +27,32 @@
      ========================================== */
 
   /* Backgrounds */
-  --color-bg-primary: #F5F1E8;
-  --color-bg-secondary: #FAF6EF;
-  --color-bg-tertiary: #FDFCFA;
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #FAFAFA;
+  --color-bg-tertiary: #F5F5F5;
 
   /* Text */
-  --color-text-primary: #2C2416;
-  --color-text-secondary: #8B7355;
-  --color-text-tertiary: #A89A82;
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary: #9CA3AF;
 
   /* Borders & Dividers */
-  --color-border: #E8DCC8;
-  --color-divider: #EFE6D5;
+  --color-border: #E5E7EB;
+  --color-divider: #F3F4F6;
 
   /* Accents */
-  --color-accent: #5C6B4A;
-  --color-highlight: #C9A961;
+  --color-accent: #0D9488;
+  --color-highlight: #F59E0B;
 
   /* Semantic Colors */
-  --color-success: #6B8E5C;
-  --color-warning: #D4A574;
-  --color-error: #B85C5C;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
 
   /* Shadows - Minimal */
-  --shadow-sm: 0 1px 2px rgba(44, 36, 22, 0.05);
-  --shadow-md: 0 2px 8px rgba(44, 36, 22, 0.08);
-  --shadow-lg: 0 4px 16px rgba(44, 36, 22, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
 
   /* Typography */
   --font-arabic: 'Reem Kufi', 'Amiri Quran', serif;

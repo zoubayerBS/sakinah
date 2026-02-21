@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-6749d8bd'], (function (workbox) { 'use strict';
+define(['./workbox-1f956ede'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,7 +82,7 @@ define(['./workbox-6749d8bd'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.p5bmnn8to5g"
+    "revision": "0.c6ujnmtkvc8"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
@@ -124,13 +124,13 @@ define(['./workbox-6749d8bd'], (function (workbox) { 'use strict';
       maxAgeSeconds: 86400
     })]
   }), 'GET');
-  workbox.registerRoute(/^https:\/\/.*\.mp3quran\.net\/.*/i, new workbox.StaleWhileRevalidate({
+  workbox.registerRoute(/^https:\/\/.*\.mp3quran\.net\/.*/i, new workbox.NetworkFirst({
     "cacheName": "audio-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 20,
       maxAgeSeconds: 604800
     }), new workbox.CacheableResponsePlugin({
-      statuses: [0, 200]
+      statuses: [200]
     }), new workbox.RangeRequestsPlugin()]
   }), 'GET');
   workbox.registerRoute(/^https:\/\/static-cdn\.tarteel\.ai\/qul\/fonts\/quran_fonts\/v2\/woff2\/.*/i, new workbox.CacheFirst({
