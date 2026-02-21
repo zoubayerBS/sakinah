@@ -1,5 +1,4 @@
-import React from 'react';
-import { Home, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Home, Bookmark, BookmarkCheck, CheckCircle2 } from 'lucide-react';
 
 const MushafHeader = ({
     showControls,
@@ -10,6 +9,7 @@ const MushafHeader = ({
     formatSurahTitle,
     khitma,
     wirdProgress,
+    onFinishPortion,
     toggleBookmark,
     isCurrentPageBookmarked,
     readingMode,
@@ -52,11 +52,23 @@ const MushafHeader = ({
 
                     {khitma?.isStarted ? (
                         <div className="flex flex-col items-center w-full mt-1.5 px-2">
-                            <div className="w-full h-1 bg-black/5 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-[var(--color-accent)] shadow-[0_0_5px_var(--color-accent)] transition-all duration-1000"
-                                    style={{ width: `${wirdProgress}%` }}
-                                />
+                            <div className="flex items-center gap-2 w-full">
+                                <div className="flex-1 h-1 bg-black/5 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-[var(--color-accent)] shadow-[0_0_5px_var(--color-accent)] transition-all duration-1000"
+                                        style={{ width: `${wirdProgress}%` }}
+                                    />
+                                </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onFinishPortion) onFinishPortion();
+                                    }}
+                                    className="p-1 rounded-full text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 active:scale-95 transition-all"
+                                    title="تسجيل ورد"
+                                >
+                                    <CheckCircle2 size={16} />
+                                </button>
                             </div>
                             <div className="flex justify-between w-full mt-1">
                                 <span className="text-[7px] font-bold opacity-30 uppercase" style={{ color: mode.text }}>

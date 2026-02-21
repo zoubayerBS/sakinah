@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { getAudioUrls } from '../utils/audio-utils';
+import { saveAudioState, getReciter, saveReciter } from '../utils/storage-utils';
 
 const AudioContext = createContext();
 
@@ -29,26 +30,20 @@ export const AudioProvider = ({ children }) => {
     const [sleepTimer, setSleepTimer] = useState(null); // null or minutes
     const [sleepTimerId, setSleepTimerId] = useState(null);
 
-    // Reciter State
-    const getStoredReciter = () => {
-        try {
-            const raw = localStorage.getItem('quran-reciter');
-            if (!raw) return null;
-            const parsed = JSON.parse(raw);
-            if (!parsed?.identifier) return null;
-            return parsed;
-        } catch {
-            return null;
-        }
-    };
+    const [currentReciter, setCurrentReciter] = useState({
+        identifier: '',
+        name: '',
+        englishName: ''
+    });
 
-    const [currentReciter, setCurrentReciter] = useState(() => (
-        getStoredReciter() || {
-            identifier: '',
-            name: '',
-            englishName: ''
-        }
-    ));
+    // Load initial Reciter
+    useEffect(() => {
+        const loadReciter = async () => {
+            const saved = await getReciter();
+            if (saved) setCurrentReciter(saved);
+        };
+        loadReciter();
+    }, []);
 
     const player = useRef(null);
     if (!player.current) {
@@ -59,6 +54,9 @@ export const AudioProvider = ({ children }) => {
     // Ref to track audio URL fallback index
     const audioUrlsRef = useRef([]);
     const currentUrlIndexRef = useRef(0);
+    const retryCountRef = useRef(0);
+    const maxRetries = 3;
+    const stuckTimeoutRef = useRef(null);
 
     // Fetch All Surahs for Playlist
     useEffect(() => {
@@ -95,8 +93,22 @@ export const AudioProvider = ({ children }) => {
             }
         };
 
-        const handleBuffering = () => setIsBuffering(true);
-        const handleReady = () => setIsBuffering(false);
+        const handleBuffering = () => {
+            setIsBuffering(true);
+            // Detect if we get stuck in buffering state
+            if (stuckTimeoutRef.current) clearTimeout(stuckTimeoutRef.current);
+            stuckTimeoutRef.current = setTimeout(() => {
+                if (audio.paused === false && audio.readyState < 3) {
+                    console.log("[AudioContext] Stuck detected, attempting reload...");
+                    handleError();
+                }
+            }, 10000);
+        };
+        const handleReady = () => {
+            setIsBuffering(false);
+            if (stuckTimeoutRef.current) clearTimeout(stuckTimeoutRef.current);
+            retryCountRef.current = 0; // Reset retry count on successful play
+        };
         const handleEnded = () => {
             setIsPlaying(false);
             setCurrentAyahNumber(null);
@@ -116,22 +128,52 @@ export const AudioProvider = ({ children }) => {
             }
         };
 
-        // Handle audio load errors - try fallback URLs
+        // Handle audio load errors - try fallback URLs and retries
         const handleError = () => {
+            if (stuckTimeoutRef.current) clearTimeout(stuckTimeoutRef.current);
+
             const urls = audioUrlsRef.current;
             const nextIndex = currentUrlIndexRef.current + 1;
+
             if (nextIndex < urls.length) {
                 console.log(`[AudioContext] Audio source failed, trying fallback URL ${nextIndex + 1}/${urls.length}`);
                 currentUrlIndexRef.current = nextIndex;
+                retryCountRef.current = 0; // Reset retries for new URL
                 audio.src = urls[nextIndex];
                 audio.load();
-                audio.play().then(() => setIsPlaying(true)).catch(console.error);
+                audio.play().then(() => setIsPlaying(true)).catch(err => {
+                    console.error("[AudioContext] Playback failed after fallback:", err);
+                    handleError(); // Try next if this one fails to play immediately
+                });
+            } else if (retryCountRef.current < maxRetries) {
+                const delay = Math.pow(2, retryCountRef.current) * 1000;
+                console.log(`[AudioContext] All URLs failed, retrying current URL in ${delay}ms (Attempt ${retryCountRef.current + 1}/${maxRetries})`);
+                retryCountRef.current += 1;
+                setTimeout(() => {
+                    audio.load();
+                    audio.play().then(() => setIsPlaying(true)).catch(handleError);
+                }, delay);
             } else {
-                console.error("[AudioContext] All audio URLs failed.");
+                console.error("[AudioContext] All audio URLs and retries failed.");
                 setIsPlaying(false);
                 setIsBuffering(false);
             }
         };
+
+        const handleNetworkChange = () => {
+            if (navigator.onLine) {
+                console.log("[AudioContext] Network restored, attempting to resume...");
+                if (isPlaying && (audio.error || audio.readyState === 0)) {
+                    handleError();
+                }
+            } else {
+                console.log("[AudioContext] Network lost.");
+                if (isPlaying) setIsBuffering(true);
+            }
+        };
+
+        window.addEventListener('online', handleNetworkChange);
+        window.addEventListener('offline', handleNetworkChange);
 
         audio.addEventListener('timeupdate', updateProgress);
         audio.addEventListener('progress', updateBuffer);
@@ -149,6 +191,9 @@ export const AudioProvider = ({ children }) => {
             audio.removeEventListener('canplay', handleReady);
             audio.removeEventListener('ended', handleEnded);
             audio.removeEventListener('error', handleError);
+            window.removeEventListener('online', handleNetworkChange);
+            window.removeEventListener('offline', handleNetworkChange);
+            if (stuckTimeoutRef.current) clearTimeout(stuckTimeoutRef.current);
         };
     }, [isWaitingForInitialBuffer]);
 
@@ -238,7 +283,7 @@ export const AudioProvider = ({ children }) => {
      * Uses getAudioUrls() to get full surah audio URLs (mp3quran.net, etc.)
      * with automatic fallback to alternative CDNs.
      */
-    const playFullSurah = useCallback((surah, data, reciterObj) => {
+    const playFullSurah = useCallback((surah, data, reciterObj, startTime = 0) => {
         const reciterId = typeof reciterObj === 'string' ? reciterObj : (reciterObj?.identifier || currentReciter.identifier);
 
         // Update reciter if object provided
@@ -267,8 +312,16 @@ export const AudioProvider = ({ children }) => {
 
         if (urls.length > 0) {
             const audio = player.current;
+            // Check if same source already loaded to avoid flash/interrupt
+            if (audio.src === urls[0] && startTime === 0) {
+                audio.play().then(() => setIsPlaying(true)).catch(console.error);
+                return;
+            }
+
             audio.src = urls[0];
             audio.load();
+            if (startTime > 0) audio.currentTime = startTime;
+
             audio.play()
                 .then(() => setIsPlaying(true))
                 .catch(err => {
@@ -277,6 +330,7 @@ export const AudioProvider = ({ children }) => {
                         currentUrlIndexRef.current = 1;
                         audio.src = urls[1];
                         audio.load();
+                        if (startTime > 0) audio.currentTime = startTime;
                         audio.play().then(() => setIsPlaying(true)).catch(console.error);
                     }
                 });
@@ -392,9 +446,25 @@ export const AudioProvider = ({ children }) => {
 
     useEffect(() => {
         if (currentReciter?.identifier) {
-            localStorage.setItem('quran-reciter', JSON.stringify(currentReciter));
+            saveReciter(currentReciter);
         }
     }, [currentReciter]);
+
+    // Periodically save playback state for "Continue Listening"
+    useEffect(() => {
+        if (!isPlaying || !activeSurah) return;
+
+        const interval = setInterval(async () => {
+            const audioData = {
+                surah: activeSurah,
+                time: player.current.currentTime,
+                timestamp: Date.now()
+            };
+            await saveAudioState(audioData);
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [isPlaying, activeSurah]);
 
     return (
         <AudioContext.Provider value={value}>

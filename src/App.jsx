@@ -9,23 +9,41 @@ import { NavigationBar } from './components/NavigationBar.jsx';
 import { ThemeToggle } from './components/ThemeToggle.jsx';
 import { AudioProvider } from './context/AudioContext.jsx';
 import { MiniPlayer } from './components/MiniPlayer.jsx';
-import { migrateToIndexedDB } from './utils/storage-utils.js';
+import { migrateToIndexedDB, getKhitmaState, saveKhitmaState, getTheme, saveTheme } from './utils/storage-utils.js';
 import { DBStatusToast } from './components/DBStatusToast.jsx';
 
 const AppContent = () => {
     const [currentPage, setCurrentPage] = useState('home');
     const [selectedSurah, setSelectedSurah] = useState(null);
-    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+    const [theme, setTheme] = useState('light');
+    const [khitma, setKhitma] = useState(null);
 
-    // Migrate from localStorage to IndexedDB on mount
+    // Load all initial states from Dexie/IndexedDB
     useEffect(() => {
-        migrateToIndexedDB();
+        const initializeApp = async () => {
+            // 1. One-time migration if needed
+            await migrateToIndexedDB();
+
+            // 2. Load Theme
+            const savedTheme = await getTheme();
+            if (savedTheme) setTheme(savedTheme);
+
+            // 3. Load Khitma
+            const savedKhitma = await getKhitmaState();
+            setKhitma(savedKhitma);
+        };
+        initializeApp();
     }, []);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
+        saveTheme(theme);
     }, [theme]);
+
+    const handleUpdateKhitma = async (newState) => {
+        setKhitma(newState);
+        await saveKhitmaState(newState);
+    };
 
     const handleNavigate = (page) => {
         setCurrentPage(page);
@@ -61,7 +79,12 @@ const AppContent = () => {
 
             <main>
                 {currentPage === 'home' && (
-                    <HomePage onSurahSelect={handleSurahSelect} onNavigate={handleNavigate} />
+                    <HomePage
+                        onSurahSelect={handleSurahSelect}
+                        onNavigate={handleNavigate}
+                        khitma={khitma}
+                        onUpdateKhitma={handleUpdateKhitma}
+                    />
                 )}
 
                 {/* Other pages would go here */}
@@ -91,6 +114,8 @@ const AppContent = () => {
                 {currentPage === 'khitma' && (
                     <KhitmaPage
                         onBack={() => handleNavigate('home')}
+                        khitma={khitma}
+                        onUpdateKhitma={handleUpdateKhitma}
                     />
                 )}
 
@@ -99,6 +124,8 @@ const AppContent = () => {
                         onBack={() => handleNavigate('home')}
                         theme={theme}
                         setTheme={handleSetTheme}
+                        khitma={khitma}
+                        onUpdateKhitma={handleUpdateKhitma}
                     />
                 )}
             </main>

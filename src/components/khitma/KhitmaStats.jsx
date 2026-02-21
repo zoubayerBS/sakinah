@@ -23,11 +23,13 @@ const KhitmaStats = ({ currentJuz, progressPercentage, results, progress }) => (
             <div className="flex gap-4 md:text-right">
                 <div className="bg-black/5 dark:bg-white/5 px-6 py-4 rounded-3xl border border-white/10">
                     <p className="font-arabic text-xs text-[var(--color-text-tertiary)] mb-1">المتبقي</p>
-                    <p className="font-ui font-black text-2xl text-[var(--color-accent)]">{results.totalPortions - progress} <span className="text-sm opacity-60">ورد</span></p>
+                    <p className="font-ui font-black text-2xl text-[var(--color-accent)]">
+                        {results.totalUnits - progress} <span className="text-sm opacity-60">{results.totalUnits === 604 ? 'صفحة' : 'آية'}</span>
+                    </p>
                 </div>
                 <div className="bg-black/5 dark:bg-white/5 px-6 py-4 rounded-3xl border border-white/10">
                     <p className="font-arabic text-xs text-[var(--color-text-tertiary)] mb-1">الإجمالي</p>
-                    <p className="font-ui font-black text-2xl text-[var(--color-text-primary)]">{results.totalPortions}</p>
+                    <p className="font-ui font-black text-2xl text-[var(--color-text-primary)]">{results.totalUnits}</p>
                 </div>
             </div>
         </div>

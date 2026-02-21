@@ -3,7 +3,7 @@ import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, Bookmar
 import { quranAPI } from '../services/quran-api.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import { getKhitmaState, saveLastRead } from '../utils/storage-utils.js';
-import { toArabicIndicDigits, formatSurahTitle, calculateWirdProgress, findJuzForPage } from '../utils/quran-utils.js';
+import { toArabicIndicDigits, formatSurahTitle, calculateWirdProgress, findJuzForPage, getKhitmaDailyTarget } from '../utils/quran-utils.js';
 
 // Import modular components
 import MushafHeader from '../components/mushaf/MushafHeader.jsx';
@@ -53,7 +53,7 @@ const READING_MODES = {
     royal: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'ملكي', icon: Layers },
 };
 
-const MushafPage = ({ onBack, theme, setTheme }) => {
+const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     // Core state
     const [pageNumber, setPageNumber] = useState(() => {
         const saved = localStorage.getItem('mushaf-last-page');
@@ -125,20 +125,29 @@ const MushafPage = ({ onBack, theme, setTheme }) => {
         localStorage.setItem('hifz-level', String(hifzLevel));
     }, [hifzLevel]);
 
-    // Khitma State Integration
-    const [khitma, setKhitma] = useState(null);
+    // MushafPage Component Props: ({ onBack, theme, setTheme, khitma, onUpdateKhitma })
 
-    useEffect(() => {
-        const load = async () => {
-            const saved = await getKhitmaState();
-            if (saved) {
-                setKhitma(saved);
-            }
-        };
-        load();
-    }, []);
+    // Khitma Progress Handler
+    const handleFinishPortion = useCallback(() => {
+        if (!khitma || !khitma.isStarted || !onUpdateKhitma) return;
 
-    const wirdProgress = useMemo(() => calculateWirdProgress(khitma), [khitma]);
+        const total = khitma.mode === 'pages' ? 604 : 6236;
+
+        if (khitma.progress < total) {
+            const todayKey = new Date().toISOString().split('T')[0];
+            const newState = {
+                ...khitma,
+                progress: Math.min(total, khitma.progress + 1),
+                progressLog: {
+                    ...(khitma.progressLog || {}),
+                    [todayKey]: ((khitma.progressLog || {})[todayKey] || 0) + 1
+                }
+            };
+            onUpdateKhitma(newState);
+        }
+    }, [khitma, onUpdateKhitma]);
+
+    const wirdProgress = useMemo(() => calculateWirdProgress(khitma, getKhitmaDailyTarget(khitma)), [khitma]);
 
     // Refs
     const containerRef = useRef(null);
@@ -603,6 +612,7 @@ const MushafPage = ({ onBack, theme, setTheme }) => {
                 formatSurahTitle={formatSurahTitle}
                 khitma={khitma}
                 wirdProgress={wirdProgress}
+                onFinishPortion={handleFinishPortion}
                 toggleBookmark={toggleBookmark}
                 isCurrentPageBookmarked={isCurrentPageBookmarked}
                 readingMode={theme}

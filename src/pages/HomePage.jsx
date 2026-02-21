@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Clock, Book } from 'lucide-react';
+import { Search, Clock, Book, CheckCircle2, Sparkles, Trophy, Award, Star } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
 import { ContinueReading } from '../components/ContinueReading.jsx';
 import { DailyAyah } from '../components/DailyAyah.jsx';
-import { getLastRead, getKhitmaState, saveKhitmaState } from '../utils/storage-utils.js';
+import { getLastRead } from '../utils/storage-utils.js';
 import { useAudio } from '../context/AudioContext.jsx';
-import { calculateWirdProgress } from '../utils/quran-utils.js';
+import { calculateWirdProgress, calculateKhitmaProgress, getKhitmaDailyTarget } from '../utils/quran-utils.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import PrayerTimesSection from '../components/PrayerTimesSection.jsx';
 import IntegratedSearch from '../components/IntegratedSearch.jsx';
-import { CheckCircle2, Award, Sparkles, Star } from 'lucide-react';
 
-export const HomePage = ({ onSurahSelect, onNavigate }) => {
+export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) => {
     const [lastRead, setLastRead] = useState(null);
-    const [khitma, setKhitma] = useState(null);
     const [surahs, setSurahs] = useState([]);
     const { activeSurah, isPlaying } = useAudio();
 
     // Fetch data
     const fetchData = async () => {
-        const lr = await getLastRead();
-        const ks = await getKhitmaState();
-        const data = await quranAPI.getAllSurahs();
-        setLastRead(lr);
-        setKhitma(ks);
-        setSurahs(data);
+        try {
+            const [readData, surahsData] = await Promise.all([
+                getLastRead(),
+                quranAPI.getAllSurahs()
+            ]);
+            setLastRead(readData);
+            setSurahs(surahsData);
+        } catch (error) {
+            console.error('Error fetching home data:', error);
+        }
     };
 
     useEffect(() => {
@@ -33,7 +35,7 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
 
     const handleFinishPortion = async (e) => {
         if (e) e.stopPropagation();
-        if (!khitma || !khitma.isStarted) return;
+        if (!khitma || !khitma.isStarted || !onUpdateKhitma) return;
 
         const todayKey = new Date().toISOString().split('T')[0];
         const newProgress = khitma.progress + 1;
@@ -48,16 +50,12 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
             progressLog: newProgressLog
         };
 
-        setKhitma(newState);
-        await saveKhitmaState(newState);
-
-        // Refresh data to ensure consistency (though local state update is enough for UI)
-        // fetchData(); 
+        onUpdateKhitma(newState);
     };
 
     const todayKey = new Date().toISOString().split('T')[0];
-    const todayPortions = khitma?.progressLog?.[todayKey] || 0;
-    const remainingToday = Math.max(0, 5 - todayPortions);
+    const todayProgress = khitma?.progressLog?.[todayKey] || 0;
+    const remainingToday = Math.max(0, getKhitmaDailyTarget(khitma) - todayProgress);
 
     return (
         <div className="min-h-screen pb-24 relative overflow-hidden mesh-bg">
@@ -158,58 +156,55 @@ export const HomePage = ({ onSurahSelect, onNavigate }) => {
                                     <div className="w-full space-y-6 mt-8 relative z-10">
                                         {/* Simplified Completion Row */}
                                         <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 p-4 rounded-3xl border border-black/5 dark:border-white/5">
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-arabic font-bold text-[var(--color-text-tertiary)] opacity-60">التقدم الكلي</p>
-                                                <span className="text-[var(--color-accent)] font-black text-lg">
-                                                    {Math.round(calculateWirdProgress(khitma))}%
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-sm font-black text-[var(--color-accent)]">
+                                                    {Math.round(calculateWirdProgress(khitma, getKhitmaDailyTarget(khitma)))}%
                                                 </span>
+                                                <span className="text-[10px] opacity-40 uppercase font-bold">هدف اليوم</span>
                                             </div>
-                                            <div className="w-px h-8 bg-black/10 dark:bg-white/10"></div>
-                                            <div className="space-y-1 text-left">
-                                                <p className="text-[10px] font-arabic font-bold text-[var(--color-text-tertiary)] opacity-60">متبقي</p>
-                                                <span className="text-[var(--color-text-primary)] font-black text-lg">
-                                                    {Math.max(0, khitma.days - Math.floor(khitma.progress / 5))} <span className="text-xs">يوم</span>
+                                            <div className="w-px h-8 bg-black/5 dark:bg-white/10 mx-2"></div>
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-sm font-black text-[var(--color-text-primary)]">
+                                                    {Math.max(0, (khitma.days || 30) - Math.floor((khitma.progress || 0) / (getKhitmaDailyTarget(khitma) || 1)))} <span className="text-xs">يوم</span>
                                                 </span>
+                                                <span className="text-[10px] opacity-40 uppercase font-bold">متبقي</span>
                                             </div>
                                         </div>
 
-                                        {/* Interactive Mission Circles */}
+                                        {/* Dynamic Daily Progress */}
                                         <div className="space-y-4">
-                                            <div className="flex justify-center gap-3">
-                                                {[1, 2, 3, 4, 5].map(idx => (
-                                                    <div
-                                                        key={idx}
-                                                        onClick={(e) => {
-                                                            if (idx === todayPortions + 1) handleFinishPortion(e);
-                                                            else e.stopPropagation();
-                                                        }}
-                                                        className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 transition-all duration-500 relative
-                                                            ${idx <= todayPortions
-                                                                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white shadow-lg'
-                                                                : idx === todayPortions + 1
-                                                                    ? 'bg-[var(--color-accent)]/5 border-dashed border-[var(--color-accent)]/40 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 animate-pulse'
-                                                                    : 'bg-black/5 dark:bg-white/5 border-transparent text-black/10 dark:text-white/10'}
-                                                        `}
-                                                    >
-                                                        {idx <= todayPortions ? <CheckCircle2 size={20} /> : <span className="font-ui font-black text-xs">{idx}</span>}
-                                                        {idx === todayPortions + 1 && (
-                                                            <div className="absolute -top-1 -right-1">
-                                                                <Sparkles size={12} className="text-[var(--color-highlight)] animate-pulse" />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))}
+                                            <div className="flex justify-between items-center px-1">
+                                                <span className="text-[10px] font-arabic font-bold text-[var(--color-text-tertiary)] opacity-60">إنجازك اليوم</span>
+                                                <span className="text-[10px] font-arabic font-bold text-[var(--color-accent)]">
+                                                    {khitma?.progressLog?.[new Date().toISOString().split('T')[0]] || 0} / {getKhitmaDailyTarget(khitma)} {khitma?.mode === 'pages' ? 'صفحة' : 'آية'}
+                                                </span>
                                             </div>
-                                            <p className="text-center font-arabic text-[10px] font-bold text-[var(--color-text-tertiary)] opacity-40">
-                                                {remainingToday > 0 ? `باقي ${remainingToday} أوراد اليوم` : 'أتممت مهمتك لليوم ✨'}
-                                            </p>
+                                            <div className="w-full h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-[var(--color-accent)] shadow-[0_0_10px_var(--color-accent)] transition-all duration-1000"
+                                                    style={{ width: `${calculateWirdProgress(khitma, getKhitmaDailyTarget(khitma))}%` }}
+                                                ></div>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleFinishPortion(e);
+                                                }}
+                                                className="w-full py-3 rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 font-arabic font-bold text-xs hover:bg-[var(--color-accent)]/20 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <CheckCircle2 size={14} />
+                                                تسجيل +1 {khitma?.mode === 'pages' ? 'صفحة' : 'آية'}
+                                            </button>
                                         </div>
+                                        <p className="text-center font-arabic text-[10px] font-bold text-[var(--color-text-tertiary)] opacity-40">
+                                            {remainingToday > 0 ? `باقي ${remainingToday} ${khitma?.mode === 'pages' ? 'صفحة' : 'آية'} لليوم` : 'أتممت هدفك لليوم ✨'}
+                                        </p>
 
                                         {/* Mini Progress Bar */}
                                         <div className="w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-highlight)] transition-all duration-1000 liquid-progress"
-                                                style={{ width: `${calculateWirdProgress(khitma)}%` }}
+                                                style={{ width: `${calculateKhitmaProgress(khitma)}%` }}
                                             ></div>
                                         </div>
                                     </div>

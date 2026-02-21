@@ -4,7 +4,9 @@ const KEYS = {
     LAST_READ: 'quran_last_read',
     BOOKMARKS: 'quran_bookmarks',
     KHITMA: 'khitma_state',
-    THEME: 'theme'
+    THEME: 'theme',
+    AUDIO_STATE: 'quran_last_audio',
+    RECITER: 'quran_reciter'
 };
 
 // --- Migration Logic ---
@@ -137,4 +139,68 @@ export const getKhitmaState = async () => {
 
     const lsData = localStorage.getItem(KEYS.KHITMA);
     return lsData ? JSON.parse(lsData) : null;
+};
+
+// --- Audio State ---
+
+/**
+ * Save current audio playback state
+ * @param {object} state - { surah, time, timestamp }
+ */
+export const saveAudioState = async (state) => {
+    localStorage.setItem(KEYS.AUDIO_STATE, JSON.stringify(state));
+    await kvService.set(KEYS.AUDIO_STATE, state);
+};
+
+/**
+ * Get last saved audio playback state
+ */
+export const getAudioState = async () => {
+    const dbData = await kvService.get(KEYS.AUDIO_STATE);
+    if (dbData) return dbData;
+
+    const lsData = localStorage.getItem(KEYS.AUDIO_STATE);
+    return lsData ? JSON.parse(lsData) : null;
+};
+
+// --- Reciter ---
+
+/**
+ * Save user's selected reciter
+ */
+export const saveReciter = async (reciter) => {
+    localStorage.setItem(KEYS.RECITER, JSON.stringify(reciter));
+    await kvService.set(KEYS.RECITER, reciter);
+};
+
+/**
+ * Get user's selected reciter
+ */
+export const getReciter = async () => {
+    const dbData = await kvService.get(KEYS.RECITER);
+    if (dbData) return dbData;
+
+    const lsData = localStorage.getItem(KEYS.RECITER);
+    return lsData ? JSON.parse(lsData) : null;
+};
+
+// --- Theme ---
+
+/**
+ * Save user's selected theme
+ */
+export const saveTheme = async (theme) => {
+    localStorage.setItem(KEYS.THEME, theme);
+    await kvService.set(KEYS.THEME, theme);
+};
+
+/**
+ * Get user's selected theme
+ */
+export const getTheme = async () => {
+    const dbData = await kvService.get(KEYS.THEME);
+    if (dbData) return dbData;
+
+    const lsData = localStorage.getItem(KEYS.THEME);
+    return lsData || 'light';
 };

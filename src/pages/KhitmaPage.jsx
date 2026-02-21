@@ -1,132 +1,137 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, Compass, Sparkles } from 'lucide-react';
 import { getKhitmaState, saveKhitmaState } from '../utils/storage-utils.js';
-import { calculateWirdProgress } from '../utils/quran-utils.js';
+import { calculateWirdProgress, calculateKhitmaProgress } from '../utils/quran-utils.js';
 
 // Import modular components
 import KhitmaHeader from '../components/khitma/KhitmaHeader.jsx';
 import KhitmaPlanner from '../components/khitma/KhitmaPlanner.jsx';
 import KhitmaStats from '../components/khitma/KhitmaStats.jsx';
-import KhitmaMission from '../components/khitma/KhitmaMission.jsx';
 import KhitmaJourney from '../components/khitma/KhitmaJourney.jsx';
 
-export const KhitmaPage = ({ onBack }) => {
+export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
     // 1. Data Definitions
     const TOTAL_PAGES = 604;
     const TOTAL_VERSES = 6236;
     const JUZ_TOTAL = 30;
 
-    // 2. State
-    const [days, setDays] = useState(30);
-    const [planType, setPlanType] = useState('days');
-    const [targetDate, setTargetDate] = useState('');
-    const [mode, setMode] = useState('pages');
-    const [isStarted, setIsStarted] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [progressLog, setProgressLog] = useState({});
+    // 2. Planning State (local until started/updated)
+    const [localPlan, setLocalPlan] = useState({
+        days: khitma?.days || 30,
+        planType: khitma?.planType || 'days',
+        targetDate: khitma?.targetDate || '',
+        mode: khitma?.mode || 'pages',
+        reminderEnabled: khitma?.reminderEnabled || false,
+        reminderTime: khitma?.reminderTime || '20:30'
+    });
+
     const [results, setResults] = useState({ daily: 0, perPrayer: 0, totalPortions: 0 });
-    const [reminderEnabled, setReminderEnabled] = useState(false);
-    const [reminderTime, setReminderTime] = useState('20:30');
 
-    // 3. Persistence
+    // 4. Shared Data Sync
+    // We only update localPlan from props if the khitma object changes (e.g. loaded from DB)
     useEffect(() => {
-        const load = async () => {
-            const saved = await getKhitmaState();
-            if (saved) {
-                if (saved.days) setDays(saved.days);
-                if (saved.planType) setPlanType(saved.planType);
-                if (saved.targetDate) setTargetDate(saved.targetDate);
-                if (saved.mode) setMode(saved.mode);
-                if (saved.isStarted !== undefined) setIsStarted(saved.isStarted);
-                if (saved.progress !== undefined) setProgress(saved.progress);
-                if (saved.progressLog) setProgressLog(saved.progressLog);
-                if (saved.reminderEnabled !== undefined) setReminderEnabled(Boolean(saved.reminderEnabled));
-                if (saved.reminderTime) setReminderTime(saved.reminderTime);
-            }
-        };
-        load();
-    }, []);
+        if (khitma) {
+            setLocalPlan({
+                days: khitma.days || 30,
+                planType: khitma.planType || 'days',
+                targetDate: khitma.targetDate || '',
+                mode: khitma.mode || 'pages',
+                reminderEnabled: khitma.reminderEnabled !== undefined ? Boolean(khitma.reminderEnabled) : false,
+                reminderTime: khitma.reminderTime || '20:30'
+            });
+        }
+    }, [khitma]);
 
+    // 5. Calculations
     useEffect(() => {
-        const save = async () => {
-            const state = {
-                days, planType, targetDate, mode,
-                isStarted, progress, progressLog,
-                reminderEnabled, reminderTime
-            };
-            await saveKhitmaState(state);
-        };
-        save();
-    }, [days, planType, targetDate, mode, isStarted, progress, progressLog, reminderEnabled, reminderTime]);
-
-    // 4. Calculations
-    useEffect(() => {
-        const total = mode === 'pages' ? TOTAL_PAGES : TOTAL_VERSES;
-        const daily = Math.ceil(total / days);
+        const total = localPlan.mode === 'pages' ? TOTAL_PAGES : TOTAL_VERSES;
+        const daily = Math.ceil(total / localPlan.days);
         const perPrayer = Math.ceil(daily / 5);
-        const totalPortions = days * 5;
-        setResults({ daily, perPrayer, totalPortions });
-    }, [days, mode]);
+        setResults({ daily, perPrayer, totalUnits: total });
+    }, [localPlan.days, localPlan.mode]);
 
     useEffect(() => {
-        if (planType !== 'date' || !targetDate) return;
-        const target = new Date(targetDate);
+        if (localPlan.planType !== 'date' || !localPlan.targetDate) return;
+        const target = new Date(localPlan.targetDate);
         if (Number.isNaN(target.getTime())) return;
         const today = new Date();
         const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const end = new Date(target.getFullYear(), target.getMonth(), target.getDate());
         const diffDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-        if (diffDays !== days) setDays(diffDays);
-    }, [planType, targetDate, days]);
+        if (diffDays !== localPlan.days) {
+            setLocalPlan(prev => ({ ...prev, days: diffDays }));
+        }
+    }, [localPlan.planType, localPlan.targetDate, localPlan.days]);
 
-    // 5. Handlers
+    // 6. Handlers
+    const updateKhitmaState = (updates) => {
+        if (!onUpdateKhitma) return;
+        const newState = {
+            ...localPlan,
+            isStarted: khitma?.isStarted || false,
+            progress: khitma?.progress || 0,
+            progressLog: khitma?.progressLog || {},
+            ...updates
+        };
+        onUpdateKhitma(newState);
+    };
+
     const handleStart = () => {
-        if (planType === 'date' && !targetDate) return;
-        setIsStarted(true);
-        setProgress(0);
-        setProgressLog({});
+        if (localPlan.planType === 'date' && !localPlan.targetDate) return;
+        updateKhitmaState({
+            isStarted: true,
+            progress: 0,
+            progressLog: {}
+        });
     };
 
     const handleReset = () => {
         if (window.confirm('إعادة ضبط خطة الختمة؟')) {
-            setIsStarted(false);
-            setProgress(0);
-            setProgressLog({});
+            updateKhitmaState({
+                isStarted: false,
+                progress: 0,
+                progressLog: {}
+            });
         }
     };
 
-    const handleFinishPortion = () => {
-        if (progress < results.totalPortions) {
+    const handleLogProgress = (amount = 1) => {
+        const currentProgress = khitma?.progress || 0;
+        const currentLog = khitma?.progressLog || {};
+
+        if (currentProgress < results.totalUnits) {
             const todayKey = new Date().toISOString().split('T')[0];
-            setProgress(prev => prev + 1);
-            setProgressLog(prev => ({
-                ...prev,
-                [todayKey]: (prev[todayKey] || 0) + 1
-            }));
+            updateKhitmaState({
+                progress: Math.min(results.totalUnits, currentProgress + amount),
+                progressLog: {
+                    ...currentLog,
+                    [todayKey]: (currentLog[todayKey] || 0) + amount
+                }
+            });
         }
     };
 
-    // 7. Memoized Progress
+    // 7. Derived Values
     const progressPercentage = useMemo(() => {
-        return calculateWirdProgress({ days, progress });
-    }, [days, progress]);
+        return calculateKhitmaProgress(khitma);
+    }, [khitma]);
 
     const currentJuz = Math.min(30, Math.floor((progressPercentage / 100) * JUZ_TOTAL) + 1);
     const todayKey = new Date().toISOString().split('T')[0];
-    const todayPortions = progressLog[todayKey] || 0;
-    const dailyPortionsGoal = 5;
-    const remainingToday = Math.max(0, dailyPortionsGoal - todayPortions);
+    const todayProgress = khitma?.progressLog?.[todayKey] || 0;
+    const remainingToday = Math.max(0, results.daily - todayProgress);
 
     const computeStreak = useCallback(() => {
+        const log = khitma?.progressLog || {};
         let streak = 0;
         const date = new Date();
-        const todayCount = progressLog[date.toISOString().split('T')[0]] || 0;
-        if (todayCount < dailyPortionsGoal) {
+        const todayCount = log[date.toISOString().split('T')[0]] || 0;
+        if (todayCount < results.daily) {
             date.setDate(date.getDate() - 1);
         }
         while (streak < 1000) { // Safety break
             const key = date.toISOString().split('T')[0];
-            if ((progressLog[key] || 0) >= dailyPortionsGoal) {
+            if ((log[key] || 0) >= results.daily) {
                 streak += 1;
                 date.setDate(date.getDate() - 1);
             } else {
@@ -134,7 +139,7 @@ export const KhitmaPage = ({ onBack }) => {
             }
         }
         return streak;
-    }, [progressLog, dailyPortionsGoal]);
+    }, [khitma?.progressLog, results.daily]);
 
     const currentStreak = useMemo(() => computeStreak(), [computeStreak]);
 
@@ -146,23 +151,23 @@ export const KhitmaPage = ({ onBack }) => {
 
             <KhitmaHeader
                 onBack={onBack}
-                isStarted={isStarted}
+                isStarted={khitma?.isStarted}
                 currentStreak={currentStreak}
             />
 
             <main className="relative max-w-4xl mx-auto px-6 py-10 space-y-12">
-                {!isStarted ? (
+                {!khitma?.isStarted ? (
                     <div className="animate-fade-in-up">
                         <KhitmaPlanner
-                            planType={planType}
-                            setPlanType={setPlanType}
-                            days={days}
-                            setDays={setDays}
-                            targetDate={targetDate}
-                            setTargetDate={setTargetDate}
+                            planType={localPlan.planType}
+                            setPlanType={(val) => setLocalPlan(p => ({ ...p, planType: val }))}
+                            days={localPlan.days}
+                            setDays={(val) => setLocalPlan(p => ({ ...p, days: val }))}
+                            targetDate={localPlan.targetDate}
+                            setTargetDate={(val) => setLocalPlan(p => ({ ...p, targetDate: val }))}
                             results={results}
-                            mode={mode}
-                            setMode={setMode}
+                            mode={localPlan.mode}
+                            setMode={(val) => setLocalPlan(p => ({ ...p, mode: val }))}
                             handleStart={handleStart}
                         />
                     </div>
@@ -173,18 +178,56 @@ export const KhitmaPage = ({ onBack }) => {
                                 currentJuz={currentJuz}
                                 progressPercentage={progressPercentage}
                                 results={results}
-                                progress={progress}
+                                progress={khitma?.progress || 0}
                             />
                         </div>
 
                         <div className="animate-fade-in-up stagger-2">
-                            <KhitmaMission
-                                remainingToday={remainingToday}
-                                todayPortions={todayPortions}
-                                handleFinishPortion={handleFinishPortion}
-                                progress={progress}
-                                totalPortions={results.totalPortions}
-                            />
+                            <div className="glass-premium rounded-[2.5rem] p-8 md:p-10 shadow-2xl space-y-8 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-accent)]/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                                <div className="flex items-center justify-between relative z-10">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-[var(--color-highlight)]/10 text-[var(--color-highlight)] flex items-center justify-center">
+                                            <Sparkles size={24} className="animate-pulse-slow" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-arabic font-black text-2xl text-[var(--color-text-primary)]">إنجاز اليوم</h4>
+                                            <p className="text-xs text-[var(--color-text-tertiary)] opacity-70">المتبقي {remainingToday} {localPlan.mode === 'pages' ? 'صفحة' : 'آية'}</p>
+                                        </div>
+                                    </div>
+                                    <div className={`px-4 py-2 rounded-xl font-arabic font-bold text-sm border transition-all duration-500
+                                        ${remainingToday > 0
+                                            ? 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-black/60 dark:text-white/60'
+                                            : 'bg-[var(--color-accent)]/10 border-[var(--color-accent)]/20 text-[var(--color-accent)]'}`}>
+                                        {remainingToday > 0
+                                            ? `أنجزت ${Math.round(calculateWirdProgress(khitma, results.daily))}%`
+                                            : 'اكتمل ورد اليوم ✨'}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-6 relative z-10">
+                                    <div className="flex gap-4">
+                                        {[1, 5, 10].map(amount => (
+                                            <button
+                                                key={amount}
+                                                onClick={() => handleLogProgress(amount)}
+                                                className="flex-1 py-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[var(--color-text-primary)] font-arabic font-bold hover:border-[var(--color-accent)]/30 transition-all flex flex-col items-center gap-1 group/btn"
+                                            >
+                                                <span className="text-lg">+{amount}</span>
+                                                <span className="text-[10px] opacity-60 font-medium">{localPlan.mode === 'pages' ? 'صفحة' : 'آية'}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => handleLogProgress(remainingToday)}
+                                        disabled={remainingToday <= 0}
+                                        className="w-full py-5 bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 rounded-2xl font-arabic font-black text-lg hover:bg-[var(--color-accent)]/20 transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:scale-100"
+                                    >
+                                        {remainingToday <= 0 ? 'أتممت هدفك لليوم مبارك!' : 'تسجيل إتمام الورد اليومي'}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Journey Map Section */}

@@ -29,16 +29,38 @@ export const formatSurahTitle = (name) => {
 };
 
 /**
- * Calculates wird progress based on portions read today.
+ * Calculates wird progress (today's goal) based on progress made today.
  * @param {object} khitma - The khitma state object.
- * @param {number} portionsPerDay - Number of portions per day (default 5 for one juz).
+ * @param {number} dailyTarget - The calculated daily target from planner.
  * @returns {number} Percentage progress (0-100).
  */
-export const calculateWirdProgress = (khitma, portionsPerDay = 5) => {
-    if (!khitma || !khitma.progressLog) return 0;
+export const calculateWirdProgress = (khitma, dailyTarget = 1) => {
+    if (!khitma?.progressLog) return 0;
     const todayKey = new Date().toISOString().split('T')[0];
-    const todayPortions = khitma.progressLog[todayKey] || 0;
-    return Math.min(100, (todayPortions / portionsPerDay) * 100);
+    const todayProgress = khitma.progressLog[todayKey] || 0;
+    return Math.min(100, (todayProgress / dailyTarget) * 100);
+};
+
+/**
+ * Calculates total khitma completion percentage.
+ * @param {object} khitma - The khitma state object.
+ * @returns {number} Percentage progress (0-100).
+ */
+export const calculateKhitmaProgress = (khitma) => {
+    if (!khitma || !khitma.isStarted) return 0;
+    const total = khitma.mode === 'pages' ? 604 : 6236;
+    return Math.min(100, (khitma.progress / total) * 100);
+};
+
+/**
+ * Calculates the daily target based on the khitma plan.
+ * @param {object} khitma - The khitma state object.
+ * @returns {number} The daily target (pages or ayahs).
+ */
+export const getKhitmaDailyTarget = (khitma) => {
+    if (!khitma?.days) return 0;
+    const total = khitma.mode === 'pages' ? 604 : 6236;
+    return Math.ceil(total / khitma.days);
 };
 
 /**

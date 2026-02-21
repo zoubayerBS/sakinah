@@ -5,7 +5,7 @@ import { ReciterSelector } from '../components/ReciterSelector.jsx';
 import SurahPlaylist from '../components/SurahPlaylist.jsx';
 import { useAudio } from '../context/AudioContext.jsx';
 import { quranAPI } from '../services/quran-api.js';
-import { saveLastRead, isBookmarked, toggleBookmark } from '../utils/storage-utils.js';
+import { saveLastRead, isBookmarked, toggleBookmark, getAudioState, getReciter } from '../utils/storage-utils.js';
 
 export function PlayerPage({ surah, onBack }) {
     // 1. Context & State
@@ -78,8 +78,7 @@ export function PlayerPage({ surah, onBack }) {
                 if (!reciterId) {
                     let savedReciter = null;
                     try {
-                        const raw = localStorage.getItem('quran-reciter');
-                        savedReciter = raw ? JSON.parse(raw) : null;
+                        savedReciter = await getReciter();
                     } catch {
                         savedReciter = null;
                     }
@@ -118,17 +117,40 @@ export function PlayerPage({ surah, onBack }) {
                     reciterId,
                     reciter?.selectedMoshafId || reciter?.defaultMoshafId
                 );
-                if (!isCancelled && data) {
-                    playFullSurah(currentSurah, data, reciter);
-                } else if (!isCancelled && !data) {
-                    setError("Failed to load audio recitation.");
+
+                // Check for saved position to resume
+                let resumeTime = 0;
+                try {
+                    const savedAudio = await getAudioState();
+                    if (savedAudio) {
+                        const parsed = savedAudio; // Already parsed by storage-utils
+                        if (String(parsed.surah.number) === String(currentSurah.number) &&
+                            parsed.surah.reciter === reciterId) {
+                            resumeTime = parsed.time;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Error parsing saved audio state:", e);
+                }
+
+                if (!isCancelled) {
+                    if (data) {
+                        playFullSurah(currentSurah, data, reciter, resumeTime);
+                    } else {
+                        setError("Failed to load audio recitation. Please check your connection.");
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching audio:", err);
-                if (!isCancelled) setError("An error occurred while loading the audio.");
-            } finally {
-                setIsAudioLoading(false);
                 if (!isCancelled) {
+                    const errorMessage = navigator.onLine
+                        ? "An error occurred while loading the audio."
+                        : "No internet connection. Please connect and try again.";
+                    setError(errorMessage);
+                }
+            } finally {
+                if (!isCancelled) {
+                    setIsAudioLoading(false);
                     // Reset trigger if it was a force reload
                     if (reciterChangeTrigger > 0) setReciterChangeTrigger(0);
                 }
@@ -137,7 +159,7 @@ export function PlayerPage({ surah, onBack }) {
 
         fetchAudio();
         return () => { isCancelled = true; };
-    }, [currentSurah.number, currentReciter, reciterChangeTrigger, playFullSurah, activeSurah]);
+    }, [currentSurah.number, currentReciter, reciterChangeTrigger, playFullSurah]);
 
 
     // Save Last Read & Check Bookmark
@@ -185,7 +207,7 @@ export function PlayerPage({ surah, onBack }) {
                     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
                         <p className="text-red-500 font-medium text-lg">{error}</p>
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={() => setReciterChangeTrigger(prev => prev + 1)}
                             className="px-6 py-2 bg-[var(--color-accent)] text-white rounded-full hover:opacity-90 transition-opacity"
                         >
                             Retry
