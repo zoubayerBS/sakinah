@@ -8,7 +8,7 @@ import { useAudio } from '../context/AudioContext.jsx';
 import { calculateWirdProgress, calculateKhitmaProgress, getKhitmaDailyTarget, getDailyAverage, getEstimatedEndDate, isKhitmaComplete } from '../utils/quran-utils.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import PrayerTimesSection from '../components/PrayerTimesSection.jsx';
-import IntegratedSearch from '../components/IntegratedSearch.jsx';
+
 import RamadanWidget from '../components/RamadanWidget.jsx';
 import { tapLight } from '../utils/haptics.js';
 
@@ -116,15 +116,6 @@ export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) 
                             <div className="mr-auto text-3xl md:text-5xl text-[var(--color-highlight)]/20 font-arabic select-none">﷽</div>
                         </div>
 
-                        {/* Integrated Search Bar */}
-                        <IntegratedSearch
-                            onVerseSelect={(result) => {
-                                const surahNum = result.chapter_id || parseInt(result.verse_key.split(':')[0]);
-                                const page = result.page_number || surahPageMapping[surahNum]?.start || 1;
-                                localStorage.setItem('mushaf-last-page', page.toString());
-                                onNavigate('mushaf');
-                            }}
-                        />
 
                         <div className="flex gap-4 mt-6">
                             <button
