@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
+import { kvService } from '../services/db.js';
 
 /**
  * Custom hook to fetch prayer times from Aladhan API.
- * @param {string} initialCity - Default city to fetch times for.
- * @param {string} initialCountry - Default country to fetch times for.
- * @returns {object} - { timings, date, meta, loading, error, fetchPrayerTimes }
+ * City is persisted in IndexedDB (Dexie) via kvService.
  */
 export const usePrayerTimes = (initialCity = 'Moknine', initialCountry = 'Tunisia', initialAdjustment = -1) => {
     const [city, setCity] = useState(initialCity);
@@ -13,6 +12,17 @@ export const usePrayerTimes = (initialCity = 'Moknine', initialCountry = 'Tunisi
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [initialized, setInitialized] = useState(false);
+
+    // Load saved city from Dexie on mount
+    useEffect(() => {
+        const loadCity = async () => {
+            const savedCity = await kvService.get('user-city');
+            if (savedCity) setCity(savedCity);
+            setInitialized(true);
+        };
+        loadCity();
+    }, []);
 
     const fetchPrayerTimes = async (searchAddress) => {
         setLoading(true);
@@ -20,8 +30,6 @@ export const usePrayerTimes = (initialCity = 'Moknine', initialCountry = 'Tunisi
         try {
             const queryAddress = searchAddress || city;
 
-            // Method 13 is Directorate of Religious Affairs, Tunisia
-            // We use method 2 (Islamic Society of North America) as fallback
             const isTunisia = queryAddress.toLowerCase().includes('tunis') || country === 'Tunisia';
             const method = isTunisia ? 13 : 2;
 
@@ -36,7 +44,11 @@ export const usePrayerTimes = (initialCity = 'Moknine', initialCountry = 'Tunisi
             const result = await response.json();
             if (result.code === 200 && result.data) {
                 setData(result.data);
-                if (searchAddress) setCity(searchAddress);
+                if (searchAddress) {
+                    setCity(searchAddress);
+                    // Persist city in Dexie
+                    await kvService.set('user-city', searchAddress);
+                }
             } else {
                 throw new Error(result.status || 'Unknown error');
             }
@@ -47,9 +59,12 @@ export const usePrayerTimes = (initialCity = 'Moknine', initialCountry = 'Tunisi
         }
     };
 
+    // Fetch once city is loaded from DB
     useEffect(() => {
-        fetchPrayerTimes();
-    }, [adjustment]);
+        if (initialized) {
+            fetchPrayerTimes();
+        }
+    }, [initialized, adjustment]);
 
     return {
         timings: data?.timings || null,
