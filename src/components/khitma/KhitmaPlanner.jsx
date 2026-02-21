@@ -25,8 +25,7 @@ const KhitmaPlanner = ({
     return (
         <div className="animate-fade-in space-y-10">
             {/* Landing Hero */}
-            <div className="relative glass-premium p-10 md:p-12 rounded-[3rem] shadow-2xl overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-highlight)]/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
+            <div className="relative bg-[var(--color-bg-secondary)] border border-[var(--color-border)] p-10 md:p-12 rounded-3xl shadow-sm overflow-hidden group">
                 <div className="relative z-10 flex flex-col items-center text-center space-y-6">
                     <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-highlight)]/20 border border-[var(--color-highlight)]/30 flex items-center justify-center text-[var(--color-highlight)] shadow-inner transform group-hover:scale-110 transition-transform duration-700">
                         <Compass size={48} />
@@ -55,8 +54,7 @@ const KhitmaPlanner = ({
             </div>
 
             {/* Planner Section */}
-            <div className="glass-premium rounded-[3rem] p-8 md:p-12 space-y-10 shadow-2xl relative overflow-hidden">
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--color-accent)]/5 rounded-full blur-[60px] -ml-24 -mb-24"></div>
+            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 md:p-12 space-y-10 shadow-sm relative overflow-hidden">
 
                 {planType === 'days' ? (
                     <div className="space-y-8 text-center relative z-10">
@@ -141,7 +139,7 @@ const KhitmaPlanner = ({
             {/* Start Button */}
             <button
                 onClick={handleStart}
-                className="w-full py-6 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-[2.5rem] font-arabic font-black text-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
+                className="w-full py-6 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-3xl font-arabic font-black text-2xl shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-4 group relative overflow-hidden"
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
                 <Target size={28} />

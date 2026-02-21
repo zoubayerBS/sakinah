@@ -125,15 +125,13 @@ export const DailyAyah = () => {
     };
 
     return (
-        <div className="relative overflow-hidden p-8 bg-transparent" dir="rtl">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 opacity-50"></div>
-            <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="h-0.5 flex-1 bg-gradient-to-l from-[var(--color-accent)]/30 to-transparent"></div>
-                    <h4 className="font-ui text-[12px] font-black tracking-[0.4em] uppercase text-[var(--color-accent)] px-6">
+        <div className="p-6 bg-[var(--color-bg-secondary)]" dir="rtl">
+            <div className="relative z-10 w-full">
+                <div className="flex items-center gap-2 mb-6">
+                    <span className="w-1.5 h-6 bg-[var(--color-accent)] rounded-full"></span>
+                    <h4 className="font-ui text-sm font-bold text-[var(--color-text-secondary)]">
                         آية اليوم
                     </h4>
-                    <div className="h-0.5 flex-1 bg-gradient-to-r from-[var(--color-accent)]/30 to-transparent"></div>
                 </div>
 
                 {isLoading ? (
@@ -143,15 +141,15 @@ export const DailyAyah = () => {
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        <p className="font-arabic font-black text-3xl md:text-4xl text-[var(--color-text-primary)] leading-tight text-right text-glow-accent">
+                        <p className="font-arabic font-bold text-3xl text-[var(--color-text-primary)] leading-relaxed text-right">
                             {ayah.text}
                         </p>
 
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-                                <span className="font-arabic font-black text-xl">سورة {ayah.surah}</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]/40"></span>
-                                <span className="font-ui font-black text-lg">آية {ayah.number}</span>
+                                <span className="font-arabic font-bold text-lg">سورة {ayah.surah}</span>
+                                <span className="w-1 h-1 rounded-full bg-[var(--color-text-tertiary)]"></span>
+                                <span className="font-ui font-bold text-base">آية {ayah.number}</span>
                             </div>
 
                             {/* Action Buttons */}

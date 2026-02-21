@@ -2,8 +2,7 @@ import React from 'react';
 import { Sparkles, CheckCircle2, Heart, Award } from 'lucide-react';
 
 const KhitmaMission = ({ remainingToday, todayPortions, handleFinishPortion, progress, totalPortions }) => (
-    <div className="glass-premium rounded-[2.5rem] p-8 md:p-10 shadow-2xl space-y-8 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-accent)]/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+    <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] shadow-sm rounded-3xl p-6 md:p-8 space-y-8 relative overflow-hidden group">
 
         <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">

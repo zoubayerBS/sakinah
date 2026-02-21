@@ -170,10 +170,7 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
     };
 
     return (
-        <div className="min-h-screen pb-24 relative overflow-x-hidden mesh-bg" dir="rtl">
-            {/* Immersive Floating Elements */}
-            <div className="absolute top-[10%] left-[-5%] w-[40rem] h-[40rem] bg-[var(--color-highlight)]/5 rounded-full blur-[120px] animate-pulse-slow"></div>
-            <div className="absolute bottom-[10%] right-[-5%] w-[35rem] h-[35rem] bg-[var(--color-accent)]/5 rounded-full blur-[100px] animate-pulse-slow font-delay-2000"></div>
+        <div className="min-h-screen pb-24 relative overflow-x-hidden bg-[var(--color-bg-primary)]" dir="rtl">
 
             <KhitmaHeader
                 onBack={onBack}
@@ -188,11 +185,11 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                 {/* ─── COMPLETION CELEBRATION ─── */}
                 {showCompletion && (
                     <div className="animate-fade-in-up">
-                        <div className="glass-premium rounded-[3rem] p-10 md:p-14 shadow-2xl text-center space-y-8 relative overflow-hidden border-2 border-[var(--color-accent)]/30">
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 md:p-12 shadow-sm text-center space-y-8 relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 via-transparent to-[var(--color-highlight)]/5"></div>
 
                             <div className="relative z-10 space-y-6">
-                                <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-highlight)] flex items-center justify-center shadow-2xl animate-bounce">
+                                <div className="w-24 h-24 mx-auto rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center shadow-sm">
                                     <PartyPopper size={48} className="text-white" />
                                 </div>
                                 <h2 className="font-arabic font-black text-4xl text-[var(--color-text-primary)]">مبارك! أتممت الختمة 🎉</h2>
@@ -275,8 +272,7 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
 
                         {/* Today's Progress Section */}
                         <div className="animate-fade-in-up stagger-2">
-                            <div className="glass-premium rounded-[2.5rem] p-8 md:p-10 shadow-2xl space-y-8 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-accent)]/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 md:p-8 shadow-sm space-y-8 relative overflow-hidden group">
                                 <div className="flex items-center justify-between relative z-10">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-[var(--color-highlight)]/10 text-[var(--color-highlight)] flex items-center justify-center">
@@ -354,7 +350,7 @@ export const KhitmaPage = ({ onBack, khitma, onUpdateKhitma }) => {
                                     <p className="text-sm text-[var(--color-text-secondary)] opacity-70">خارطة تقدمك نحو الختام</p>
                                 </div>
                             </div>
-                            <div className="glass-premium rounded-[2.5rem] overflow-hidden shadow-2xl">
+                            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl overflow-hidden shadow-sm">
                                 <KhitmaJourney
                                     currentJuz={currentJuz}
                                     progressPercentage={progressPercentage}

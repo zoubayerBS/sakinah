@@ -111,7 +111,7 @@ const PrayerTimesSection = () => {
 
     if (loading) {
         return (
-            <div className={`w-full py-8 flex items-center justify-center glass-premium rounded-3xl animate-pulse`}>
+            <div className={`w-full py-8 flex items-center justify-center bg-[var(--color-bg-secondary)] border border-[var(--color-border)] shadow-sm rounded-3xl animate-pulse`}>
                 <Loader2 className="animate-spin opacity-50" size={24} />
             </div>
         );
@@ -121,12 +121,12 @@ const PrayerTimesSection = () => {
 
     return (
         <section className="w-full animate-fade-in" dir="rtl">
-            <div className="glass-premium rounded-[2.5rem] p-6 lg:p-8 shadow-2xl hover:border-[var(--color-accent)]/40 transition-all duration-700 group relative overflow-hidden">
+            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 shadow-sm group relative overflow-hidden">
 
                 {/* Header: Location & Date */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6 lg:mb-10 pb-6 lg:pb-8 border-b border-black/5 dark:border-white/5">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-[var(--color-border)]">
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl bg-[var(--color-accent)] text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500">
+                        <div className="w-12 h-12 rounded-xl bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] flex items-center justify-center">
                             <MapPin size={24} />
                         </div>
                         <div>
@@ -135,7 +135,7 @@ const PrayerTimesSection = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-[var(--color-text-primary)] bg-black/5 dark:bg-white/5 px-4 py-2 lg:px-6 lg:py-3 rounded-xl lg:rounded-2xl border border-white/20 backdrop-blur-sm shadow-inner">
+                    <div className="flex items-center gap-4 text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-tertiary)] px-4 py-2 rounded-xl">
                         <div className="flex items-center gap-2">
                             <Calendar size={18} className="text-[var(--color-accent)]" />
                             <span className="font-arabic font-bold text-sm lg:text-lg">{getUmmAlQuraDate().day} {getUmmAlQuraDate().month}</span>
@@ -146,8 +146,7 @@ const PrayerTimesSection = () => {
                 </div>
 
                 {/* Fasting Progress Bar */}
-                <div className="mb-8 lg:mb-12 p-6 lg:p-8 bg-black/5 dark:bg-white/5 rounded-3xl border border-white/10 shadow-inner relative overflow-hidden group/fasting">
-                    <div className="absolute inset-0 shimmer opacity-0 group-hover/fasting:opacity-10 transition-opacity"></div>
+                <div className="mb-8 p-6 bg-[var(--color-bg-tertiary)] rounded-2xl relative overflow-hidden">
                     <div className="flex justify-between items-end mb-4 relative z-10">
                         <div className="flex flex-col items-start gap-1">
                             <span className="text-[10px] lg:text-xs text-[var(--color-text-tertiary)] font-arabic font-bold">الإمساك</span>
@@ -164,37 +163,34 @@ const PrayerTimesSection = () => {
                         </div>
                     </div>
 
-                    <div className="relative h-3 w-full bg-black/10 dark:bg-white/10 rounded-full overflow-hidden shadow-inner">
+                    <div className="relative h-2 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
                         <div
-                            className="absolute top-0 right-0 h-full bg-gradient-to-l from-[var(--color-highlight)] via-[var(--color-accent)] to-[var(--color-highlight)] transition-all duration-1000 ease-out liquid-progress shadow-[0_0_20px_rgba(92,107,74,0.3)]"
+                            className="absolute top-0 right-0 h-full bg-[var(--color-accent)] transition-all duration-1000 ease-out"
                             style={{ width: `${fastingProgress}%` }}
                         ></div>
                     </div>
                 </div>
 
-                {/* Prayer Times List (Responsive Grid to Vertical List) */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-3">
+                {/* Prayer Times List */}
+                <div className="flex flex-col gap-2">
                     {['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((p) => {
                         const isActive = p === nextPrayerName;
                         const Icon = prayerIcons[p];
                         return (
                             <div
                                 key={p}
-                                className={`flex flex-row items-center justify-between px-4 py-3 lg:px-5 lg:py-4 rounded-2xl border transition-all duration-500 relative group/p ${isActive
-                                    ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] shadow-xl z-10 scale-[1.02]'
-                                    : 'bg-white/5 dark:bg-black/5 border-white/10 text-[var(--color-text-primary)] hover:border-[var(--color-accent)]/30'
+                                className={`flex flex-row items-center justify-between px-4 py-3 rounded-xl border transition-all ${isActive
+                                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border-[var(--color-accent)]/30'
+                                    : 'bg-transparent border-transparent text-[var(--color-text-primary)]'
                                     }`}
                             >
-                                {isActive && (
-                                    <div className="absolute -inset-1 bg-[var(--color-accent)] blur opacity-40 rounded-2xl -z-10 animate-pulse-slow"></div>
-                                )}
                                 <div className="flex items-center gap-3">
-                                    <Icon size={18} className={isActive ? 'text-white' : 'text-[var(--color-accent)] group-hover/p:scale-110 transition-transform'} />
-                                    <span className={`font-arabic font-black ${isActive ? 'text-white' : 'text-[var(--color-text-primary)] opacity-80'} text-sm lg:text-base`}>
+                                    <Icon size={18} className={isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)]'} />
+                                    <span className={`font-arabic font-bold text-sm lg:text-base`}>
                                         {prayerNamesAr[p]}
                                     </span>
                                 </div>
-                                <span className={`font-ui font-black tracking-tight ${isActive ? 'text-white' : 'opacity-100'} text-base lg:text-lg`}>{timings[p]}</span>
+                                <span className={`font-ui font-bold text-base`}>{timings[p]}</span>
                             </div>
                         );
                     })}

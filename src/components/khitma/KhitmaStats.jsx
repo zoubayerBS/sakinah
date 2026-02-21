@@ -16,8 +16,7 @@ const KhitmaStats = ({
     const maxBarValue = weeklyHistory ? Math.max(...weeklyHistory.map(d => d.value), weeklyHistory[0]?.target || 1) : 1;
 
     return (
-        <div className="glass-premium rounded-[2.5rem] p-8 md:p-10 shadow-2xl relative overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[var(--color-highlight)]/10 blur-3xl group-hover:bg-[var(--color-highlight)]/20 transition-colors"></div>
+        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 md:p-8 shadow-sm relative overflow-hidden group">
 
             {/* Top: Current Juz & Overall Progress */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8 relative z-10">

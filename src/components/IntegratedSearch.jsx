@@ -73,7 +73,7 @@ const IntegratedSearch = ({ onVerseSelect }) => {
             {/* Results Dropdown */}
             {isFocused && (query.length >= 3 || results.length > 0) && (
                 <div className="absolute top-full left-0 right-0 mt-4 z-[100] animate-fade-in-up">
-                    <div className="glass-premium rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-black/5 dark:border-white/10 overflow-hidden backdrop-blur-3xl bg-white/40 dark:bg-black/60">
+                    <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] shadow-md rounded-3xl overflow-hidden">
                         {isLoading ? (
                             <div className="p-12 flex flex-col items-center gap-4">
                                 <Loader2 className="w-8 h-8 text-[var(--color-accent)] animate-spin" />

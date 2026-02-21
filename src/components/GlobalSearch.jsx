@@ -69,7 +69,6 @@ const GlobalSearch = ({ isOpen, onClose, onVerseSelect }) => {
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-32 space-y-6">
                         <div className="relative">
-                            <div className="absolute inset-0 bg-[var(--color-accent)] blur-xl opacity-20 animate-pulse"></div>
                             <Loader2 className="w-16 h-16 text-[var(--color-accent)] animate-spin relative" />
                         </div>
                         <p className="font-arabic text-2xl font-bold text-[var(--color-text-secondary)]">جاري البحث في المصحف...</p>
@@ -87,13 +86,12 @@ const GlobalSearch = ({ isOpen, onClose, onVerseSelect }) => {
                             <div
                                 key={idx}
                                 onClick={() => onVerseSelect(result)}
-                                className="glass-premium rounded-[2.5rem] p-10 hover:border-[var(--color-accent)] transition-all duration-500 cursor-pointer group animate-fade-in-up relative overflow-hidden"
+                                className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] shadow-sm rounded-3xl p-8 hover:border-[var(--color-accent)] transition-colors cursor-pointer group animate-fade-in-up relative overflow-hidden"
                                 style={{ animationDelay: `${idx * 0.05}s` }}
                             >
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-highlight)]/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-700"></div>
                                 <div className="flex items-start justify-between mb-8 relative z-10">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-[var(--color-accent)] text-white flex items-center justify-center font-bold text-lg shadow-lg">
+                                        <div className="w-12 h-12 rounded-xl bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] flex items-center justify-center font-bold text-lg">
                                             {result.verse_number}
                                         </div>
                                         <div className="text-right">

@@ -262,37 +262,16 @@
 }
 
 /* Refine mesh background and add liquid shimmer */
-.mesh-bg {
-  background-color: var(--color-bg-primary);
-  background-image:
-    radial-gradient(at 0% 0%, var(--mesh-color-1) 0, transparent 50%),
-    radial-gradient(at 50% 0%, var(--mesh-color-2) 0, transparent 50%),
-    radial-gradient(at 100% 0%, var(--mesh-color-3) 0, transparent 50%);
-  transition: background-image 0.8s ease;
+/* Minimalist Cards replacing glass-premium */
+.glass-premium {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
 }
 
-:root {
-  --mesh-color-1: hsla(42, 63%, 91%, 1);
-  --mesh-color-2: hsla(43, 62%, 85%, 1);
-  --mesh-color-3: hsla(45, 60%, 80%, 1);
-}
-
-[data-theme="dark"] {
-  --mesh-color-1: hsla(30, 20%, 8%, 1);
-  --mesh-color-2: hsla(30, 25%, 12%, 1);
-  --mesh-color-3: hsla(30, 30%, 15%, 1);
-}
-
-[data-theme="damas"] {
-  --mesh-color-1: hsla(168, 38%, 95%, 1);
-  --mesh-color-2: hsla(168, 30%, 90%, 1);
-  --mesh-color-3: hsla(168, 25%, 85%, 1);
-}
-
-[data-theme="royal"] {
-  --mesh-color-1: hsla(222, 47%, 10%, 1);
-  --mesh-color-2: hsla(222, 35%, 15%, 1);
-  --mesh-color-3: hsla(222, 25%, 20%, 1);
+.glass-premium:hover {
+  border-color: var(--color-accent);
 }
 
 /* Simple Pattern Background */
