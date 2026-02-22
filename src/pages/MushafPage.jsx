@@ -635,7 +635,20 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     setShowVerseDetail(false);
                     setSelectedVerseKey(null);
                 } else {
-                    setShowControls(prev => !prev);
+                    setShowControls(prev => {
+                        const nextState = !prev;
+                        // Handle native fullscreen API for deeper immersion
+                        try {
+                            if (!nextState && document.documentElement.requestFullscreen) {
+                                document.documentElement.requestFullscreen().catch(() => { });
+                            } else if (nextState && document.fullscreenElement && document.exitFullscreen) {
+                                document.exitFullscreen().catch(() => { });
+                            }
+                        } catch (e) {
+                            // Ignore fullscreen API errors on unsupported browsers/devices
+                        }
+                        return nextState;
+                    });
                 }
             }}
         >
@@ -680,7 +693,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 >
                     {/* Page Header Labels (Mushaf style) */}
                     <div
-                        className="absolute top-12 left-6 right-6 flex items-center justify-between text-[11px] font-bold opacity-70 pointer-events-none"
+                        className={`absolute top-12 left-6 right-6 flex items-center justify-between text-[11px] font-bold pointer-events-none transition-opacity duration-700 ${showControls ? 'opacity-70' : 'opacity-0'}`}
                         style={{ color: mode.text }}
                         dir="ltr"
                     >
