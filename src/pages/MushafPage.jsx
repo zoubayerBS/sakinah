@@ -47,7 +47,7 @@ const SURAH_NAMES = [
 ];
 
 const READING_MODES = {
-    light: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'باهت', icon: Sun },
+    light: { bg: '#FAF6EF', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'باهت', icon: Sun },
     dark: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'داكن', icon: Moon },
     manuscript: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'ورقي', icon: Coffee },
     damas: { bg: 'var(--color-bg-primary)', text: 'var(--color-text-primary)', accent: 'var(--color-accent)', label: 'دمشقي', icon: List },

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FAF6EF">
+  <meta name="theme-color" content="#FFFFFF">
   <meta name="description" content="A modern, elegant Progressive Web App for reading the Noble Quran">
   <meta name="keywords" content="Sakina, Quran, سكينة, القرآن الكريم, Islamic, PWA, Listening">
 
@@ -119,9 +119,11 @@
       0% {
         transform: translateX(-100%);
       }
+
       50% {
         transform: translateX(0%);
       }
+
       100% {
         transform: translateX(100%);
       }
@@ -141,7 +143,7 @@
       const theme = document.documentElement.getAttribute('data-theme');
       const metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', theme === 'dark' ? '#2C2416' : '#FAF6EF');
+        metaThemeColor.setAttribute('content', theme === 'dark' ? '#2C2416' : '#FFFFFF');
       }
     };
 

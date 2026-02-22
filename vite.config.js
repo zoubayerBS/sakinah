@@ -28,8 +28,8 @@ export default defineConfig({
                 start_url: '/',
                 display: 'standalone',
                 orientation: 'portrait',
-                background_color: '#FAF6EF',
-                theme_color: '#FAF6EF',
+                background_color: '#FFFFFF',
+                theme_color: '#FFFFFF',
                 lang: 'ar',
                 dir: 'rtl',
                 icons: [
