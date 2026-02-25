@@ -186,10 +186,16 @@ router.get('/chapter/:id/verses', async (req, res) => {
 });
 
 // 3. Get Mushaf Page
+const pageCache = new Map();
+
 router.get('/page/:page', async (req, res) => {
     try {
-        const { page } = req.params;
-        const verses = await client.verses.findByPage(Number(page), {
+        const pageNum = Number(req.params.page);
+        if (pageCache.has(pageNum)) {
+            return res.json(pageCache.get(pageNum));
+        }
+
+        const opts = {
             fields: {
                 codeV2: true,
                 imageUrl: true,
@@ -205,8 +211,51 @@ router.get('/page/:page', async (req, res) => {
                 codeV2: true,
                 v2Page: true
             }
+        };
+
+        // Fetch requested page + adjacent pages because Quran API uses V1 boundaries
+        // but we need to serve strict V2 boundaries based on word metadata.
+        const [prev, curr, next] = await Promise.all([
+            pageNum > 1 ? client.verses.findByPage(pageNum - 1, opts).catch(() => []) : Promise.resolve([]),
+            client.verses.findByPage(pageNum, opts).catch(() => []),
+            pageNum < 604 ? client.verses.findByPage(pageNum + 1, opts).catch(() => []) : Promise.resolve([])
+        ]);
+
+        const allVersesMap = new Map();
+        [...(prev || []), ...(curr || []), ...(next || [])].forEach(v => {
+            // Deduplicate verses that might span across API V1 pages
+            if (!allVersesMap.has(v.id)) {
+                allVersesMap.set(v.id, v);
+            }
         });
-        res.json(verses);
+
+        const v2Verses = [];
+        Array.from(allVersesMap.values()).forEach(v => {
+            const pageWords = (v.words || []).filter(w => {
+                const wPage = w.v2Page || w.pageNumber || w.page_number;
+                return wPage === pageNum;
+            });
+
+            if (pageWords.length > 0) {
+                v2Verses.push({
+                    ...v,
+                    words: pageWords
+                });
+            }
+        });
+
+        // Ensure verses are sorted properly
+        v2Verses.sort((a, b) => a.id - b.id);
+
+        pageCache.set(pageNum, v2Verses);
+
+        // Cache management: keep memory footprint low (max 100 pages)
+        if (pageCache.size > 100) {
+            const firstKey = pageCache.keys().next().value;
+            pageCache.delete(firstKey);
+        }
+
+        res.json(v2Verses);
     } catch (error) {
         console.error(`Error fetching page ${req.params.page}:`, error);
         res.status(500).json({ error: error.message });

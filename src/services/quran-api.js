@@ -118,12 +118,14 @@ class QuranService {
 
             if (verses && verses.length > 0) {
                 const validVerses = verses.filter(v => v.chapterId);
+
                 const processed = validVerses.map(v => {
                     let img = v.imageUrl;
                     if (img) {
                         img = img.replace(/\.r\d+\.cf\d+\.rackcdn\.com/, '.ssl.cf1.rackcdn.com');
                         img = img.startsWith('//') ? `https:${img}` : img;
                     }
+
                     return {
                         ...v,
                         id: v.id,

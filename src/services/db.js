@@ -3,8 +3,8 @@ import Dexie from 'dexie';
 export const db = new Dexie('SkinaDB');
 
 // Define Database Schema
-db.version(2).stores({
-    mushaf_pages: 'pageNumber, timestamp',
+db.version(4).stores({
+    mushaf_pages_v3: 'pageNumber, timestamp',
     tafsirs: '[verseKey+tafsirId], timestamp',
     verse_info: 'verseKey, timestamp', // New table
     kv_store: 'key' // For Khitma state, preferences, etc.
@@ -34,11 +34,11 @@ export const kvService = {
 // Mushaf Caching Service
 export const mushafCache = {
     async getPage(pageNumber) {
-        return await db.mushaf_pages.get(pageNumber);
+        return await db.mushaf_pages_v3.get(pageNumber);
     },
 
     async setPage(pageNumber, data) {
-        return await db.mushaf_pages.put({
+        return await db.mushaf_pages_v3.put({
             pageNumber,
             data,
             timestamp: Date.now()

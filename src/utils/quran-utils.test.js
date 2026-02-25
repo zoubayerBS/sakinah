@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toArabicIndicDigits, formatSurahTitle, calculateKhitmaProgress } from './quran-utils.js';
+import { toArabicIndicDigits, formatSurahTitle } from './quran-utils.js';
 
 describe('Quran Utils', () => {
     describe('toArabicIndicDigits', () => {
@@ -32,13 +32,4 @@ describe('Quran Utils', () => {
         });
     });
 
-    describe('calculateKhitmaProgress', () => {
-        it('should return 0 when khitma is not started', () => {
-            expect(calculateKhitmaProgress({ isStarted: false })).toBe(0);
-        });
-
-        it('should calculate correct percentage for pages mode', () => {
-            expect(calculateKhitmaProgress({ isStarted: true, mode: 'pages', progress: 302 })).toBeCloseTo(50);
-        });
-    });
 });

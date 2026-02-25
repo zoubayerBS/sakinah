@@ -29,109 +29,60 @@ export const formatSurahTitle = (name) => {
 };
 
 /**
- * Calculates wird progress (today's goal) based on progress made today.
- * @param {object} khitma - The khitma state object.
- * @param {number} dailyTarget - The calculated daily target from planner.
- * @returns {number} Percentage progress (0-100).
+ * Generates a Khitma reading schedule based on days and starting page.
+ * @param {number} days - Number of days to complete the Khitma.
+ * @param {number} startPage - The page number to start from (1-604).
+ * @returns {Array} Array of daily reading blocks.
  */
-export const calculateWirdProgress = (khitma, dailyTarget = 1) => {
-    if (!khitma?.progressLog) return 0;
-    const todayKey = new Date().toISOString().split('T')[0];
-    const todayProgress = khitma.progressLog[todayKey] || 0;
-    return Math.min(100, (todayProgress / dailyTarget) * 100);
-};
+export const generateKhitmaSchedule = (days = 30, startPage = 1) => {
+    const TOTAL_PAGES = 604;
+    const schedule = [];
 
-/**
- * Calculates total khitma completion percentage.
- * @param {object} khitma - The khitma state object.
- * @returns {number} Percentage progress (0-100).
- */
-export const calculateKhitmaProgress = (khitma) => {
-    if (!khitma || !khitma.isStarted) return 0;
-    const total = khitma.mode === 'pages' ? 604 : 6236;
-    return Math.min(100, (khitma.progress / total) * 100);
-};
+    // We need to read exactly TOTAL_PAGES over the specified days
+    const basePagesPerDay = Math.floor(TOTAL_PAGES / days);
+    const remainder = TOTAL_PAGES % days;
 
-/**
- * Calculates the daily target based on the khitma plan.
- * @param {object} khitma - The khitma state object.
- * @returns {number} The daily target (pages or ayahs).
- */
-export const getKhitmaDailyTarget = (khitma) => {
-    if (!khitma?.days) return 0;
-    const total = khitma.mode === 'pages' ? 604 : 6236;
-    return Math.ceil(total / khitma.days);
-};
+    let currentPage = startPage;
 
-/**
- * Returns the number of days elapsed since the Khitma started.
- */
-export const getDaysElapsed = (khitma) => {
-    if (!khitma?.startDate) return 0;
-    const start = new Date(khitma.startDate);
-    const today = new Date();
-    start.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    return Math.max(1, Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1);
-};
+    for (let day = 1; day <= days; day++) {
+        // Distribute remainder pages early in the schedule
+        const pagesToday = basePagesPerDay + (day <= remainder ? 1 : 0);
 
-/**
- * Returns the actual average units read per day from the progressLog.
- */
-export const getDailyAverage = (khitma) => {
-    if (!khitma?.progressLog) return 0;
-    const log = khitma.progressLog;
-    const entries = Object.values(log);
-    if (entries.length === 0) return 0;
-    const total = entries.reduce((sum, v) => sum + v, 0);
-    return Math.round((total / entries.length) * 10) / 10;
-};
+        // Calculate the end page for today, wrapping around if needed
+        let endPage = currentPage + pagesToday - 1;
+        if (endPage > TOTAL_PAGES) {
+            endPage = endPage % TOTAL_PAGES;
+        }
 
-/**
- * Returns the estimated end date based on actual average daily progress.
- */
-export const getEstimatedEndDate = (khitma) => {
-    const avg = getDailyAverage(khitma);
-    if (avg <= 0) return null;
-    const total = khitma.mode === 'pages' ? 604 : 6236;
-    const remaining = total - (khitma.progress || 0);
-    if (remaining <= 0) return new Date(); // Already done
-    const daysRemaining = Math.ceil(remaining / avg);
-    const end = new Date();
-    end.setDate(end.getDate() + daysRemaining);
-    return end;
-};
-
-/**
- * Returns true if the Khitma is complete.
- */
-export const isKhitmaComplete = (khitma) => {
-    if (!khitma?.isStarted) return false;
-    const total = khitma.mode === 'pages' ? 604 : 6236;
-    return (khitma.progress || 0) >= total;
-};
-
-/**
- * Returns the last 7 days of reading progress for a mini chart.
- * Returns an array of { date, label, value, target }.
- */
-export const getWeeklyHistory = (khitma) => {
-    const log = khitma?.progressLog || {};
-    const target = getKhitmaDailyTarget(khitma);
-    const days = [];
-    const dayLabels = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().split('T')[0];
-        days.push({
-            date: key,
-            label: dayLabels[d.getDay()],
-            value: log[key] || 0,
-            target
+        schedule.push({
+            day,
+            startPage: currentPage,
+            endPage,
+            pagesCount: pagesToday,
+            isCompleted: false,
+            completedAt: null
         });
+
+        currentPage = endPage + 1;
+        if (currentPage > TOTAL_PAGES) {
+            currentPage = 1;
+        }
     }
-    return days;
+
+    return schedule;
+};
+
+/**
+ * Checks if a given page is within a specific daily Wird range.
+ * This handles the wrap-around logic (e.g. range 600 -> 10).
+ */
+export const isPageInWird = (page, startPage, endPage) => {
+    if (startPage <= endPage) {
+        return page >= startPage && page <= endPage;
+    } else {
+        // Wraps around from end of Musaf to the beginning
+        return page >= startPage || page <= endPage;
+    }
 };
 
 /**

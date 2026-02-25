@@ -3,7 +3,7 @@ import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, Bookmar
 import { quranAPI } from '../services/quran-api.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import { getKhitmaState, saveLastRead } from '../utils/storage-utils.js';
-import { toArabicIndicDigits, formatSurahTitle, calculateWirdProgress, findJuzForPage, getKhitmaDailyTarget } from '../utils/quran-utils.js';
+import { toArabicIndicDigits, formatSurahTitle, findJuzForPage } from '../utils/quran-utils.js';
 import { tapTick, tapMedium } from '../utils/haptics.js';
 
 // Import modular components
@@ -135,57 +135,89 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     // Automatic Khitma Progress Tracking — aligned with page position
     const prevPageRef = useRef(pageNumber);
     useEffect(() => {
-        if (!khitma?.isStarted || !onUpdateKhitma || khitma.mode !== 'pages') {
+        if (!khitma?.isStarted || !onUpdateKhitma) {
             prevPageRef.current = pageNumber;
             return;
         }
+
         const prevPage = prevPageRef.current;
         prevPageRef.current = pageNumber;
 
-        // Only auto-log if user moved forward (normal reading direction)
-        if (pageNumber > prevPage) {
-            const delta = pageNumber - prevPage;
-            const todayKey = new Date().toISOString().split('T')[0];
+        // Auto-advance logic for Khatmah-style daily schedule
+        if (pageNumber > prevPage && khitma.schedule && khitma.currentDayIndex !== undefined) {
+            const currentWird = khitma.schedule[khitma.currentDayIndex];
 
-            // Progress = highest page reached (aligned with Mushaf position)
-            const newProgress = Math.max(khitma.progress || 0, pageNumber);
+            // Check if we just read past the end of the current wird
+            if (currentWird && !currentWird.isCompleted) {
+                // Determine if we crossed the end boundary. We need to handle wrap-around (endPage < startPage)
+                const crossedBoundary = (currentWird.startPage <= currentWird.endPage)
+                    ? (prevPage <= currentWird.endPage && pageNumber > currentWird.endPage)
+                    : (prevPage <= currentWird.endPage && pageNumber > currentWird.endPage) || (prevPage >= currentWird.startPage && pageNumber >= 1 && pageNumber < currentWird.startPage && prevPage > pageNumber);
 
-            if (newProgress > (khitma.progress || 0)) {
-                onUpdateKhitma({
-                    ...khitma,
-                    progress: Math.min(604, newProgress),
-                    lastReadPage: pageNumber,
-                    progressLog: {
-                        ...(khitma.progressLog || {}),
-                        [todayKey]: ((khitma.progressLog || {})[todayKey] || 0) + delta
+                if (crossedBoundary) {
+                    tapSuccess();
+                    const schedule = [...khitma.schedule];
+                    schedule[khitma.currentDayIndex] = {
+                        ...currentWird,
+                        isCompleted: true,
+                        completedAt: new Date().toISOString()
+                    };
+
+                    let nextDayIdx = khitma.currentDayIndex;
+                    if (nextDayIdx < schedule.length - 1) {
+                        nextDayIdx += 1;
                     }
-                });
+
+                    onUpdateKhitma({
+                        ...khitma,
+                        schedule,
+                        currentDayIndex: nextDayIdx,
+                        lastReadPage: pageNumber
+                    });
+
+                    // Show a toast or notification in a real app, here haptics are enough
+                    return; // Early return so we don't trigger the generic update below twice
+                }
             }
+
+            // Just update last read page if no boundary crossed
+            onUpdateKhitma({
+                ...khitma,
+                lastReadPage: pageNumber
+            });
         }
-    }, [pageNumber]);
+    }, [pageNumber, khitma, onUpdateKhitma]);
 
     // Manual Khitma Progress Handler (kept as fallback for header button)
     const handleFinishPortion = useCallback(() => {
-        if (!khitma || !khitma.isStarted || !onUpdateKhitma) return;
+        if (!khitma || !khitma.isStarted || !onUpdateKhitma || !khitma.schedule) return;
 
-        const total = khitma.mode === 'pages' ? 604 : 6236;
+        const currentDayIdx = khitma.currentDayIndex;
+        if (currentDayIdx === undefined) return;
 
-        if (khitma.progress < total) {
-            const todayKey = new Date().toISOString().split('T')[0];
-            const newState = {
-                ...khitma,
-                progress: Math.min(total, khitma.progress + 1),
-                lastReadPage: pageNumber,
-                progressLog: {
-                    ...(khitma.progressLog || {}),
-                    [todayKey]: ((khitma.progressLog || {})[todayKey] || 0) + 1
-                }
+        const currentWird = khitma.schedule[currentDayIdx];
+        if (currentWird && !currentWird.isCompleted) {
+            tapSuccess();
+            const schedule = [...khitma.schedule];
+            schedule[currentDayIdx] = {
+                ...currentWird,
+                isCompleted: true,
+                completedAt: new Date().toISOString()
             };
-            onUpdateKhitma(newState);
-        }
-    }, [khitma, onUpdateKhitma, pageNumber]);
 
-    const wirdProgress = useMemo(() => calculateWirdProgress(khitma, getKhitmaDailyTarget(khitma)), [khitma]);
+            let nextDayIdx = currentDayIdx;
+            if (nextDayIdx < schedule.length - 1) {
+                nextDayIdx += 1;
+            }
+
+            onUpdateKhitma({
+                ...khitma,
+                schedule,
+                currentDayIndex: nextDayIdx
+            });
+        }
+    }, [khitma, onUpdateKhitma]);
+
 
 
     // Refs
@@ -664,7 +696,6 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 pageInfo={pageInfo}
                 formatSurahTitle={formatSurahTitle}
                 khitma={khitma}
-                wirdProgress={wirdProgress}
                 onFinishPortion={handleFinishPortion}
                 toggleBookmark={toggleBookmark}
                 isCurrentPageBookmarked={isCurrentPageBookmarked}

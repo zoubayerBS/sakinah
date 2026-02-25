@@ -5,7 +5,6 @@ import { ContinueReading } from '../components/ContinueReading.jsx';
 import { DailyAyah } from '../components/DailyAyah.jsx';
 import { getLastRead } from '../utils/storage-utils.js';
 import { useAudio } from '../context/AudioContext.jsx';
-import { calculateWirdProgress, calculateKhitmaProgress, getKhitmaDailyTarget, getDailyAverage, getEstimatedEndDate, isKhitmaComplete } from '../utils/quran-utils.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import PrayerTimesSection from '../components/PrayerTimesSection.jsx';
 
@@ -72,6 +71,15 @@ export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) 
         }
         setPullDistance(0);
     }, [pullDistance, handleRefresh]);
+
+    // Derived Khitma State
+    const currentWird = khitma?.isStarted && khitma?.schedule ? khitma.schedule[khitma.currentDayIndex] : null;
+    const isComplete = khitma?.isStarted && khitma?.schedule?.every(d => d.isCompleted);
+    const scheduleLength = khitma?.schedule?.length || 1;
+    const progressPercentage = khitma?.isStarted && khitma?.schedule
+        ? Math.round((khitma.schedule.filter(d => d.isCompleted).length / scheduleLength) * 100)
+        : 0;
+    const daysRemaining = Math.max(0, (khitma?.days || 0) - (khitma?.currentDayIndex || 0));
 
     return (
 
@@ -171,62 +179,56 @@ export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) 
                             </div>
 
                             {khitma?.isStarted && (
-                                <div className="w-full space-y-6 mt-8 relative z-10">
+                                <div className="w-full space-y-6 mt-8 relative z-10 border-t border-black/5 dark:border-white/5 pt-6">
                                     {/* Rich Stats Row */}
-                                    <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 p-4 rounded-3xl border border-black/5 dark:border-white/5">
+                                    <div className="flex justify-between items-center px-2">
                                         <div className="flex flex-col items-center">
                                             <span className="text-sm font-black text-[var(--color-accent)]">
-                                                {Math.round(calculateWirdProgress(khitma, getKhitmaDailyTarget(khitma)))}%
+                                                {currentWird?.isCompleted ? 'مكتمل' : 'قيد الإنجاز'}
                                             </span>
-                                            <span className="text-[10px] opacity-40 uppercase font-bold">هدف اليوم</span>
+                                            <span className="text-[10px] opacity-40 uppercase font-bold mt-1">حالة الورد</span>
                                         </div>
                                         <div className="w-px h-8 bg-black/5 dark:bg-white/10 mx-2"></div>
                                         <div className="flex flex-col items-center">
                                             <span className="text-sm font-black text-[var(--color-highlight)]">
-                                                {getDailyAverage(khitma) || '—'}
+                                                {daysRemaining}
                                             </span>
-                                            <span className="text-[10px] opacity-40 uppercase font-bold">معدل يومي</span>
+                                            <span className="text-[10px] opacity-40 uppercase font-bold mt-1">الأيام المتبقية</span>
                                         </div>
                                         <div className="w-px h-8 bg-black/5 dark:bg-white/10 mx-2"></div>
                                         <div className="flex flex-col items-center">
                                             <span className="text-sm font-black text-[var(--color-text-primary)]">
-                                                {Math.round(calculateKhitmaProgress(khitma))}%
+                                                {progressPercentage || 0}%
                                             </span>
-                                            <span className="text-[10px] opacity-40 uppercase font-bold">الختمة</span>
+                                            <span className="text-[10px] opacity-40 uppercase font-bold mt-1">إنجاز الختمة</span>
                                         </div>
                                     </div>
 
                                     {/* Daily Progress */}
                                     <div className="space-y-3">
-                                        <div className="flex justify-between items-center px-1">
-                                            <span className="text-[10px] font-arabic font-bold text-[var(--color-text-tertiary)] opacity-60">إنجازك اليوم</span>
-                                            <span className="text-[10px] font-arabic font-bold text-[var(--color-accent)]">
-                                                {khitma?.progressLog?.[new Date().toISOString().split('T')[0]] || 0} / {getKhitmaDailyTarget(khitma)} {khitma?.mode === 'pages' ? 'صفحة' : 'آية'}
-                                            </span>
-                                        </div>
-                                        <div className="w-full h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-[var(--color-accent)] shadow-[0_0_10px_var(--color-accent)] transition-all duration-1000"
-                                                style={{ width: `${calculateWirdProgress(khitma, getKhitmaDailyTarget(khitma))}%` }}
-                                            ></div>
-                                        </div>
+                                        {currentWird && (
+                                            <div className="flex justify-between items-center px-1">
+                                                <span className="text-[10px] font-arabic font-bold text-[var(--color-text-tertiary)] opacity-60">نطاق قراءة اليوم</span>
+                                                <span className="text-[10px] font-arabic font-bold text-[var(--color-text-primary)]">
+                                                    صفحة {currentWird.startPage} إلى {currentWird.endPage}
+                                                </span>
+                                            </div>
+                                        )}
 
                                         {/* CTA: Navigate to Mushaf for auto-tracking */}
-                                        {khitma?.mode === 'pages' && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onNavigate('mushaf');
-                                                }}
-                                                className="w-full py-3 rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 font-arabic font-bold text-xs hover:bg-[var(--color-accent)]/20 transition-all flex items-center justify-center gap-2"
-                                            >
-                                                <Book size={14} />
-                                                افتح المصحف للقراءة
-                                            </button>
-                                        )}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onNavigate('khitma');
+                                            }}
+                                            className="w-full py-3 rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 font-arabic font-bold text-xs hover:bg-[var(--color-accent)]/20 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <Book size={14} />
+                                            متابعة الختمة
+                                        </button>
                                     </div>
 
-                                    {isKhitmaComplete(khitma) && (
+                                    {isComplete && (
                                         <div className="text-center py-2 bg-[var(--color-accent)]/10 rounded-2xl border border-[var(--color-accent)]/20">
                                             <span className="font-arabic font-black text-sm text-[var(--color-accent)]">🎉 أتممت الختمة! مبارك</span>
                                         </div>
@@ -236,7 +238,7 @@ export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) 
                                     <div className="w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-highlight)] transition-all duration-1000 liquid-progress"
-                                            style={{ width: `${calculateKhitmaProgress(khitma)}%` }}
+                                            style={{ width: `${progressPercentage}%` }}
                                         ></div>
                                     </div>
                                 </div>

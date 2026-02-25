@@ -9,7 +9,6 @@ const MushafHeader = ({
     pageInfo,
     formatSurahTitle,
     khitma,
-    wirdProgress,
     onFinishPortion,
     toggleBookmark,
     isCurrentPageBookmarked,
@@ -17,6 +16,8 @@ const MushafHeader = ({
     setReadingMode,
     READING_MODES
 }) => {
+    const currentWird = khitma?.isStarted && khitma?.schedule ? khitma.schedule[khitma.currentDayIndex] : null;
+
     return (
         <header
             className={`fixed top-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-24 opacity-0 pointer-events-none'}`}
@@ -54,30 +55,27 @@ const MushafHeader = ({
                     {khitma?.isStarted ? (
                         <div className="flex flex-col items-center w-full mt-1.5 px-2">
                             <div className="flex items-center gap-2 w-full">
-                                <div className="flex-1 h-1 bg-black/5 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-[var(--color-accent)] shadow-[0_0_5px_var(--color-accent)] transition-all duration-1000"
-                                        style={{ width: `${wirdProgress}%` }}
-                                    />
-                                </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onFinishPortion) onFinishPortion();
-                                    }}
-                                    className="p-1 rounded-full text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 active:scale-95 transition-all"
-                                    title="تسجيل ورد"
-                                >
-                                    <CheckCircle2 size={16} />
-                                </button>
-                            </div>
-                            <div className="flex justify-between w-full mt-1">
-                                <span className="text-[7px] font-bold opacity-30 uppercase" style={{ color: mode.text }}>
-                                    الجزء {pageInfo?.juz}
-                                </span>
-                                <span className="text-[7px] font-bold opacity-40 uppercase tracking-tighter" style={{ color: mode.text }}>
-                                    ورد اليوم {Math.round(wirdProgress)}%
-                                </span>
+                                {currentWird?.isCompleted ? (
+                                    <div className="w-full text-center text-xs font-arabic text-[var(--color-accent)] font-bold">
+                                        تم إنجاز ورد اليوم
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex-1 text-center text-[10px] font-arabic opacity-70" style={{ color: mode.text }}>
+                                            الورد: ص {currentWird?.startPage} - {currentWird?.endPage}
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onFinishPortion) onFinishPortion();
+                                            }}
+                                            className="p-1 rounded-full text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 active:scale-95 transition-all"
+                                            title="إتمام الورد يدوياً"
+                                        >
+                                            <CheckCircle2 size={16} />
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ) : (
