@@ -138,7 +138,7 @@ export const KhitmaPage = ({ onBack, onNavigate, khitma, onUpdateKhitma }) => {
                                 <div className="w-24 h-24 mx-auto rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center shadow-sm">
                                     <PartyPopper size={48} className="text-white" />
                                 </div>
-                                <h2 className="font-arabic font-black text-4xl text-[var(--color-text-primary)]">مبارك! أتممت الختمة 🎉</h2>
+                                <h2 className="font-arabic font-black text-2xl md:text-4xl text-[var(--color-text-primary)]">مبارك! أتممت الختمة 🎉</h2>
                                 <p className="font-arabic text-lg text-[var(--color-text-secondary)] max-w-md mx-auto">
                                     تقبل الله منك وجعله في ميزان حسناتك
                                 </p>
@@ -182,36 +182,36 @@ export const KhitmaPage = ({ onBack, onNavigate, khitma, onUpdateKhitma }) => {
                 {isActivelyReading && currentWird && (
                     <div className="animate-fade-in space-y-12">
 
-                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-6 md:p-10 shadow-sm space-y-8 relative overflow-hidden group">
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-5 sm:p-6 md:p-10 shadow-sm space-y-6 sm:space-y-8 relative overflow-hidden group">
 
-                            <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-[var(--color-highlight)]/10 text-[var(--color-highlight)] flex items-center justify-center">
-                                        <BookOpen size={28} />
+                            <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4 sm:pb-6">
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl bg-[var(--color-highlight)]/10 text-[var(--color-highlight)] flex items-center justify-center">
+                                        <BookOpen size={24} className="sm:w-7 sm:h-7" />
                                     </div>
                                     <div>
-                                        <h4 className="font-arabic font-black text-3xl text-[var(--color-text-primary)]">ورد اليوم</h4>
-                                        <p className="text-sm font-arabic font-bold text-[var(--color-text-tertiary)] mt-1">
+                                        <h4 className="font-arabic font-black text-2xl sm:text-3xl text-[var(--color-text-primary)]">ورد اليوم</h4>
+                                        <p className="text-xs sm:text-sm font-arabic font-bold text-[var(--color-text-tertiary)] mt-1">
                                             اليوم {currentWird.day} من {khitma.days}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="w-16 h-16 rounded-full border-4 border-[var(--color-border)] flex items-center justify-center">
-                                    <span className="font-ui font-black text-xl text-[var(--color-text-secondary)]">{progressPercentage}%</span>
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full border-4 border-[var(--color-border)] flex items-center justify-center">
+                                    <span className="font-ui font-black text-lg sm:text-xl text-[var(--color-text-secondary)]">{progressPercentage}%</span>
                                 </div>
                             </div>
 
-                            <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-8 text-center space-y-4">
-                                <p className="font-arabic font-bold text-lg text-[var(--color-text-secondary)]">نطاق القراءة</p>
-                                <div className="flex items-center justify-center gap-6">
+                            <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 sm:p-8 text-center space-y-4">
+                                <p className="font-arabic font-bold text-base sm:text-lg text-[var(--color-text-secondary)]">نطاق القراءة</p>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
                                     <div className="space-y-1">
-                                        <p className="font-arabic text-sm opacity-60">الورد يبدأ من</p>
-                                        <p className="font-arabic font-black text-2xl text-[var(--color-accent)]">صفحة {currentWird.startPage}</p>
+                                        <p className="font-arabic text-xs sm:text-sm opacity-60">الورد يبدأ من</p>
+                                        <p className="font-arabic font-black text-xl sm:text-2xl text-[var(--color-accent)]">صفحة {currentWird.startPage}</p>
                                     </div>
-                                    <div className="w-12 h-px bg-black/20 dark:bg-white/20"></div>
+                                    <div className="w-12 h-px sm:w-px sm:h-8 bg-black/10 dark:bg-white/20"></div>
                                     <div className="space-y-1">
-                                        <p className="font-arabic text-sm opacity-60">إلى غاية</p>
-                                        <p className="font-arabic font-black text-2xl text-[var(--color-text-primary)]">صفحة {currentWird.endPage}</p>
+                                        <p className="font-arabic text-xs sm:text-sm opacity-60">إلى غاية</p>
+                                        <p className="font-arabic font-black text-xl sm:text-2xl text-[var(--color-text-primary)]">صفحة {currentWird.endPage}</p>
                                     </div>
                                 </div>
                                 <div className="pt-4 mt-4 border-t border-black/5 dark:border-white/5 mx-auto max-w-xs">
@@ -221,20 +221,20 @@ export const KhitmaPage = ({ onBack, onNavigate, khitma, onUpdateKhitma }) => {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-3 sm:gap-4">
                                 <button
                                     onClick={handleReadWird}
-                                    className="w-full py-5 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-2xl font-arabic font-black text-xl shadow-md hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                    className="w-full py-4 sm:py-5 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-2xl font-arabic font-black text-lg sm:text-xl shadow-md hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
                                 >
-                                    <BookOpen size={24} />
+                                    <BookOpen size={20} className="sm:w-6 sm:h-6" />
                                     اقرأ الورد الآن
                                 </button>
 
                                 <button
                                     onClick={handleMarkCompleted}
-                                    className="w-full py-5 bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 rounded-2xl font-arabic font-black text-lg hover:bg-[var(--color-accent)]/20 active:scale-95 transition-all flex items-center justify-center gap-3"
+                                    className="w-full py-4 sm:py-5 bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 rounded-2xl font-arabic font-black text-base sm:text-lg hover:bg-[var(--color-accent)]/20 active:scale-95 transition-all flex items-center justify-center gap-3"
                                 >
-                                    <CheckCircle2 size={24} />
+                                    <CheckCircle2 size={20} className="sm:w-6 sm:h-6" />
                                     قرأته من المصحف الورقي
                                 </button>
                             </div>

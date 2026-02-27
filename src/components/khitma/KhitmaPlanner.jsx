@@ -28,7 +28,7 @@ const KhitmaPlanner = ({
     return (
         <div className="animate-fade-in space-y-8">
             {/* Landing Hero */}
-            <div className="relative bg-[var(--color-bg-secondary)] border border-[var(--color-border)] p-8 md:p-10 rounded-3xl shadow-sm text-center">
+            <div className="relative bg-[var(--color-bg-secondary)] border border-[var(--color-border)] p-6 sm:p-8 md:p-10 rounded-3xl shadow-sm text-center">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[var(--color-accent)]/20 to-[var(--color-highlight)]/20 text-[var(--color-highlight)] flex items-center justify-center">
                     <Compass size={40} />
                 </div>
@@ -37,11 +37,11 @@ const KhitmaPlanner = ({
             </div>
 
             {/* Planner Section */}
-            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-8 space-y-10 shadow-sm">
+            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-3xl p-5 sm:p-8 space-y-8 sm:space-y-10 shadow-sm">
 
                 {/* Setting 1: Days */}
                 <div className="space-y-6 text-center">
-                    <label className="font-arabic font-bold text-lg text-[var(--color-text-primary)]">
+                    <label className="font-arabic font-bold text-base sm:text-lg text-[var(--color-text-primary)]">
                         في كم يوم تريد أن تختم القرآن؟
                     </label>
                     <div className="flex items-center justify-center gap-4">
@@ -51,9 +51,9 @@ const KhitmaPlanner = ({
                             max="1000"
                             value={days}
                             onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 30))}
-                            className="w-32 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl py-4 text-center font-ui font-black text-4xl text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
+                            className="w-24 sm:w-32 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl py-3 sm:py-4 text-center font-ui font-black text-3xl sm:text-4xl text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
                         />
-                        <span className="font-arabic font-bold text-2xl text-[var(--color-text-secondary)]">يوماً</span>
+                        <span className="font-arabic font-bold text-xl sm:text-2xl text-[var(--color-text-secondary)]">يوماً</span>
                     </div>
 
                     <div className="flex flex-wrap gap-2 justify-center">
@@ -61,9 +61,9 @@ const KhitmaPlanner = ({
                             <button
                                 key={d}
                                 onClick={() => setDays(d)}
-                                className={`px-5 py-2.5 rounded-xl border-2 transition-all duration-300 font-ui font-black ${days === d
-                                        ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white shadow-md scale-105'
-                                        : 'border-black/5 dark:border-white/10 text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)]/30'
+                                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border-2 transition-all duration-300 font-ui font-black ${days === d
+                                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white shadow-md scale-105'
+                                    : 'border-black/5 dark:border-white/10 text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)]/30'
                                     }`}
                             >
                                 {d}
@@ -76,7 +76,7 @@ const KhitmaPlanner = ({
 
                 {/* Setting 2: Start Page */}
                 <div className="space-y-6 text-center">
-                    <label className="font-arabic font-bold text-lg text-[var(--color-text-primary)]">
+                    <label className="font-arabic font-bold text-base sm:text-lg text-[var(--color-text-primary)]">
                         من أي صفحة تريد أن تبدأ؟
                     </label>
                     <div className="flex items-center justify-center gap-4">
@@ -91,9 +91,9 @@ const KhitmaPlanner = ({
                                     setStartPage(Math.min(604, Math.max(1, val)));
                                 }
                             }}
-                            className="w-32 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl py-4 text-center font-ui font-black text-4xl text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-highlight)]"
+                            className="w-24 sm:w-32 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl py-3 sm:py-4 text-center font-ui font-black text-3xl sm:text-4xl text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-highlight)]"
                         />
-                        <Hash className="text-[var(--color-text-secondary)] opacity-50" size={28} />
+                        <Hash className="text-[var(--color-text-secondary)] opacity-50 sm:w-7 sm:h-7 w-6 h-6 shrink-0" />
                     </div>
                     <p className="text-xs font-arabic text-[var(--color-text-tertiary)] max-w-xs mx-auto">
                         القرآن الكريم يتكون من 604 صفحات. القيمة الافتراضية هي الصفحة الأولى (الفاتحة).
@@ -101,30 +101,29 @@ const KhitmaPlanner = ({
                 </div>
 
                 {/* Preview Summary */}
-                <div className="bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/20 p-6 rounded-2xl space-y-4">
-                    <h3 className="font-arabic font-bold text-center text-[var(--color-accent)] text-lg mb-4">ملخص خطتك</h3>
+                <div className="bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/20 p-4 sm:p-6 rounded-2xl space-y-3 sm:space-y-4">
+                    <h3 className="font-arabic font-bold text-center text-[var(--color-accent)] text-base sm:text-lg mb-2 sm:mb-4">ملخص خطتك</h3>
 
-                    <div className="flex justify-between items-center bg-white/50 dark:bg-black/20 p-4 rounded-xl">
-                        <span className="font-arabic font-medium text-[var(--color-text-secondary)]">الورد اليومي</span>
-                        <span className="font-ui font-black text-xl text-[var(--color-text-primary)]">
-                            {basePagesPerDay} - {maxPagesPerDay} <span className="text-sm font-arabic font-normal">صفحات</span>
+                    <div className="flex justify-between items-center bg-white/50 dark:bg-black/20 p-3 sm:p-4 rounded-xl">
+                        <span className="font-arabic font-medium text-xs sm:text-sm text-[var(--color-text-secondary)]">الورد اليومي</span>
+                        <span className="font-ui font-black text-lg sm:text-xl text-[var(--color-text-primary)]">
+                            {basePagesPerDay} - {maxPagesPerDay} <span className="text-xs sm:text-sm font-arabic font-normal">صفحات</span>
                         </span>
                     </div>
 
-                    <div className="flex justify-between items-center bg-white/50 dark:bg-black/20 p-4 rounded-xl">
-                        <span className="font-arabic font-medium text-[var(--color-text-secondary)]">موعد الختم المتوقع</span>
-                        <span className="font-arabic font-bold text-[var(--color-text-primary)]">{getEndDatePreview()}</span>
+                    <div className="flex justify-between items-center bg-white/50 dark:bg-black/20 p-3 sm:p-4 rounded-xl">
+                        <span className="font-arabic font-medium text-xs sm:text-sm text-[var(--color-text-secondary)]">موعد الختم المتوقع</span>
+                        <span className="font-arabic font-bold text-sm sm:text-base text-[var(--color-text-primary)]">{getEndDatePreview()}</span>
                     </div>
                 </div>
 
             </div>
 
-            {/* Start Button */}
             <button
                 onClick={handleStart}
-                className="w-full py-6 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-3xl font-arabic font-black text-2xl shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-4"
+                className="w-full py-4 sm:py-6 bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-3xl font-arabic font-black text-xl sm:text-2xl shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-3 sm:gap-4"
             >
-                <Target size={28} />
+                <Target size={24} className="sm:w-7 sm:h-7" />
                 <span>اعقد النية وابدأ</span>
             </button>
         </div>

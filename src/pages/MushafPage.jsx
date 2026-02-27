@@ -902,7 +902,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                 ) : (
                                     // AUTHENTIC MUSHAF MODE - render full lines with QPC V2 glyphs
                                     <div
-                                        className="w-full flex flex-col items-center justify-start py-4 md:py-8 transition-all duration-700 mushaf-page"
+                                        className="w-full flex flex-col items-center justify-start py-4 pb-32 md:py-8 md:pb-36 transition-all duration-700 mushaf-page"
                                         style={{
                                             fontFamily: `p${pageNumber}-v2`,
                                             direction: 'rtl',
@@ -1033,9 +1033,9 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     </div>
 
                     {/* Subtle Page Footer */}
-                    <div className="fixed bottom-24 left-0 right-0 z-[700] flex items-center justify-center pointer-events-none">
+                    <div className="fixed bottom-10 md:bottom-12 left-0 right-0 z-[700] flex items-center justify-center pointer-events-none">
                         <div
-                            className="px-3 py-1 rounded-full text-[14px] font-bold font-kfgqpc"
+                            className="px-3 py-1 rounded-full text-[14px] font-bold font-kfgqpc shadow-sm"
                             style={{
                                 color: mode.text,
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',

@@ -181,26 +181,26 @@ export const HomePage = ({ onSurahSelect, onNavigate, khitma, onUpdateKhitma }) 
                             {khitma?.isStarted && (
                                 <div className="w-full space-y-6 mt-8 relative z-10 border-t border-black/5 dark:border-white/5 pt-6">
                                     {/* Rich Stats Row */}
-                                    <div className="flex justify-between items-center px-2">
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-sm font-black text-[var(--color-accent)]">
+                                    <div className="flex justify-between items-center px-0 sm:px-2">
+                                        <div className="flex flex-col items-center flex-1">
+                                            <span className="text-xs sm:text-sm font-black text-[var(--color-accent)]">
                                                 {currentWird?.isCompleted ? 'مكتمل' : 'قيد الإنجاز'}
                                             </span>
-                                            <span className="text-[10px] opacity-40 uppercase font-bold mt-1">حالة الورد</span>
+                                            <span className="text-[9px] sm:text-[10px] opacity-40 uppercase font-bold mt-1">حالة الورد</span>
                                         </div>
-                                        <div className="w-px h-8 bg-black/5 dark:bg-white/10 mx-2"></div>
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-sm font-black text-[var(--color-highlight)]">
+                                        <div className="w-px h-8 bg-black/5 dark:bg-white/10 mx-1 sm:mx-2"></div>
+                                        <div className="flex flex-col items-center flex-1">
+                                            <span className="text-xs sm:text-sm font-black text-[var(--color-highlight)]">
                                                 {daysRemaining}
                                             </span>
-                                            <span className="text-[10px] opacity-40 uppercase font-bold mt-1">الأيام المتبقية</span>
+                                            <span className="text-[9px] sm:text-[10px] opacity-40 uppercase font-bold mt-1">الأيام المتبقية</span>
                                         </div>
-                                        <div className="w-px h-8 bg-black/5 dark:bg-white/10 mx-2"></div>
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-sm font-black text-[var(--color-text-primary)]">
+                                        <div className="w-px h-8 bg-black/5 dark:bg-white/10 mx-1 sm:mx-2"></div>
+                                        <div className="flex flex-col items-center flex-1">
+                                            <span className="text-xs sm:text-sm font-black text-[var(--color-text-primary)]">
                                                 {progressPercentage || 0}%
                                             </span>
-                                            <span className="text-[10px] opacity-40 uppercase font-bold mt-1">إنجاز الختمة</span>
+                                            <span className="text-[9px] sm:text-[10px] opacity-40 uppercase font-bold mt-1">إنجاز الختمة</span>
                                         </div>
                                     </div>
 
