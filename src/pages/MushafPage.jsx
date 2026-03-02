@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, BookmarkCheck, Maximize2, Minimize2, Sun, Moon, Coffee, Layers, X, BookMarked, Hash, List, Type, Home, Minus, Plus, ChevronDown, Check } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, Search, Loader2, Bookmark, BookmarkCheck, Sun, Moon, Coffee, Layers, X, BookMarked, Hash, List, Type, Home, Minus, Plus, ChevronDown, Check } from 'lucide-react';
 import { quranAPI } from '../services/quran-api.js';
 import { surahPageMapping } from '../data/surah-pages.js';
 import { getKhitmaState, saveLastRead } from '../utils/storage-utils.js';
@@ -70,7 +70,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     const [verses, setVerses] = useState([]);
 
     // UI state
-    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const [showControls, setShowControls] = useState(true);
     const [fontScale, setFontScale] = useState(() => {
         const saved = parseFloat(localStorage.getItem('mushaf-font-scale') || '1');
@@ -490,18 +490,10 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
         };
     }, [mode.bg]);
 
-    // Auto-hide controls in fullscreen
     const resetControlsTimer = useCallback(() => {
         setShowControls(true);
         if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
-
-        // Only auto-hide in fullscreen mode, and give more time (8s)
-        if (isFullscreen) {
-            controlsTimeout.current = setTimeout(() => {
-                setShowControls(false);
-            }, 8000);
-        }
-    }, [isFullscreen]);
+    }, []);
 
     // Touch handlers for swipe navigation
     const handleTouchStart = useCallback((e) => {
@@ -555,14 +547,11 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 navigateTo(pageNumber - 1, 'right');
             } else if (e.key === 'Escape') {
                 if (showNavPanel) setShowNavPanel(false);
-                else if (isFullscreen) setIsFullscreen(false);
-            } else if (e.key === 'f' || e.key === 'F') {
-                setIsFullscreen(prev => !prev);
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [pageNumber, isFullscreen, showNavPanel]);
+    }, [pageNumber, showNavPanel]);
 
     const navigateTo = useCallback((page, direction) => {
         if (page >= 1 && page <= 604) {
@@ -654,7 +643,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     return (
         <div
             ref={containerRef}
-            className={`min-h-[100dvh] relative overflow-hidden transition-all duration-700 ${isFullscreen ? 'fixed inset-0 z-[9999]' : ''}`}
+            className="h-[100dvh] flex flex-col relative overflow-hidden transition-all duration-700"
             style={{
                 backgroundColor: mode.bg,
                 color: mode.text,
@@ -667,20 +656,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     setShowVerseDetail(false);
                     setSelectedVerseKey(null);
                 } else {
-                    setShowControls(prev => {
-                        const nextState = !prev;
-                        // Handle native fullscreen API for deeper immersion
-                        try {
-                            if (!nextState && document.documentElement.requestFullscreen) {
-                                document.documentElement.requestFullscreen().catch(() => { });
-                            } else if (nextState && document.fullscreenElement && document.exitFullscreen) {
-                                document.exitFullscreen().catch(() => { });
-                            }
-                        } catch (e) {
-                            // Ignore fullscreen API errors on unsupported browsers/devices
-                        }
-                        return nextState;
-                    });
+                    setShowControls(prev => !prev);
                 }
             }}
         >
@@ -708,24 +684,23 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             {/* MAIN MUSHAF CONTENT */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <main
-                className={`transition-all duration-700 ease-in-out ${isFullscreen ? 'h-screen pt-0' : 'min-h-[100dvh] -mt-4 pb-6 flex items-stretch justify-center px-3 md:px-6'}`}
+                className="transition-all duration-700 ease-in-out flex-1 flex items-stretch justify-center px-3 md:px-6"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
             >
                 <div
                     ref={pageContentRef}
-                    className={`relative w-full max-w-4xl transition-all duration-500 ${isFullscreen ? 'h-full' : 'min-h-[100dvh]'} ${fontScale > 1 && viewMode === 'authentic' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
+                    className={`relative w-full max-w-4xl transition-all duration-500 flex flex-col ${fontScale > 1 && viewMode === 'authentic' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
                     style={{
                         backgroundColor: mode.bg,
-                        minHeight: isFullscreen ? '100%' : '100%',
                         scrollbarWidth: fontScale > 1 && viewMode === 'authentic' ? 'none' : undefined,
                     }}
                 >
                     {/* Page Header Labels (Mushaf style) */}
                     <div
-                        className={`absolute top-12 left-6 right-6 flex items-center justify-between text-[11px] font-bold pointer-events-none transition-opacity duration-700 ${showControls ? 'opacity-70' : 'opacity-0'}`}
-                        style={{ color: mode.text }}
+                        className="absolute left-6 right-6 flex items-center justify-between text-[11px] font-bold pointer-events-none opacity-70"
+                        style={{ color: mode.text, top: 'max(3rem, calc(env(safe-area-inset-top) + 0.5rem))' }}
                         dir="ltr"
                     >
                         <span
@@ -743,7 +718,10 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                         </span>
                     </div>
                     {/* Page Content - Full page reader style */}
-                    <div className={`relative z-10 w-full flex-1 flex flex-col justify-start items-center ${isFullscreen ? 'p-2 md:p-4 h-full' : 'py-2 min-h-[100dvh]'}`}>
+                    <div
+                        className="relative z-10 w-full flex-1 flex flex-col justify-center items-center"
+                        style={{ paddingTop: 'max(4rem, calc(env(safe-area-inset-top) + 2rem))', paddingBottom: 'max(5rem, calc(env(safe-area-inset-bottom) + 3rem))' }}
+                    >
                         {isLoading || isFontLoading ? (
                             <div className="flex flex-col items-center justify-center py-40 space-y-8">
                                 <div className="relative">
@@ -964,7 +942,8 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                             }
 
                                             return (
-                                                <div className="w-full flex flex-col" style={{ gap: '0.85rem' }}>
+                                                <div className="w-full flex-1 flex flex-col justify-between">
+                                                    <div className="mushaf-line-auth" aria-hidden="true">&nbsp;</div>
                                                     {lines.map(([lineNum, words]) => {
                                                         const isFirstSurahLine = firstVerseLines.has(lineNum);
                                                         // Check if this line is the start of a new surah
@@ -1205,7 +1184,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     justify-content: center;
                     align-items: baseline;
                     white-space: nowrap;
-                    line-height: 1.25;
+                    line-height: 2;
                     overflow: hidden;
                     padding-inline: 0.75rem;
                 }

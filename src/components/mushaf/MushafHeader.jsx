@@ -20,15 +20,16 @@ const MushafHeader = ({
 
     return (
         <header
-            className={`fixed top-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-24 opacity-0 pointer-events-none'}`}
+            className={`fixed left-1/2 -translate-x-1/2 z-[600] w-[96%] sm:w-auto sm:max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-24 opacity-0 pointer-events-none'}`}
             style={{
+                top: 'max(1.5rem, env(safe-area-inset-top))',
                 transition: 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)',
                 willChange: 'transform, opacity',
             }}
             onClick={(e) => e.stopPropagation()}
         >
             <div
-                className="flex items-center justify-between gap-4 pl-2 pr-4 py-2 rounded-full shadow-2xl border border-[var(--color-border)] transition-all duration-300 backdrop-blur-md"
+                className="flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-2 rounded-full shadow-2xl border border-[var(--color-border)] transition-all duration-300 backdrop-blur-md opacity-75"
                 style={{
                     backgroundColor: 'var(--color-bg-secondary)',
                     boxShadow: 'var(--shadow-lg)',
@@ -47,7 +48,7 @@ const MushafHeader = ({
                 </button>
 
                 {/* Title Info */}
-                <div className="flex flex-col items-center min-w-[120px]">
+                <div className="flex flex-col items-center flex-1 max-w-[50%] min-w-0 sm:min-w-[120px]">
                     <h1 className="font-arabic font-bold text-base leading-tight" style={{ color: mode.text }}>
                         {pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف'}
                     </h1>

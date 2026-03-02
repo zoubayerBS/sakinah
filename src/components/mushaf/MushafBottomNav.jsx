@@ -17,15 +17,16 @@ const MushafBottomNav = ({
 }) => {
     return (
         <nav
-            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[600] w-auto max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'}`}
+            className={`fixed left-1/2 -translate-x-1/2 z-[600] w-[96%] sm:w-auto sm:max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'}`}
             style={{
+                bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
                 transition: 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)',
                 willChange: 'transform, opacity',
             }}
             onClick={(e) => e.stopPropagation()}
         >
             <div
-                className="flex items-center gap-3 px-2 py-2 rounded-full shadow-2xl border border-[var(--color-border)] transition-all duration-300 backdrop-blur-md"
+                className="flex items-center justify-between sm:justify-center gap-1 sm:gap-3 px-2 py-2 rounded-full shadow-2xl border border-[var(--color-border)] transition-all duration-300 backdrop-blur-md"
                 style={{
                     backgroundColor: 'var(--color-bg-secondary)',
                     boxShadow: 'var(--shadow-lg)',
@@ -42,7 +43,7 @@ const MushafBottomNav = ({
                 </button>
 
                 {/* Page Info & Slider Container */}
-                <div className="flex flex-col items-center w-32 sm:w-48 gap-1">
+                <div className="flex flex-col items-center flex-1 max-w-[120px] sm:max-w-none sm:w-48 gap-1">
                     <span className="text-[10px] font-bold opacity-60 font-arabic" style={{ color: mode.text }}>
                         صفحة {toArabicIndicDigits ? toArabicIndicDigits(pageNumber) : pageNumber}
                     </span>
@@ -86,7 +87,7 @@ const MushafBottomNav = ({
                 {/* Menu Button */}
                 <button
                     onClick={() => { setShowNavPanel(true); setNavTab('surah'); }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 hover:bg-black/5"
+                    className="flex items-center justify-center gap-2 w-10 sm:w-auto sm:px-4 h-10 sm:h-auto py-2 rounded-full transition-all active:scale-95 hover:bg-black/5"
                     style={{
                         backgroundColor: mode.accent,
                         color: '#fff',
