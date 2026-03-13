@@ -43,6 +43,19 @@ export const mushafCache = {
             data,
             timestamp: Date.now()
         });
+    },
+
+    async countCachedPages() {
+        return await db.mushaf_pages_v3.count();
+    },
+
+    async getAllCachedPageNumbers() {
+        const pages = await db.mushaf_pages_v3.toCollection().primaryKeys();
+        return new Set(pages);
+    },
+
+    async clearAllPages() {
+        return await db.mushaf_pages_v3.clear();
     }
 };
 
