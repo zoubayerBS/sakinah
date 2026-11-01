@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, ChevronLeft, ChevronUp, ChevronDown, List, Brain } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronDown, List, Brain } from 'lucide-react';
 
 const MushafBottomNav = ({
     showControls,
@@ -21,25 +21,27 @@ const MushafBottomNav = ({
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-[600] w-full pointer-events-none">
             {/* ═══════════════════════════════════════════════════════ */}
-            {/* COLLAPSED STATE: small floating handle (default on rest) */}
+            {/* COLLAPSED STATE: side handle — left edge, vertical middle */}
             {/* ═══════════════════════════════════════════════════════ */}
             <div
-                className={`absolute bottom-0 left-0 right-0 flex justify-center transition-all duration-300 ${showControls ? 'opacity-0 translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0 pointer-events-auto'}`}
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}
+                className={`fixed left-0 top-1/2 -translate-y-1/2 transition-all duration-300 ${showControls ? '-translate-x-full opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
+                style={{ paddingLeft: 'calc(env(safe-area-inset-left) + 0.25rem)' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
                     onClick={() => setShowControls(true)}
-                    className="flex items-center gap-2 h-9 px-4 rounded-full shadow-lg border border-[var(--color-border)] backdrop-blur-md active:scale-95 transition-all"
+                    className="flex flex-col items-center gap-1 w-10 py-2.5 rounded-r-full shadow-lg border border-l-0 border-[var(--color-border)] backdrop-blur-md active:scale-95 transition-all"
                     style={{
                         backgroundColor: 'var(--color-bg-secondary)',
                         color: mode.text,
                         boxShadow: 'var(--shadow-lg)',
                     }}
-                    title="إظهار أدوات القراءة"
+                    title={pageLabel}
                 >
-                    <ChevronUp size={16} style={{ color: mode.accent }} />
-                    <span className="text-[11px] font-bold font-arabic leading-none">{pageLabel}</span>
+                    <ChevronRight size={15} style={{ color: mode.accent }} />
+                    <span className="text-[10px] font-bold font-arabic leading-none">
+                        {toArabicIndicDigits ? toArabicIndicDigits(pageNumber) : pageNumber}
+                    </span>
                 </button>
             </div>
 

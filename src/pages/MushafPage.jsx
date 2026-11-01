@@ -654,7 +654,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 // Lighter reservation when the bottom bar is collapsed to its handle (more reading space).
                 '--mushaf-vpad': showControls
                     ? 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 16.5rem)'
-                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 15rem)'
+                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 13.5rem)'
             }}
             dir="rtl"
             onClick={() => {
@@ -730,7 +730,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                             paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 4rem))',
                             paddingBottom: showControls
                                 ? 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4rem))'
-                                : 'max(4rem, calc(env(safe-area-inset-bottom) + 3.5rem))'
+                                : 'max(2.5rem, calc(env(safe-area-inset-bottom) + 0.5rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (
