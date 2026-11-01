@@ -181,23 +181,31 @@ const MushafHeader = ({
                         <ChevronRight size={20} />
                     </button>
 
-                    {/* Page number */}
-                    <span className="text-[9px] font-bold font-arabic opacity-60 whitespace-nowrap w-10 text-center shrink-0" style={{ color: mode.text }}>
-                        {pageLabel}
-                    </span>
-
-                    {/* Page slider */}
-                    <input
-                        type="range"
-                        min="1"
-                        max="604"
-                        value={pageNumber}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => setPageNumber(parseInt(e.target.value))}
-                        className="mushaf-slider flex-1 min-w-0 h-1 rounded-full appearance-none cursor-pointer bg-current opacity-20 hover:opacity-100 transition-opacity"
-                        style={{ color: mode.accent }}
-                        title="انتقل إلى صفحة"
-                    />
+                    {/* Page slider with the page number centered on top of it */}
+                    <div className="relative flex-1 min-w-0 flex items-center">
+                        <input
+                            type="range"
+                            min="1"
+                            max="604"
+                            value={pageNumber}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => setPageNumber(parseInt(e.target.value))}
+                            className="mushaf-slider w-full h-1 rounded-full appearance-none cursor-pointer bg-current opacity-20 hover:opacity-100 transition-opacity"
+                            style={{ color: mode.accent }}
+                            title="انتقل إلى صفحة"
+                        />
+                        {/* Page number, centered in the middle of the row */}
+                        <span
+                            className="absolute left-1/2 -translate-x-1/2 px-2 text-[9px] font-bold font-arabic leading-none whitespace-nowrap pointer-events-none"
+                            style={{
+                                color: mode.text,
+                                opacity: 0.75,
+                                backgroundColor: 'var(--color-bg-secondary)',
+                            }}
+                        >
+                            {pageLabel}
+                        </span>
+                    </div>
 
                     {/* Next Page (RTL) */}
                     <button
