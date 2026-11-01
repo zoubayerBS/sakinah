@@ -71,7 +71,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
 
     // UI state
 
-    const [showControls, setShowControls] = useState(true);
+    const [showControls, setShowControls] = useState(false); // false = collapsed to the floating handle (immersive reading)
     const [fontScale, setFontScale] = useState(() => {
         const saved = parseFloat(localStorage.getItem('mushaf-font-scale') || '1');
         return Number.isFinite(saved) ? saved : 1;
