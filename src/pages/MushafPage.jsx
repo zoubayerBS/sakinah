@@ -652,8 +652,8 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 // used by the font-size height cap below so a full page always fits the screen.
                 // Lighter reservation when the header is hidden (immersive reading).
                 '--mushaf-vpad': showControls
-                    ? 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 17.5rem)'
-                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 13rem)'
+                    ? 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 13.5rem)'
+                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 9.5rem)'
             }}
             dir="rtl"
             onClick={() => {
@@ -736,9 +736,9 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                         className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll transition-all duration-500"
                         style={{
                             paddingTop: showControls
-                                ? 'max(7.5rem, calc(env(safe-area-inset-top) + 6rem))'
-                                : 'max(2.5rem, calc(env(safe-area-inset-top) + 1rem))',
-                            paddingBottom: 'max(2.5rem, calc(env(safe-area-inset-bottom) + 1.5rem))'
+                                ? 'max(7rem, calc(env(safe-area-inset-top) + 5.25rem))'
+                                : 'max(2rem, calc(env(safe-area-inset-top) + 0.75rem))',
+                            paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom) + 1rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (

@@ -47,14 +47,14 @@ const MushafHeader = ({
                 }}
             >
                 {/* ═══ Row 1: Home · Title · Tools ═══ */}
-                <div className="flex items-center gap-1 px-2 py-1.5">
+                <div className="flex items-center gap-1 px-2 py-1">
                     {/* Home / Back */}
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             if (onBack) onBack();
                         }}
-                        className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90"
+                        className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90"
                         style={{ color: mode.text }}
                         title="الرئيسية"
                     >
@@ -108,7 +108,7 @@ const MushafHeader = ({
                             e.stopPropagation();
                             toggleBookmark();
                         }}
-                        className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-90 ${isCurrentPageBookmarked ? '' : 'hover:bg-black/5'}`}
+                        className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-90 ${isCurrentPageBookmarked ? '' : 'hover:bg-black/5'}`}
                         style={{ color: isCurrentPageBookmarked ? mode.accent : mode.text, opacity: isCurrentPageBookmarked ? 1 : 0.6 }}
                         title="علامة مرجعية"
                     >
@@ -123,7 +123,7 @@ const MushafHeader = ({
                             const idx = modes.indexOf(readingMode);
                             setReadingMode(modes[(idx + 1) % modes.length]);
                         }}
-                        className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 opacity-60 hover:opacity-100"
+                        className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 opacity-60 hover:opacity-100"
                         style={{ color: mode.text }}
                         title="مظهر القراءة"
                     >
@@ -136,7 +136,7 @@ const MushafHeader = ({
                             e.stopPropagation();
                             setIsHifzMode(prev => !prev);
                         }}
-                        className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-90 ${isHifzMode ? 'hifz-toggle-active' : 'hover:bg-black/5 opacity-60 hover:opacity-100'}`}
+                        className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-90 ${isHifzMode ? 'hifz-toggle-active' : 'hover:bg-black/5 opacity-60 hover:opacity-100'}`}
                         style={{
                             backgroundColor: isHifzMode ? 'var(--color-accent)' : 'transparent',
                             color: isHifzMode ? '#fff' : mode.text,
@@ -153,7 +153,7 @@ const MushafHeader = ({
                             setShowNavPanel(true);
                             setNavTab('surah');
                         }}
-                        className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-95 hover:bg-black/5"
+                        className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-all active:scale-95 hover:bg-black/5"
                         style={{
                             backgroundColor: mode.accent,
                             color: '#fff',
@@ -166,7 +166,7 @@ const MushafHeader = ({
                 </div>
 
                 {/* ═══ Row 2: Page navigation + slider ═══ */}
-                <div className="flex items-center gap-2 px-3 pt-1 pb-2 border-t border-[var(--color-border)]">
+                <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5 border-t border-[var(--color-border)]">
                     {/* Prev Page (RTL) */}
                     <button
                         onClick={(e) => {
@@ -174,7 +174,7 @@ const MushafHeader = ({
                             handlePrev();
                         }}
                         disabled={pageNumber <= 1}
-                        className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
+                        className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
                         style={{ color: mode.text }}
                         title="الصفحة السابقة"
                     >
@@ -214,7 +214,7 @@ const MushafHeader = ({
                             handleNext();
                         }}
                         disabled={pageNumber >= 604}
-                        className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
+                        className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-all hover:bg-black/5 active:scale-90 disabled:opacity-20"
                         style={{ color: mode.text }}
                         title="الصفحة التالية"
                     >
