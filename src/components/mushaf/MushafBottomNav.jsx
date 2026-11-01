@@ -22,8 +22,8 @@ const MushafBottomNav = ({
                 bottom: '0px',
                 left: '0px',
                 right: '0px',
-                paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
-                paddingTop: '0.5rem',
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.25rem)',
+                paddingTop: '0.25rem',
                 transition: 'transform 400ms cubic-bezier(0.22, 1, 0.36, 1), opacity 400ms cubic-bezier(0.22, 1, 0.36, 1)',
                 willChange: 'transform, opacity',
                 backgroundColor: 'var(--color-bg-secondary)',
@@ -35,7 +35,7 @@ const MushafBottomNav = ({
             onClick={(e) => e.stopPropagation()}
         >
             <div
-                className="flex items-center justify-between sm:justify-center gap-1 sm:gap-3 px-4 py-2 w-full max-w-4xl mx-auto"
+                className="flex items-center justify-between sm:justify-center gap-1 sm:gap-3 px-3 sm:px-4 w-full max-w-4xl mx-auto"
             >
                 {/* Prev Page Button (RTL) */}
                 <button
@@ -48,8 +48,8 @@ const MushafBottomNav = ({
                 </button>
 
                 {/* Page Info & Slider Container */}
-                <div className="flex flex-col items-center flex-1 min-w-0 max-w-[240px] sm:max-w-none sm:w-48 gap-1">
-                    <span className="text-[10px] font-bold opacity-60 font-arabic" style={{ color: mode.text }}>
+                <div className="flex flex-col items-center flex-1 min-w-0 max-w-[240px] sm:max-w-none sm:w-48 gap-0.5">
+                    <span className="text-[9px] font-bold opacity-60 font-arabic leading-none" style={{ color: mode.text }}>
                         صفحة {toArabicIndicDigits ? toArabicIndicDigits(pageNumber) : pageNumber}
                     </span>
                     <input

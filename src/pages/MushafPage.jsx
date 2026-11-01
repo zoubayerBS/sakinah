@@ -725,7 +725,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                         className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll"
                         style={{
                             paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 4rem))',
-                            paddingBottom: 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4.75rem))'
+                            paddingBottom: 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (
