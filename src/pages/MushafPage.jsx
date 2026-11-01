@@ -849,7 +849,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                                                 <div
                                                                     className={`w-full flex justify-center`}
                                                                     style={{
-                                                                        minHeight: '4.5rem',
+                                                                        minHeight: '5rem',
                                                                         color: mode.text,
                                                                         lineHeight: 1.1,
                                                                     }}
@@ -1180,7 +1180,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     justify-content: center;
                     align-items: baseline;
                     white-space: nowrap;
-                    line-height: 1.8;
+                    line-height: 2.1;
                     overflow: hidden;
                     padding-inline: 0.75rem;
                 }
@@ -1194,19 +1194,20 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     flex-wrap: nowrap;
                     transition: font-size 400ms ease;
                     /* Height-aware cap: a full mushaf page is 15 lines, so the font can never
-                       exceed what fits in (100dvh - reserved chrome). Floor of 1rem keeps glyphs
+                       exceed what fits in (100dvh - reserved chrome). The divisor is
+                       15 lines x line-height (2.1) = 31.5. Floor of 1rem keeps glyphs
                        readable on very short screens (content then scrolls). The user scale
                        multiplier is applied last so zooming still works. */
                     font-size: calc(
                         max(1rem, min(
                             clamp(1.35rem, calc(3.6vw + 0.4rem), 2.6rem),
-                            calc((100vh - var(--mushaf-vpad, 16.5rem)) / 27)
+                            calc((100vh - var(--mushaf-vpad, 16.5rem)) / 31.5)
                         )) * var(--mushaf-scale, 1)
                     );
                     font-size: calc(
                         max(1rem, min(
                             clamp(1.35rem, calc(3.6vw + 0.4rem), 2.6rem),
-                            calc((100dvh - var(--mushaf-vpad, 16.5rem)) / 27)
+                            calc((100dvh - var(--mushaf-vpad, 16.5rem)) / 31.5)
                         )) * var(--mushaf-scale, 1)
                     );
                 }
