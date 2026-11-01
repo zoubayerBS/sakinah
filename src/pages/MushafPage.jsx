@@ -736,9 +736,9 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                         className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll transition-all duration-500"
                         style={{
                             paddingTop: showControls
-                                ? 'max(7rem, calc(env(safe-area-inset-top) + 5.25rem))'
-                                : 'max(2rem, calc(env(safe-area-inset-top) + 0.75rem))',
-                            paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom) + 1rem))'
+                                ? 'max(6.75rem, calc(env(safe-area-inset-top) + 5.1rem))'
+                                : 'max(1.5rem, calc(env(safe-area-inset-top) + 0.5rem))',
+                            paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 0.75rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (
@@ -753,11 +753,11 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                 <p className="font-arabic text-xl tracking-wide opacity-50 animate-pulse">جاري التحميل...</p>
                             </div>
                         ) : (
-                            <div className={`w-full min-h-full flex flex-col items-center justify-center transition-all duration-500 ${slideDirection === 'left' ? 'animate-page-flip-left' : slideDirection === 'right' ? 'animate-page-flip-right' : 'animate-fade-in'}`} style={{ perspective: '1200px' }}>
+                            <div className={`w-full min-h-full flex flex-col items-center justify-start transition-all duration-500 ${slideDirection === 'left' ? 'animate-page-flip-left' : slideDirection === 'right' ? 'animate-page-flip-right' : 'animate-fade-in'}`} style={{ perspective: '1200px' }}>
                                 {viewMode === 'text' ? (
                                     // MUSHAF READING MODE - Quran.com style: words grouped by line
                                     <div
-                                        className="w-full flex flex-col items-center justify-start py-2 md:py-6 transition-all duration-500"
+                                        className="w-full flex flex-col items-center justify-start py-1 md:py-3 transition-all duration-500"
                                         style={{
                                             fontFamily: `p${pageNumber}-v2`,
                                             direction: 'rtl',
@@ -835,7 +835,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                                             <React.Fragment key={lineNum}>
                                                                 {/* Display surah name before the first verse of each surah */}
                                                                 {surahName && (
-                                                                    <div className="w-full flex justify-center py-6">
+                                                                    <div className="w-full flex justify-center py-3">
                                                                         <span
                                                                             className="surah-title"
                                                                             dir="rtl"
