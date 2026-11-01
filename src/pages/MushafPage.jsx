@@ -643,7 +643,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     return (
         <div
             ref={containerRef}
-            className="h-[100dvh] flex flex-col relative overflow-hidden transition-all duration-700"
+            className="fixed inset-0 flex flex-col overflow-hidden transition-all duration-700 z-[500]"
             style={{
                 backgroundColor: mode.bg,
                 color: mode.text,
@@ -1012,14 +1012,13 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     </div>
 
                     {/* Subtle Page Footer */}
-                    <div className="fixed bottom-10 md:bottom-12 left-0 right-0 z-[700] flex items-center justify-center pointer-events-none">
+                    <div className={`fixed bottom-10 md:bottom-12 left-0 right-0 z-[700] flex items-center justify-center pointer-events-none transition-all duration-500 ${showControls ? 'opacity-0 translate-y-4' : 'opacity-80 translate-y-0'}`}>
                         <div
                             className="px-3 py-1 rounded-full text-[14px] font-bold font-kfgqpc shadow-sm"
                             style={{
                                 color: mode.text,
                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                                 border: `1px solid ${mode.accent}30`,
-                                opacity: 0.8
                             }}
                         >
                             <span>{`صفحة ${toArabicIndicDigits(pageNumber)}`}</span>

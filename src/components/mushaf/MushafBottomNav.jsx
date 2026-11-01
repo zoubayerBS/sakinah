@@ -17,20 +17,25 @@ const MushafBottomNav = ({
 }) => {
     return (
         <nav
-            className={`fixed left-1/2 -translate-x-1/2 z-[600] w-[96%] sm:w-auto sm:max-w-[94%] ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'}`}
+            className={`fixed z-[600] w-full ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
             style={{
-                bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-                transition: 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)',
+                bottom: '0px',
+                left: '0px',
+                right: '0px',
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
+                paddingTop: '0.5rem',
+                transition: 'transform 400ms cubic-bezier(0.22, 1, 0.36, 1), opacity 400ms cubic-bezier(0.22, 1, 0.36, 1)',
                 willChange: 'transform, opacity',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderTop: '1px solid var(--color-border)',
+                boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.05)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)'
             }}
             onClick={(e) => e.stopPropagation()}
         >
             <div
-                className="flex items-center justify-between sm:justify-center gap-1 sm:gap-3 px-2 py-2 rounded-full shadow-2xl border border-[var(--color-border)] transition-all duration-300 backdrop-blur-md"
-                style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    boxShadow: 'var(--shadow-lg)',
-                }}
+                className="flex items-center justify-between sm:justify-center gap-1 sm:gap-3 px-4 py-2 w-full max-w-4xl mx-auto"
             >
                 {/* Prev Page Button (RTL) */}
                 <button

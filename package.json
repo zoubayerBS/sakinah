@@ -5,7 +5,7 @@
     "type": "module",
     "description": "A modern, elegant Progressive Web App for reading the Noble Quran",
     "scripts": {
-        "dev": "vite",
+        "dev": "vite --host",
         "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
         "server": "node server/index.js",
         "build": "vite build",
