@@ -48,7 +48,7 @@ const MushafBottomNav = ({
                 </button>
 
                 {/* Page Info & Slider Container */}
-                <div className="flex flex-col items-center flex-1 max-w-[120px] sm:max-w-none sm:w-48 gap-1">
+                <div className="flex flex-col items-center flex-1 min-w-0 max-w-[240px] sm:max-w-none sm:w-48 gap-1">
                     <span className="text-[10px] font-bold opacity-60 font-arabic" style={{ color: mode.text }}>
                         صفحة {toArabicIndicDigits ? toArabicIndicDigits(pageNumber) : pageNumber}
                     </span>

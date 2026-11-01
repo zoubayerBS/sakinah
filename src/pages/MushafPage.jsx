@@ -357,8 +357,8 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
         document.documentElement.style.overscrollBehaviorY = 'none';
 
         const allowScrollInNav = (target) => {
-            if (!showNavPanel) return false;
-            return Boolean(target.closest && target.closest('.nav-panel-scroll'));
+            if (!showNavPanel && !target.closest) return false;
+            return Boolean(target.closest && target.closest('.nav-panel-scroll, .mushaf-scroll'));
         };
 
         const handleTouchMove = (e) => {
@@ -647,8 +647,11 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             style={{
                 backgroundColor: mode.bg,
                 color: mode.text,
-                touchAction: viewMode === 'authentic' && !showNavPanel && !showVerseDetail ? 'pan-x' : 'auto',
-                '--mushaf-scale': String(fontScale)
+                touchAction: viewMode === 'authentic' && !showNavPanel && !showVerseDetail ? 'pan-x pan-y' : 'auto',
+                '--mushaf-scale': String(fontScale),
+                // Vertical space reserved by header pill + bottom nav + page padding + surah title,
+                // used by the font-size height cap below so a full page always fits the screen.
+                '--mushaf-vpad': 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 16.5rem)'
             }}
             dir="rtl"
             onClick={() => {
@@ -699,7 +702,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 >
                     {/* Page Header Labels (Mushaf style) */}
                     <div
-                        className="absolute left-6 right-6 flex items-center justify-between text-[11px] font-bold pointer-events-none opacity-70"
+                        className="absolute left-6 right-6 hidden sm:flex items-center justify-between text-[11px] font-bold pointer-events-none opacity-70"
                         style={{ color: mode.text, top: 'max(3rem, calc(env(safe-area-inset-top) + 0.5rem))' }}
                         dir="ltr"
                     >
@@ -719,11 +722,14 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     </div>
                     {/* Page Content - Full page reader style */}
                     <div
-                        className="relative z-10 w-full flex-1 flex flex-col justify-center items-center"
-                        style={{ paddingTop: 'max(4rem, calc(env(safe-area-inset-top) + 2rem))', paddingBottom: 'max(5rem, calc(env(safe-area-inset-bottom) + 3rem))' }}
+                        className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll"
+                        style={{
+                            paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 4rem))',
+                            paddingBottom: 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4.75rem))'
+                        }}
                     >
                         {isLoading || isFontLoading ? (
-                            <div className="flex flex-col items-center justify-center py-40 space-y-8">
+                            <div className="flex flex-col items-center justify-center min-h-full py-40 space-y-8">
                                 <div className="relative">
                                     <div className="w-24 h-24 rounded-full border-[3px] border-current opacity-10 skeleton" />
                                     <div className="absolute inset-0 border-[3px] border-t-transparent animate-spin rounded-full" style={{ borderColor: mode.accent }} />
@@ -734,7 +740,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                 <p className="font-arabic text-xl tracking-wide opacity-50 animate-pulse">جاري التحميل...</p>
                             </div>
                         ) : (
-                            <div className={`w-full flex-1 flex flex-col items-center justify-center transition-all duration-500 ${slideDirection === 'left' ? 'animate-page-flip-left' : slideDirection === 'right' ? 'animate-page-flip-right' : 'animate-fade-in'}`} style={{ perspective: '1200px' }}>
+                            <div className={`w-full min-h-full flex flex-col items-center justify-center transition-all duration-500 ${slideDirection === 'left' ? 'animate-page-flip-left' : slideDirection === 'right' ? 'animate-page-flip-right' : 'animate-fade-in'}`} style={{ perspective: '1200px' }}>
                                 {viewMode === 'text' ? (
                                     // MUSHAF READING MODE - Quran.com style: words grouped by line
                                     <div
@@ -880,7 +886,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                 ) : (
                                     // AUTHENTIC MUSHAF MODE - render full lines with QPC V2 glyphs
                                     <div
-                                        className="w-full flex flex-col items-center justify-start py-4 pb-32 md:py-8 md:pb-36 transition-all duration-700 mushaf-page"
+                                        className="w-full flex flex-col items-center justify-start py-4 transition-all duration-700 mushaf-page"
                                         style={{
                                             fontFamily: `p${pageNumber}-v2`,
                                             direction: 'rtl',
@@ -943,7 +949,6 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
 
                                             return (
                                                 <div className="w-full flex-1 flex flex-col justify-between">
-                                                    <div className="mushaf-line-auth" aria-hidden="true">&nbsp;</div>
                                                     {lines.map(([lineNum, words]) => {
                                                         const isFirstSurahLine = firstVerseLines.has(lineNum);
                                                         // Check if this line is the start of a new surah
@@ -959,7 +964,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                                             <React.Fragment key={lineNum}>
                                                                 {/* Display surah name before the first verse of each surah */}
                                                                 {surahName && (
-                                                                    <div className="w-full flex justify-center py-4">
+                                                                    <div className="w-full flex justify-center py-1">
                                                                         <span
                                                                             className="surah-title"
                                                                             dir="rtl"
@@ -1149,6 +1154,15 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     scrollbar-width: none;
                 }
 
+                /* Hide scrollbar for the scrollable page content (mobile-friendly) */
+                .mushaf-scroll::-webkit-scrollbar {
+                    display: none;
+                }
+                .mushaf-scroll {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+
                 /* Authentic Mushaf styling */
                 .mushaf-word {
                     position: relative;
@@ -1183,7 +1197,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     justify-content: center;
                     align-items: baseline;
                     white-space: nowrap;
-                    line-height: 2;
+                    line-height: 1.8;
                     overflow: hidden;
                     padding-inline: 0.75rem;
                 }
@@ -1195,7 +1209,27 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     align-items: baseline;
                     justify-content: center;
                     flex-wrap: nowrap;
-                    font-size: clamp(calc(1.35rem * var(--mushaf-scale, 1)), calc((3.6vw + 0.4rem) * var(--mushaf-scale, 1)), calc(2.6rem * var(--mushaf-scale, 1)));
+                    /* Height-aware cap: a full mushaf page is 15 lines, so the font can never
+                       exceed what fits in (100dvh - reserved chrome). Floor of 1rem keeps glyphs
+                       readable on very short screens (content then scrolls). The user scale
+                       multiplier is applied last so zooming still works. */
+                    font-size: calc(
+                        max(1rem, min(
+                            clamp(1.35rem, calc(3.6vw + 0.4rem), 2.6rem),
+                            calc((100vh - var(--mushaf-vpad, 16.5rem)) / 27)
+                        )) * var(--mushaf-scale, 1)
+                    );
+                    font-size: calc(
+                        max(1rem, min(
+                            clamp(1.35rem, calc(3.6vw + 0.4rem), 2.6rem),
+                            calc((100dvh - var(--mushaf-vpad, 16.5rem)) / 27)
+                        )) * var(--mushaf-scale, 1)
+                    );
+                }
+                /* Responsive surah title: was a fixed 64px, far too large on phones */
+                .mushaf-page .surah-title {
+                    font-size: clamp(26px, 6vw, 40px);
+                    color: currentColor;
                 }
                 .mushaf-word-selectable {
                     cursor: pointer;

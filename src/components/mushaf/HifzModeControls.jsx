@@ -12,7 +12,7 @@ const HifzModeControls = ({ isActive, level, setLevel, onClose, mode }) => {
 
     return (
         <div
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-[700] animate-fade-in"
+            className="fixed top-32 left-1/2 -translate-x-1/2 z-[700] animate-fade-in"
             onClick={(e) => e.stopPropagation()}
         >
             <div
