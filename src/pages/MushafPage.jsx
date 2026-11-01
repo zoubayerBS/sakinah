@@ -649,9 +649,12 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 color: mode.text,
                 touchAction: viewMode === 'authentic' && !showNavPanel && !showVerseDetail ? 'pan-x pan-y' : 'auto',
                 '--mushaf-scale': String(fontScale),
-                // Vertical space reserved by header pill + bottom nav + page padding + surah title,
+                // Vertical space reserved by header pill + bottom bar + page padding + surah title,
                 // used by the font-size height cap below so a full page always fits the screen.
-                '--mushaf-vpad': 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 16.5rem)'
+                // Lighter reservation when the bottom bar is collapsed to its handle (more reading space).
+                '--mushaf-vpad': showControls
+                    ? 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 16.5rem)'
+                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 15rem)'
             }}
             dir="rtl"
             onClick={() => {
@@ -722,10 +725,12 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     </div>
                     {/* Page Content - Full page reader style */}
                     <div
-                        className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll"
+                        className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll transition-all duration-500"
                         style={{
                             paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 4rem))',
-                            paddingBottom: 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4rem))'
+                            paddingBottom: showControls
+                                ? 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4rem))'
+                                : 'max(4rem, calc(env(safe-area-inset-bottom) + 3.5rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (
@@ -1016,19 +1021,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                         )}
                     </div>
 
-                    {/* Subtle Page Footer */}
-                    <div className={`fixed bottom-10 md:bottom-12 left-0 right-0 z-[700] flex items-center justify-center pointer-events-none transition-all duration-500 ${showControls ? 'opacity-0 translate-y-4' : 'opacity-80 translate-y-0'}`}>
-                        <div
-                            className="px-3 py-1 rounded-full text-[14px] font-bold font-kfgqpc shadow-sm"
-                            style={{
-                                color: mode.text,
-                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                                border: `1px solid ${mode.accent}30`,
-                            }}
-                        >
-                            <span>{`صفحة ${toArabicIndicDigits(pageNumber)}`}</span>
-                        </div>
-                    </div>
+                    {/* Page number is now shown on the collapsible bottom handle / slider label */}
                 </div>
             </main>
 
@@ -1048,6 +1041,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             {/* ═══════════════════════════════════════════════════════════════ */}
             <MushafBottomNav
                 showControls={showControls}
+                setShowControls={setShowControls}
                 isDarkMode={isDarkMode}
                 handlePrev={handlePrev}
                 handleNext={handleNext}
@@ -1209,6 +1203,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     align-items: baseline;
                     justify-content: center;
                     flex-wrap: nowrap;
+                    transition: font-size 400ms ease;
                     /* Height-aware cap: a full mushaf page is 15 lines, so the font can never
                        exceed what fits in (100dvh - reserved chrome). Floor of 1rem keeps glyphs
                        readable on very short screens (content then scrolls). The user scale
