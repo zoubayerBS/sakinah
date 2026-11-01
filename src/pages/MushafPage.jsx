@@ -8,7 +8,6 @@ import { tapTick, tapMedium } from '../utils/haptics.js';
 
 // Import modular components
 import MushafHeader from '../components/mushaf/MushafHeader.jsx';
-import MushafBottomNav from '../components/mushaf/MushafBottomNav.jsx';
 import MushafNavPanel from '../components/mushaf/MushafNavPanel.jsx';
 import AyahDetailPanel from '../components/mushaf/AyahDetailPanel.jsx';
 import HifzModeControls from '../components/mushaf/HifzModeControls.jsx';
@@ -71,7 +70,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
 
     // UI state
 
-    const [showControls, setShowControls] = useState(false); // false = collapsed to the floating handle (immersive reading)
+    const [showControls, setShowControls] = useState(true); // header visible by default (tap the page to hide it)
     const [fontScale, setFontScale] = useState(() => {
         const saved = parseFloat(localStorage.getItem('mushaf-font-scale') || '1');
         return Number.isFinite(saved) ? saved : 1;
@@ -649,12 +648,12 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 color: mode.text,
                 touchAction: viewMode === 'authentic' && !showNavPanel && !showVerseDetail ? 'pan-x pan-y' : 'auto',
                 '--mushaf-scale': String(fontScale),
-                // Vertical space reserved by header pill + bottom bar + page padding + surah title,
+                // Vertical space reserved by header (2 rows) + page padding + surah title,
                 // used by the font-size height cap below so a full page always fits the screen.
-                // Lighter reservation when the bottom bar is collapsed to its handle (more reading space).
+                // Lighter reservation when the header is hidden (immersive reading).
                 '--mushaf-vpad': showControls
-                    ? 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 16.5rem)'
-                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 13.5rem)'
+                    ? 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 17.5rem)'
+                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 13rem)'
             }}
             dir="rtl"
             onClick={() => {
@@ -684,6 +683,15 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 readingMode={theme}
                 setReadingMode={setTheme}
                 READING_MODES={READING_MODES}
+                pageNumber={pageNumber}
+                setPageNumber={setPageNumber}
+                handlePrev={handlePrev}
+                handleNext={handleNext}
+                isHifzMode={isHifzMode}
+                setIsHifzMode={setIsHifzMode}
+                setShowNavPanel={setShowNavPanel}
+                setNavTab={setNavTab}
+                toArabicIndicDigits={toArabicIndicDigits}
             />
 
             {/* ═══════════════════════════════════════════════════════════════ */}
@@ -727,10 +735,10 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     <div
                         className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll transition-all duration-500"
                         style={{
-                            paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 4rem))',
-                            paddingBottom: showControls
-                                ? 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4rem))'
-                                : 'max(2.5rem, calc(env(safe-area-inset-bottom) + 0.5rem))'
+                            paddingTop: showControls
+                                ? 'max(7.5rem, calc(env(safe-area-inset-top) + 6rem))'
+                                : 'max(2.5rem, calc(env(safe-area-inset-top) + 1rem))',
+                            paddingBottom: 'max(2.5rem, calc(env(safe-area-inset-bottom) + 1.5rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (
@@ -1034,25 +1042,6 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 setLevel={setHifzLevel}
                 onClose={() => setIsHifzMode(false)}
                 mode={mode}
-            />
-
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* MINIMAL FLOATING BOTTOM NAV BAR */}
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            <MushafBottomNav
-                showControls={showControls}
-                setShowControls={setShowControls}
-                isDarkMode={isDarkMode}
-                handlePrev={handlePrev}
-                handleNext={handleNext}
-                pageNumber={pageNumber}
-                setPageNumber={setPageNumber}
-                mode={mode}
-                setShowNavPanel={setShowNavPanel}
-                setNavTab={setNavTab}
-                toArabicIndicDigits={toArabicIndicDigits}
-                isHifzMode={isHifzMode}
-                setIsHifzMode={setIsHifzMode}
             />
 
             {/* ═══════════════════════════════════════════════════════════════ */}
