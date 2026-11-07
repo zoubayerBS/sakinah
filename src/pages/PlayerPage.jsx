@@ -178,19 +178,34 @@ export function PlayerPage({ surah, onBack }) {
         updateState();
     }, [currentSurah]);
 
+    // Lock page scrolling while on the player (full-screen layout)
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.width = '100%';
+        const { style } = document.body;
+        const prev = {
+            overflow: style.overflow,
+            position: style.position,
+            top: style.top,
+            left: style.left,
+            right: style.right,
+            width: style.width,
+            height: style.height,
+        };
+        style.overflow = 'hidden';
+        style.position = 'fixed';
+        style.top = '0';
+        style.left = '0';
+        style.right = '0';
+        style.width = '100%';
+        style.height = '100%';
         return () => {
-            document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.width = '';
+            Object.assign(style, prev);
         };
     }, []);
 
     return (
-        <div className="relative h-screen overflow-hidden bg-[var(--color-bg-primary)] flex flex-col">
+        // fixed inset-0 instead of h-screen: 100vh is shorter than the real screen
+        // in an iOS PWA, which left a white band at the bottom.
+        <div className="fixed inset-0 overflow-hidden bg-[var(--color-bg-primary)] flex flex-col">
 
             <PlayerHeader
                 surah={currentSurah}
@@ -202,7 +217,8 @@ export function PlayerPage({ surah, onBack }) {
                 onTogglePlaylist={() => setIsPlaylistOpen(true)}
             />
 
-            <div className="flex-1 flex flex-col items-center justify-center overflow-hidden relative z-10">
+            {/* Bottom padding keeps the player controls above the floating bottom nav */}
+            <div className="flex-1 flex flex-col items-center justify-center overflow-hidden relative z-10 pb-[calc(env(safe-area-inset-bottom)+7.5rem)]">
                 {error ? (
                     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
                         <p className="text-red-500 font-medium text-lg">{error}</p>
