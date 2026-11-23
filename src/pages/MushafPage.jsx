@@ -7,7 +7,7 @@ import { toArabicIndicDigits, formatSurahTitle, findJuzForPage } from '../utils/
 import { tapTick, tapMedium } from '../utils/haptics.js';
 
 // Import modular components
-import MushafHeader from '../components/mushaf/MushafHeader.jsx';
+import MushafHUD from '../components/mushaf/MushafHUD.jsx';
 import MushafNavPanel from '../components/mushaf/MushafNavPanel.jsx';
 import AyahDetailPanel from '../components/mushaf/AyahDetailPanel.jsx';
 import HifzModeControls from '../components/mushaf/HifzModeControls.jsx';
@@ -70,7 +70,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
 
     // UI state
 
-    const [showControls, setShowControls] = useState(true); // header visible by default (tap the page to hide it)
+    const [showControls, setShowControls] = useState(true); // HUD visible on open, auto-hides after 4s
     const [fontScale, setFontScale] = useState(() => {
         const saved = parseFloat(localStorage.getItem('mushaf-font-scale') || '1');
         return Number.isFinite(saved) ? saved : 1;
@@ -489,10 +489,30 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
         };
     }, [mode.bg]);
 
-    const resetControlsTimer = useCallback(() => {
-        setShowControls(true);
+    // Auto-hide the HUD after a few seconds of inactivity (immersive reading)
+    const scheduleAutoHide = useCallback(() => {
         if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+        controlsTimeout.current = setTimeout(() => setShowControls(false), 4000);
     }, []);
+
+    // Show the HUD and restart the auto-hide countdown
+    const showHud = useCallback(() => {
+        setShowControls(true);
+        scheduleAutoHide();
+    }, [scheduleAutoHide]);
+
+    const hideHud = useCallback(() => {
+        if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+        setShowControls(false);
+    }, []);
+
+    // HUD visible on open, then fade out on its own
+    useEffect(() => {
+        scheduleAutoHide();
+        return () => {
+            if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+        };
+    }, [scheduleAutoHide]);
 
     // Touch handlers for swipe navigation
     const handleTouchStart = useCallback((e) => {
@@ -531,10 +551,10 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 navigateTo(pageNumber + 1, 'left');
             }
         } else if (showControlsRef.current) {
-            resetControlsTimer();
+            scheduleAutoHide();
         }
         isSwiping.current = false;
-    }, [pageNumber, resetControlsTimer]);
+    }, [pageNumber, scheduleAutoHide]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -648,29 +668,33 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 color: mode.text,
                 touchAction: viewMode === 'authentic' && !showNavPanel && !showVerseDetail ? 'pan-x pan-y' : 'auto',
                 '--mushaf-scale': String(fontScale),
-                // Vertical space reserved by header (2 rows) + page padding + surah title,
-                // used by the font-size height cap below so a full page always fits the screen.
-                // Lighter reservation when the header is hidden (immersive reading).
-                '--mushaf-vpad': showControls
-                    ? 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 13.5rem)'
-                    : 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 9.5rem)'
+                // Vertical space reserved by the floating HUD + page padding + surah title,
+                // used by the font-size height cap below so a full 15-line page always fits
+                // the screen. Fixed (independent of HUD visibility) so the typography never
+                // jumps when the HUD fades in/out.
+                '--mushaf-vpad': 'calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 10.5rem)'
             }}
             dir="rtl"
             onClick={() => {
                 if (showVerseDetail) {
                     setShowVerseDetail(false);
                     setSelectedVerseKey(null);
+                } else if (showNavPanel) {
+                    setShowNavPanel(false);
+                } else if (showControls) {
+                    hideHud();
                 } else {
-                    setShowControls(prev => !prev);
+                    showHud();
                 }
             }}
         >
 
             {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* MINIMAL FLOATING HEADER BAR */}
+            {/* IMMERSIVE FLOATING HUD (auto-hides, floats over the text)        */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            <MushafHeader
+            <MushafHUD
                 showControls={showControls}
+                onActivity={scheduleAutoHide}
                 onBack={onBack}
                 mode={mode}
                 isDarkMode={isDarkMode}
@@ -692,6 +716,9 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 setShowNavPanel={setShowNavPanel}
                 setNavTab={setNavTab}
                 toArabicIndicDigits={toArabicIndicDigits}
+                fontScale={fontScale}
+                setFontScale={setFontScale}
+                progressPercent={progressPercent}
             />
 
             {/* ═══════════════════════════════════════════════════════════════ */}
@@ -711,34 +738,12 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                         scrollbarWidth: fontScale > 1 && viewMode === 'authentic' ? 'none' : undefined,
                     }}
                 >
-                    {/* Page Header Labels (Mushaf style) */}
-                    <div
-                        className="absolute left-6 right-6 hidden sm:flex items-center justify-between text-[11px] font-bold pointer-events-none opacity-70"
-                        style={{ color: mode.text, top: 'max(3rem, calc(env(safe-area-inset-top) + 0.5rem))' }}
-                        dir="ltr"
-                    >
-                        <span
-                            className={pageInfo && pageInfo.surahNumber ? "font-surah-name text-4xl mt-[-5px]" : "font-kfgqpc text-[20.8px]"}
-                            style={{ direction: 'rtl', textAlign: 'left', lineHeight: 1 }}
-                            aria-label={pageInfo ? pageInfo.surah : 'المصحف'}
-                            title={pageInfo ? pageInfo.surah : 'المصحف'}
-                        >
-                            {pageInfo && pageInfo.surahNumber
-                                ? `surah${String(pageInfo.surahNumber).padStart(3, '0')}`
-                                : (pageInfo ? formatSurahTitle(pageInfo.surah) : 'المصحف')}
-                        </span>
-                        <span className="font-kfgqpc text-[18.2px]" style={{ direction: 'rtl', textAlign: 'right' }}>
-                            {pageInfo ? `الجزء ${toArabicIndicDigits(pageInfo.juz)}` : ''}
-                        </span>
-                    </div>
-                    {/* Page Content - Full page reader style */}
+                    {/* Page Content - immersive: no header labels, the HUD title covers them */}
                     <div
                         className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll transition-all duration-500"
                         style={{
-                            paddingTop: showControls
-                                ? 'max(6.75rem, calc(env(safe-area-inset-top) + 5.1rem))'
-                                : 'max(1.5rem, calc(env(safe-area-inset-top) + 0.5rem))',
-                            paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 0.75rem))'
+                            paddingTop: 'max(6.5rem, calc(env(safe-area-inset-top) + 3.5rem))',
+                            paddingBottom: 'max(3.5rem, calc(env(safe-area-inset-bottom) + 1.5rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (
