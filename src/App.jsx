@@ -198,7 +198,8 @@ const AppContent = () => {
 
             <DBStatusToast />
 
-            <div className="h-32"></div>
+            {/* Bottom spacer — not needed on the Mushaf (immersive page) */}
+            {currentPage !== 'mushaf' && <div className="h-32"></div>}
         </div>
     );
 };

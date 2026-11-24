@@ -228,7 +228,6 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     const controlsTimeout = useRef(null);
     const pageContentRef = useRef(null);
     const surahNameMapRef = useRef(new Map());
-    const scrollStyleRef = useRef(null);
     const showControlsRef = useRef(showControls);
 
     // Derived state
@@ -325,74 +324,39 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             });
     }, [pageNumber]);
 
-    // Lock page scrolling while on MushafPage
+    // Lock background scroll only while a panel/sheet is open. While reading,
+    // the document itself scrolls — exactly like the homepage — so no global
+    // scroll lock is needed (the old fixed-overlay lock is gone).
     useEffect(() => {
-        if (!scrollStyleRef.current) {
-            scrollStyleRef.current = {
-                htmlOverflow: document.documentElement.style.overflow,
-                htmlHeight: document.documentElement.style.height,
-                htmlOverscrollY: document.documentElement.style.overscrollBehaviorY,
-                bodyOverflow: document.body.style.overflow,
-                bodyPosition: document.body.style.position,
-                bodyTop: document.body.style.top,
-                bodyLeft: document.body.style.left,
-                bodyRight: document.body.style.right,
-                bodyWidth: document.body.style.width,
-                bodyHeight: document.body.style.height,
-                bodyTouchAction: document.body.style.touchAction,
-            };
-        }
-
-        document.documentElement.style.overflow = 'hidden';
-        document.documentElement.style.height = '100%';
-        document.documentElement.style.overscrollBehaviorY = 'none';
-        document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.top = '0';
-        document.body.style.left = '0';
-        document.body.style.right = '0';
-        document.body.style.width = '100%';
-        document.body.style.height = '100%';
-        document.documentElement.style.overscrollBehaviorY = 'none';
-
-        const allowScrollInNav = (target) => {
-            if (!showNavPanel && !target.closest) return false;
-            return Boolean(target.closest && target.closest('.nav-panel-scroll, .mushaf-scroll'));
+        if (!showNavPanel && !showVerseDetail) return;
+        const y = window.scrollY;
+        const body = document.body;
+        const prev = {
+            position: body.style.position,
+            top: body.style.top,
+            left: body.style.left,
+            right: body.style.right,
+            overflow: body.style.overflow,
         };
-
-        const handleTouchMove = (e) => {
-            if (!allowScrollInNav(e.target)) {
-                e.preventDefault();
-            }
-        };
-
-        const handleWheel = (e) => {
-            if (!allowScrollInNav(e.target)) {
-                e.preventDefault();
-            }
-        };
-
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
-        document.addEventListener('wheel', handleWheel, { passive: false });
-
+        body.style.position = 'fixed';
+        body.style.top = `-${y}px`;
+        body.style.left = '0';
+        body.style.right = '0';
+        body.style.overflow = 'hidden';
         return () => {
-            if (scrollStyleRef.current) {
-                document.documentElement.style.overflow = scrollStyleRef.current.htmlOverflow;
-                document.documentElement.style.height = scrollStyleRef.current.htmlHeight;
-                document.documentElement.style.overscrollBehaviorY = scrollStyleRef.current.htmlOverscrollY;
-                document.body.style.overflow = scrollStyleRef.current.bodyOverflow;
-                document.body.style.position = scrollStyleRef.current.bodyPosition;
-                document.body.style.top = scrollStyleRef.current.bodyTop;
-                document.body.style.left = scrollStyleRef.current.bodyLeft;
-                document.body.style.right = scrollStyleRef.current.bodyRight;
-                document.body.style.width = scrollStyleRef.current.bodyWidth;
-                document.body.style.height = scrollStyleRef.current.bodyHeight;
-                document.body.style.touchAction = scrollStyleRef.current.bodyTouchAction;
-            }
-            document.removeEventListener('touchmove', handleTouchMove);
-            document.removeEventListener('wheel', handleWheel);
+            body.style.position = prev.position;
+            body.style.top = prev.top;
+            body.style.left = prev.left;
+            body.style.right = prev.right;
+            body.style.overflow = prev.overflow;
+            window.scrollTo(0, y);
         };
-    }, [showNavPanel]);
+    }, [showNavPanel, showVerseDetail]);
+
+    // Open the Mushaf at the top of the document (like any other page)
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     // Helper to process page data
     const processPageData = async (data) => {
@@ -577,6 +541,9 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             setSlideDirection(direction);
             setPageNumber(page);
             setShowNavPanel(false);
+            // Turning the page goes back to the top of the document (the page
+            // itself scrolls naturally now, like any other page of the app)
+            if (window.scrollY) window.scrollTo(0, 0);
             setTimeout(() => setSlideDirection(null), 400);
         }
     }, []);
@@ -662,7 +629,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
     return (
         <div
             ref={containerRef}
-            className="fixed inset-0 flex flex-col overflow-hidden transition-all duration-700 z-[500]"
+            className="min-h-screen relative flex flex-col overflow-hidden transition-all duration-700 z-[500]"
             style={{
                 backgroundColor: mode.bg,
                 color: mode.text,
@@ -725,7 +692,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
             {/* MAIN MUSHAF CONTENT */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             <main
-                className="transition-all duration-700 ease-in-out flex-1 flex items-stretch justify-center px-3 md:px-6"
+                className="transition-all duration-700 ease-in-out flex items-stretch justify-center px-3 md:px-6"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
@@ -740,7 +707,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                 >
                     {/* Page Content - immersive: no header labels, the HUD title covers them */}
                     <div
-                        className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll transition-all duration-500"
+                        className="relative z-10 w-full min-h-screen flex flex-col justify-start items-center mushaf-scroll transition-all duration-500"
                         style={{
                             paddingTop: 'max(6.75rem, calc(env(safe-area-inset-top) + 3.25rem))',
                             paddingBottom: 'max(2.5rem, calc(env(safe-area-inset-bottom) + 0.75rem))'
@@ -758,7 +725,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                 <p className="font-arabic text-xl tracking-wide opacity-50 animate-pulse">جاري التحميل...</p>
                             </div>
                         ) : (
-                            <div className={`w-full min-h-full flex flex-col items-center justify-start transition-all duration-500 ${slideDirection === 'left' ? 'animate-page-flip-left' : slideDirection === 'right' ? 'animate-page-flip-right' : 'animate-fade-in'}`} style={{ perspective: '1200px' }}>
+                            <div className={`w-full grow flex flex-col items-center justify-start transition-all duration-500 ${slideDirection === 'left' ? 'animate-page-flip-left' : slideDirection === 'right' ? 'animate-page-flip-right' : 'animate-fade-in'}`} style={{ perspective: '1200px' }}>
                                 {viewMode === 'text' ? (
                                     // MUSHAF READING MODE - Quran.com style: words grouped by line
                                     <div
@@ -966,7 +933,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                             }
 
                                             return (
-                                                <div className="w-full flex-1 flex flex-col justify-between">
+                                                <div className="w-full grow flex flex-col justify-between">
                                                     {lines.map(([lineNum, words]) => {
                                                         const isFirstSurahLine = firstVerseLines.has(lineNum);
                                                         // Check if this line is the start of a new surah
