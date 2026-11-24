@@ -742,8 +742,8 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                     <div
                         className="relative z-10 w-full flex-1 flex flex-col justify-start items-center overflow-y-auto overscroll-contain mushaf-scroll transition-all duration-500"
                         style={{
-                            paddingTop: 'max(6.5rem, calc(env(safe-area-inset-top) + 3.5rem))',
-                            paddingBottom: 'max(3.5rem, calc(env(safe-area-inset-bottom) + 1.5rem))'
+                            paddingTop: 'max(6.75rem, calc(env(safe-area-inset-top) + 3.25rem))',
+                            paddingBottom: 'max(2.5rem, calc(env(safe-area-inset-bottom) + 0.75rem))'
                         }}
                     >
                         {isLoading || isFontLoading ? (
@@ -904,7 +904,7 @@ const MushafPage = ({ onBack, theme, setTheme, khitma, onUpdateKhitma }) => {
                                 ) : (
                                     // AUTHENTIC MUSHAF MODE - render full lines with QPC V2 glyphs
                                     <div
-                                        className="w-full flex flex-col items-center justify-start py-4 transition-all duration-700 mushaf-page"
+                                        className="w-full grow flex flex-col items-center justify-start py-4 transition-all duration-700 mushaf-page"
                                         style={{
                                             fontFamily: `p${pageNumber}-v2`,
                                             direction: 'rtl',
